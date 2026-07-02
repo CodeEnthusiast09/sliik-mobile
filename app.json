@@ -1,16 +1,18 @@
 {
   "expo": {
-    "name": "sliik-mobile",
-    "slug": "sliik-mobile",
+    "name": "Sliik",
+    "slug": "sliik",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "sliikmobile",
+    "scheme": "sliik",
     "userInterfaceStyle": "automatic",
     "ios": {
+      "bundleIdentifier": "com.sliik.app",
       "icon": "./assets/expo.icon"
     },
     "android": {
+      "package": "com.sliik.app",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
