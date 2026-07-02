@@ -34,6 +34,14 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Sliik accesses your photos so you can set a profile photo and add portfolio images.",
+          "cameraPermission": "Sliik accesses your camera so you can take a profile photo or portfolio image.",
+          "microphonePermission": false
+        }
       ]
     ],
     "experiments": {
