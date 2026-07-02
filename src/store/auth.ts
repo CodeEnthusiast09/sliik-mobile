@@ -16,6 +16,11 @@ interface AuthState {
 
 // expo-secure-store has no web implementation, so persist through
 // localStorage on web and the native secure keychain everywhere else.
+// Known tradeoff: localStorage is readable by any script on the page (XSS
+// risk), unlike SecureStore's OS-level encryption. Accepted for now since
+// Sliik is mobile-only and web is a dev/testing target, not a shipped
+// surface. If web ever ships for real, this should move to an httpOnly
+// cookie issued by the backend instead.
 const secureStorage = {
   getItem: (name: string) => {
     if (Platform.OS === 'web') {
