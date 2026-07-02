@@ -8,14 +8,21 @@ export const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
-    alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: Spacing.four,
     gap: Spacing.three,
   },
-  logoutButton: {
-    marginTop: Spacing.three,
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.four,
+  subtitle: {
+    marginBottom: Spacing.four,
+  },
+  optionButton: {
+    paddingVertical: Spacing.three,
+    paddingHorizontal: Spacing.three,
     borderRadius: Spacing.three,
+    alignItems: 'center',
+  },
+  linkButton: {
+    marginTop: Spacing.three,
+    alignItems: 'center',
   },
 });
