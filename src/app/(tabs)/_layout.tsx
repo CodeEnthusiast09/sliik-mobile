@@ -18,6 +18,10 @@ export default function TabsLayout() {
         <Tabs.Screen name="availability" options={{ title: 'Availability' }} />
         <Tabs.Screen name="portfolio" options={{ title: 'Portfolio' }} />
       </Tabs.Protected>
+
+      <Tabs.Protected guard={role === 'customer' || role === 'provider'}>
+        <Tabs.Screen name="bookings" options={{ title: 'Bookings' }} />
+      </Tabs.Protected>
     </Tabs>
   );
 }

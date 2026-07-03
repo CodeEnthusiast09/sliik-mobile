@@ -72,17 +72,28 @@ export function ProviderDetailScreen() {
           </ThemedText>
           {provider.services?.length ? (
             provider.services.map((service) => (
-              <ThemedView key={service.id} type="backgroundElement" style={styles.serviceRow}>
-                <ThemedText type="default">{service.name}</ThemedText>
-                {service.description && (
+              <Pressable
+                key={service.id}
+                onPress={() =>
+                  router.push({
+                    pathname: '/home/book',
+                    params: { providerId: provider.id, serviceId: service.id },
+                  })
+                }
+              >
+                <ThemedView type="backgroundElement" style={styles.serviceRow}>
+                  <ThemedText type="default">{service.name}</ThemedText>
+                  {service.description && (
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {service.description}
+                    </ThemedText>
+                  )}
                   <ThemedText type="small" themeColor="textSecondary">
-                    {service.description}
+                    ₦{service.price} · {service.durationMinutes} min
                   </ThemedText>
-                )}
-                <ThemedText type="small" themeColor="textSecondary">
-                  ₦{service.price} · {service.durationMinutes} min
-                </ThemedText>
-              </ThemedView>
+                  <ThemedText type="link">Book this service</ThemedText>
+                </ThemedView>
+              </Pressable>
             ))
           ) : (
             <ThemedText type="small" themeColor="textSecondary">
