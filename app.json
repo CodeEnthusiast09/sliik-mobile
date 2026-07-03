@@ -42,6 +42,12 @@
           "cameraPermission": "Sliik accesses your camera so you can take a profile photo or portfolio image.",
           "microphonePermission": false
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Sliik accesses your location so you can find providers near you."
+        }
       ]
     ],
     "experiments": {

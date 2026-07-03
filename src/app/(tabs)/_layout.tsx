@@ -8,7 +8,8 @@ export default function TabsLayout() {
   return (
     <Tabs screenOptions={{ headerShown: false }}>
       <Tabs.Protected guard={role === 'customer'}>
-        <Tabs.Screen name="index" options={{ title: 'Home' }} />
+        <Tabs.Screen name="home" options={{ title: 'Home' }} />
+        <Tabs.Screen name="account" options={{ title: 'Account' }} />
       </Tabs.Protected>
 
       <Tabs.Protected guard={role === 'provider'}>

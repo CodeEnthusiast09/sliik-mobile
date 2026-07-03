@@ -5,3 +5,5 @@ export * from './availability';
 export * from './portfolio';
 export * from './payouts';
 export * from './uploads';
+export * from './discovery';
+export * from './customer';

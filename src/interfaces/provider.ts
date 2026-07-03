@@ -56,6 +56,17 @@ export interface DayOff {
   createdAt: string;
 }
 
+export interface ProvidersQuery {
+  city?: string;
+  tradeType?: string;
+  minRating?: number;
+  lat?: number;
+  lng?: number;
+  radiusKm?: number;
+  page?: number;
+  limit?: number;
+}
+
 export interface Bank {
   name: string;
   code: string;
