@@ -1,4 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
+import { useState } from 'react';
 import { ActivityIndicator, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -11,6 +13,7 @@ import {
   useConfirmBooking,
   useDeclineBooking,
 } from '@/hooks/services/bookings';
+import { useInitiatePayment } from '@/hooks/services/payments';
 import { formatDateTimeLabel, getErrorMessage } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth';
 
@@ -22,11 +25,41 @@ export function BookingDetailScreen() {
   const role = useAuthStore((state) => state.role);
   const { id } = useLocalSearchParams<{ id: string }>();
 
-  const { data: booking, isLoading } = useBooking(id);
+  const { data: booking, isLoading, refetch: refetchBooking } = useBooking(id);
   const confirmMutation = useConfirmBooking();
   const declineMutation = useDeclineBooking();
   const cancelMutation = useCancelBooking();
   const completeMutation = useCompleteBooking();
+  const initiatePaymentMutation = useInitiatePayment();
+
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+
+  async function handlePayNow() {
+    if (!booking) return;
+    setPaymentError(null);
+
+    try {
+      const response = await initiatePaymentMutation.mutateAsync(booking.id);
+      if (!response.data) return;
+
+      await WebBrowser.openAuthSessionAsync(response.data.checkoutUrl, 'sliik://payment/success');
+
+      // Paystack's redirect fires whether the user actually paid or just
+      // backed out, and the webhook that flips paymentStatus can lag
+      // slightly behind it - poll a few times rather than trusting one refetch.
+      setIsProcessingPayment(true);
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const result = await refetchBooking();
+        if (result.data?.paymentStatus === 'paid') break;
+        if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 2000));
+      }
+    } catch (error) {
+      setPaymentError(getErrorMessage(error));
+    } finally {
+      setIsProcessingPayment(false);
+    }
+  }
 
   if (isLoading || !booking) {
     return (
@@ -39,15 +72,22 @@ export function BookingDetailScreen() {
   }
 
   const otherParty = role === 'customer' ? booking.provider : booking.customer;
-  const serverError = confirmMutation.isError
-    ? getErrorMessage(confirmMutation.error)
-    : declineMutation.isError
-      ? getErrorMessage(declineMutation.error)
-      : cancelMutation.isError
-        ? getErrorMessage(cancelMutation.error)
-        : completeMutation.isError
-          ? getErrorMessage(completeMutation.error)
-          : null;
+  const canPayNow =
+    role === 'customer' &&
+    booking.paymentStatus === 'unpaid' &&
+    booking.status !== 'cancelled' &&
+    booking.status !== 'declined';
+  const serverError =
+    paymentError ??
+    (confirmMutation.isError
+      ? getErrorMessage(confirmMutation.error)
+      : declineMutation.isError
+        ? getErrorMessage(declineMutation.error)
+        : cancelMutation.isError
+          ? getErrorMessage(cancelMutation.error)
+          : completeMutation.isError
+            ? getErrorMessage(completeMutation.error)
+            : null);
 
   return (
     <ThemedView style={styles.container}>
@@ -79,6 +119,24 @@ export function BookingDetailScreen() {
             </ThemedText>
           )}
         </ThemedView>
+
+        {canPayNow && (
+          <Pressable
+            onPress={handlePayNow}
+            disabled={initiatePaymentMutation.isPending || isProcessingPayment}
+            style={styles.standaloneButton}
+          >
+            <ThemedView type="backgroundElement" style={styles.submitButton}>
+              <ThemedText type="smallBold">
+                {initiatePaymentMutation.isPending
+                  ? 'Opening checkout...'
+                  : isProcessingPayment
+                    ? 'Checking payment...'
+                    : 'Pay now'}
+              </ThemedText>
+            </ThemedView>
+          </Pressable>
+        )}
 
         {serverError && (
           <ThemedText type="small" style={styles.error}>

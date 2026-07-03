@@ -8,3 +8,4 @@ export * from './uploads';
 export * from './discovery';
 export * from './customer';
 export * from './bookings';
+export * from './payments';

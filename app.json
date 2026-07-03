@@ -48,7 +48,8 @@
         {
           "locationWhenInUsePermission": "Sliik accesses your location so you can find providers near you."
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,
