@@ -1,3 +1,5 @@
+import type { Deal } from './deal';
+
 export interface ProviderProfile {
   id: string;
   userId: string;
@@ -18,6 +20,7 @@ export interface ProviderProfile {
   portfolio?: PortfolioItem[];
   availability?: AvailabilitySlot[];
   daysOff?: DayOff[];
+  deals?: Deal[];
 }
 
 export interface Service {

@@ -101,6 +101,29 @@ export function ProviderDetailScreen() {
             </ThemedText>
           )}
 
+          {!!provider.deals?.length && (
+            <>
+              <ThemedText type="subtitle" style={styles.sectionTitle}>
+                Flash deals
+              </ThemedText>
+              {provider.deals.map((deal) => (
+                <Pressable
+                  key={deal.id}
+                  onPress={() => router.push({ pathname: '/deals/[id]', params: { id: deal.id } })}
+                >
+                  <ThemedView type="backgroundElement" style={styles.serviceRow}>
+                    <ThemedText type="default">{deal.title}</ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      ₦{deal.dealPrice} (was ₦{deal.originalPrice}) · {deal.slotsRemaining} slot
+                      {deal.slotsRemaining === 1 ? '' : 's'} left
+                    </ThemedText>
+                    <ThemedText type="link">View deal</ThemedText>
+                  </ThemedView>
+                </Pressable>
+              ))}
+            </>
+          )}
+
           <ThemedText type="subtitle" style={styles.sectionTitle}>
             Portfolio
           </ThemedText>

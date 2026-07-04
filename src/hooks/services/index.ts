@@ -10,3 +10,4 @@ export * from './customer';
 export * from './bookings';
 export * from './payments';
 export * from './offers';
+export * from './deals';
