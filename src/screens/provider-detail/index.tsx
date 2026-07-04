@@ -2,9 +2,11 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, FlatList, Image, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ReviewsList } from '@/components/reviews-list';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { usePublicProviderProfile } from '@/hooks/services/discovery';
+import { useReviewsForUser } from '@/hooks/services/reviews';
 
 import { styles } from './index.styles';
 
@@ -13,6 +15,7 @@ export function ProviderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const { data: provider, isLoading } = usePublicProviderProfile(id);
+  const { data: userReviews, isLoading: isLoadingReviews } = useReviewsForUser(provider?.userId);
 
   if (isLoading || !provider) {
     return (
@@ -145,6 +148,16 @@ export function ProviderDetailScreen() {
               No portfolio photos yet.
             </ThemedText>
           )}
+
+          <ThemedText type="subtitle" style={styles.sectionTitle}>
+            Reviews
+          </ThemedText>
+          <ReviewsList
+            averageRating={userReviews?.averageRating ?? null}
+            totalReviews={userReviews?.totalReviews ?? 0}
+            reviews={userReviews?.reviews ?? []}
+            isLoading={isLoadingReviews}
+          />
         </ScrollView>
       </SafeAreaView>
     </ThemedView>

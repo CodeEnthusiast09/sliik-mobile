@@ -4,10 +4,12 @@ import { useState } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ReviewsList } from '@/components/reviews-list';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { usePayoutAccount } from '@/hooks/services/payouts';
 import { useProviderProfile, useUpdateProviderProfile } from '@/hooks/services/provider';
+import { useReviewsForUser } from '@/hooks/services/reviews';
 import { useUploadImage } from '@/hooks/services/uploads';
 import { getErrorMessage } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth';
@@ -23,6 +25,7 @@ export function ProviderProfileScreen() {
   const { data: payoutAccount } = usePayoutAccount();
   const updateProfileMutation = useUpdateProviderProfile();
   const uploadImageMutation = useUploadImage();
+  const { data: userReviews, isLoading: isLoadingReviews } = useReviewsForUser(profile?.userId);
 
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
@@ -169,6 +172,16 @@ export function ProviderProfileScreen() {
               </ThemedText>
             </ThemedView>
           </Pressable>
+
+          <ThemedText type="subtitle" style={styles.sectionTitle}>
+            Reviews received
+          </ThemedText>
+          <ReviewsList
+            averageRating={userReviews?.averageRating ?? null}
+            totalReviews={userReviews?.totalReviews ?? 0}
+            reviews={userReviews?.reviews ?? []}
+            isLoading={isLoadingReviews}
+          />
 
           <Pressable onPress={() => clearAuth()} style={styles.logoutButton}>
             <ThemedText type="smallBold" style={styles.logoutText}>

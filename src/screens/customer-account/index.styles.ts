@@ -58,4 +58,10 @@ export const styles = StyleSheet.create({
   logoutText: {
     color: '#e5484d',
   },
+  sectionTitle: {
+    fontSize: 20,
+    lineHeight: 26,
+    marginTop: Spacing.four,
+    marginBottom: Spacing.two,
+  },
 });

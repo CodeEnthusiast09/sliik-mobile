@@ -52,4 +52,25 @@ export const styles = StyleSheet.create({
   destructiveText: {
     color: '#e5484d',
   },
+  reviewSection: {
+    marginTop: Spacing.four,
+    gap: Spacing.two,
+  },
+  starRow: {
+    flexDirection: 'row',
+    gap: Spacing.two,
+  },
+  star: {
+    fontSize: 28,
+  },
+  commentInput: {
+    borderWidth: 1,
+    borderColor: '#8888884D',
+    borderRadius: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    fontSize: 16,
+    minHeight: 80,
+    textAlignVertical: 'top',
+  },
 });

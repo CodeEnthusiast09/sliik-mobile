@@ -1,7 +1,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable } from 'react-native';
+import { ActivityIndicator, Pressable, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -14,8 +14,10 @@ import {
   useDeclineBooking,
 } from '@/hooks/services/bookings';
 import { useInitiatePayment } from '@/hooks/services/payments';
+import { useCreateReview, useReviewsForBooking } from '@/hooks/services/reviews';
 import { formatDateTimeLabel, getErrorMessage } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth';
+import { createReviewSchema } from '@/validations/review';
 
 import { STATUS_COLORS } from '../bookings-list/index.styles';
 import { styles } from './index.styles';
@@ -31,9 +33,14 @@ export function BookingDetailScreen() {
   const cancelMutation = useCancelBooking();
   const completeMutation = useCompleteBooking();
   const initiatePaymentMutation = useInitiatePayment();
+  const { data: bookingReviews } = useReviewsForBooking(id);
+  const createReviewMutation = useCreateReview();
 
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState('');
+  const [reviewError, setReviewError] = useState<string | null>(null);
 
   async function handlePayNow() {
     if (!booking) return;
@@ -61,6 +68,23 @@ export function BookingDetailScreen() {
     }
   }
 
+  function handleSubmitReview() {
+    if (!booking) return;
+    setReviewError(null);
+
+    const result = createReviewSchema.safeParse({
+      bookingId: booking.id,
+      rating,
+      comment: comment || undefined,
+    });
+    if (!result.success) {
+      setReviewError(result.error.issues[0]?.message ?? 'Invalid review');
+      return;
+    }
+
+    createReviewMutation.mutate(result.data);
+  }
+
   if (isLoading || !booking) {
     return (
       <ThemedView style={styles.container}>
@@ -72,6 +96,9 @@ export function BookingDetailScreen() {
   }
 
   const otherParty = role === 'customer' ? booking.provider : booking.customer;
+  const myUserId = role === 'customer' ? booking.customer?.userId : booking.provider?.userId;
+  const myReview = bookingReviews?.find((review) => review.reviewerId === myUserId);
+  const theirReview = bookingReviews?.find((review) => review.reviewerId !== myUserId);
   const canPayNow =
     role === 'customer' &&
     booking.paymentStatus === 'unpaid' &&
@@ -210,6 +237,73 @@ export function BookingDetailScreen() {
               </ThemedText>
             </ThemedView>
           </Pressable>
+        )}
+
+        {booking.status === 'completed' && (
+          <ThemedView style={styles.reviewSection}>
+            <ThemedText type="subtitle">Reviews</ThemedText>
+
+            {theirReview && (
+              <ThemedView type="backgroundElement" style={styles.card}>
+                <ThemedText type="small" themeColor="textSecondary">
+                  What {otherParty?.fullName} said:
+                </ThemedText>
+                <ThemedText type="default">
+                  {'★'.repeat(theirReview.rating)}
+                  {'☆'.repeat(5 - theirReview.rating)}
+                </ThemedText>
+                {theirReview.comment && (
+                  <ThemedText type="default">{theirReview.comment}</ThemedText>
+                )}
+              </ThemedView>
+            )}
+
+            {myReview ? (
+              <ThemedView type="backgroundElement" style={styles.card}>
+                <ThemedText type="small" themeColor="textSecondary">
+                  Your review:
+                </ThemedText>
+                <ThemedText type="default">
+                  {'★'.repeat(myReview.rating)}
+                  {'☆'.repeat(5 - myReview.rating)}
+                </ThemedText>
+                {myReview.comment && <ThemedText type="default">{myReview.comment}</ThemedText>}
+              </ThemedView>
+            ) : (
+              <>
+                <ThemedView style={styles.starRow}>
+                  {[1, 2, 3, 4, 5].map((value) => (
+                    <Pressable key={value} onPress={() => setRating(value)}>
+                      <ThemedText style={styles.star}>{value <= rating ? '★' : '☆'}</ThemedText>
+                    </Pressable>
+                  ))}
+                </ThemedView>
+                <TextInput
+                  placeholder={`Leave a comment for ${otherParty?.fullName ?? 'them'} (optional)`}
+                  value={comment}
+                  onChangeText={setComment}
+                  style={styles.commentInput}
+                  multiline
+                />
+                {(reviewError ?? (createReviewMutation.isError ? getErrorMessage(createReviewMutation.error) : null)) && (
+                  <ThemedText type="small" style={styles.error}>
+                    {reviewError ?? getErrorMessage(createReviewMutation.error)}
+                  </ThemedText>
+                )}
+                <Pressable
+                  onPress={handleSubmitReview}
+                  disabled={createReviewMutation.isPending}
+                  style={styles.standaloneButton}
+                >
+                  <ThemedView type="backgroundElement" style={styles.submitButton}>
+                    <ThemedText type="smallBold">
+                      {createReviewMutation.isPending ? 'Submitting...' : 'Submit review'}
+                    </ThemedText>
+                  </ThemedView>
+                </Pressable>
+              </>
+            )}
+          </ThemedView>
         )}
       </SafeAreaView>
     </ThemedView>
