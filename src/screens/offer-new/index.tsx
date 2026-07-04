@@ -1,9 +1,10 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, TextInput } from 'react-native';
+import { Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
+import { ThemedTextInput } from '@/components/themed-text-input';
 import { ThemedView } from '@/components/themed-view';
 import { useCreateOffer } from '@/hooks/services/offers';
 import { useCustomerProfile } from '@/hooks/services/customer';
@@ -71,39 +72,39 @@ export function OfferNewScreen() {
           Leave budget blank for an open request - providers compete on price.
         </ThemedText>
 
-        <TextInput
+        <ThemedTextInput
           placeholder="Service (e.g. hairdresser, barber)"
           value={serviceType}
           onChangeText={setServiceType}
           style={styles.input}
         />
-        <TextInput
+        <ThemedTextInput
           placeholder="Describe what you need"
           value={description}
           onChangeText={setDescription}
           style={[styles.input, styles.descriptionInput]}
           multiline
         />
-        <TextInput
+        <ThemedTextInput
           placeholder="Budget (optional)"
           value={budget}
           onChangeText={setBudget}
           style={styles.input}
           keyboardType="decimal-pad"
         />
-        <TextInput placeholder="City" value={city} onChangeText={setCity} style={styles.input} />
+        <ThemedTextInput placeholder="City" value={city} onChangeText={setCity} style={styles.input} />
 
         <ThemedText type="subtitle" style={styles.sectionTitle}>
           Preferred window
         </ThemedText>
         <ThemedView style={styles.row}>
-          <TextInput
+          <ThemedTextInput
             placeholder="From date (YYYY-MM-DD)"
             value={fromDate}
             onChangeText={setFromDate}
             style={[styles.input, styles.rowInput]}
           />
-          <TextInput
+          <ThemedTextInput
             placeholder="From time (HH:MM)"
             value={fromTime}
             onChangeText={setFromTime}
@@ -111,13 +112,13 @@ export function OfferNewScreen() {
           />
         </ThemedView>
         <ThemedView style={styles.row}>
-          <TextInput
+          <ThemedTextInput
             placeholder="To date (YYYY-MM-DD)"
             value={toDate}
             onChangeText={setToDate}
             style={[styles.input, styles.rowInput]}
           />
-          <TextInput
+          <ThemedTextInput
             placeholder="To time (HH:MM)"
             value={toTime}
             onChangeText={setToTime}
@@ -126,7 +127,7 @@ export function OfferNewScreen() {
         </ThemedView>
 
         {(fieldError ?? serverError) && (
-          <ThemedText type="small" style={styles.error}>
+          <ThemedText type="small" themeColor="danger" style={styles.error}>
             {fieldError ?? serverError}
           </ThemedText>
         )}

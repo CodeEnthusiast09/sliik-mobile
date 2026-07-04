@@ -37,7 +37,6 @@ export const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: '#8888884D',
     borderRadius: Spacing.two,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
@@ -56,7 +55,6 @@ export const styles = StyleSheet.create({
     flex: 1,
   },
   error: {
-    color: '#e5484d',
     marginBottom: Spacing.two,
   },
   submitButton: {

@@ -1,10 +1,15 @@
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, TextInput } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { EmptyState } from '@/components/empty-state';
+import { ErrorState } from '@/components/error-state';
+import { DetailSkeleton } from '@/components/skeleton';
 import { ThemedText } from '@/components/themed-text';
+import { ThemedTextInput } from '@/components/themed-text-input';
 import { ThemedView } from '@/components/themed-view';
+import { useTheme } from '@/hooks/common/use-theme';
 import { useBanks, useCreatePayoutAccount, usePayoutAccount } from '@/hooks/services/payouts';
 import type { Bank } from '@/interfaces/provider';
 import { getErrorMessage } from '@/lib/utils';
@@ -14,9 +19,22 @@ import { styles } from './index.styles';
 
 export function ProviderPayoutScreen() {
   const router = useRouter();
+  const theme = useTheme();
 
-  const { data: payoutAccount, isLoading: isLoadingAccount } = usePayoutAccount();
-  const { data: banks, isLoading: isLoadingBanks } = useBanks();
+  const {
+    data: payoutAccount,
+    isLoading: isLoadingAccount,
+    isError: isAccountError,
+    error: accountError,
+    refetch: refetchAccount,
+  } = usePayoutAccount();
+  const {
+    data: banks,
+    isLoading: isLoadingBanks,
+    isError: isBanksError,
+    error: banksError,
+    refetch: refetchBanks,
+  } = useBanks();
   const createPayoutAccountMutation = useCreatePayoutAccount();
 
   const [search, setSearch] = useState('');
@@ -52,11 +70,21 @@ export function ProviderPayoutScreen() {
     ? getErrorMessage(createPayoutAccountMutation.error)
     : null;
 
+  if (isAccountError) {
+    return (
+      <ThemedView style={styles.container}>
+        <SafeAreaView style={styles.safeArea}>
+          <ErrorState message={getErrorMessage(accountError)} onRetry={refetchAccount} />
+        </SafeAreaView>
+      </ThemedView>
+    );
+  }
+
   if (isLoadingAccount) {
     return (
       <ThemedView style={styles.container}>
-        <SafeAreaView style={styles.loadingContainer}>
-          <ActivityIndicator />
+        <SafeAreaView style={styles.safeArea}>
+          <DetailSkeleton />
         </SafeAreaView>
       </ThemedView>
     );
@@ -100,7 +128,7 @@ export function ProviderPayoutScreen() {
               </Pressable>
             ) : (
               <>
-                <TextInput
+                <ThemedTextInput
                   placeholder="Search for your bank"
                   value={search}
                   onChangeText={setSearch}
@@ -108,13 +136,19 @@ export function ProviderPayoutScreen() {
                 />
                 {isLoadingBanks ? (
                   <ActivityIndicator />
+                ) : isBanksError ? (
+                  <ErrorState message={getErrorMessage(banksError)} onRetry={refetchBanks} />
                 ) : (
                   <FlatList
                     data={filteredBanks}
                     keyExtractor={(bank) => `${bank.code}-${bank.name}`}
                     style={styles.bankList}
+                    ListEmptyComponent={<EmptyState message="No banks found." />}
                     renderItem={({ item }) => (
-                      <Pressable onPress={() => setSelectedBank(item)} style={styles.bankRow}>
+                      <Pressable
+                        onPress={() => setSelectedBank(item)}
+                        style={[styles.bankRow, { borderBottomColor: theme.border }]}
+                      >
                         <ThemedText type="default">{item.name}</ThemedText>
                       </Pressable>
                     )}
@@ -124,7 +158,7 @@ export function ProviderPayoutScreen() {
             )}
 
             {selectedBank && (
-              <TextInput
+              <ThemedTextInput
                 placeholder="Account number"
                 value={accountNumber}
                 onChangeText={setAccountNumber}
@@ -134,7 +168,7 @@ export function ProviderPayoutScreen() {
             )}
 
             {(fieldError ?? serverError) && (
-              <ThemedText type="small" style={styles.error}>
+              <ThemedText type="small" themeColor="danger">
                 {fieldError ?? serverError}
               </ThemedText>
             )}

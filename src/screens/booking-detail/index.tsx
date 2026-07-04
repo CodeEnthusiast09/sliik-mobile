@@ -1,11 +1,15 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, TextInput } from 'react-native';
+import { Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { DetailSkeleton } from '@/components/skeleton';
+import { ErrorState } from '@/components/error-state';
 import { ThemedText } from '@/components/themed-text';
+import { ThemedTextInput } from '@/components/themed-text-input';
 import { ThemedView } from '@/components/themed-view';
+import { useTheme } from '@/hooks/common/use-theme';
 import {
   useBooking,
   useCancelBooking,
@@ -20,7 +24,7 @@ import { formatDateTimeLabel, getErrorMessage } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth';
 import { createReviewSchema } from '@/validations/review';
 
-import { STATUS_COLORS } from '../bookings-list/index.styles';
+import { getStatusColor } from '../bookings-list/index.styles';
 import { styles } from './index.styles';
 
 export function BookingDetailScreen() {
@@ -28,7 +32,14 @@ export function BookingDetailScreen() {
   const role = useAuthStore((state) => state.role);
   const { id } = useLocalSearchParams<{ id: string }>();
 
-  const { data: booking, isLoading, refetch: refetchBooking } = useBooking(id);
+  const theme = useTheme();
+  const {
+    data: booking,
+    isLoading,
+    isError,
+    error,
+    refetch: refetchBooking,
+  } = useBooking(id);
   const confirmMutation = useConfirmBooking();
   const declineMutation = useDeclineBooking();
   const cancelMutation = useCancelBooking();
@@ -86,11 +97,21 @@ export function BookingDetailScreen() {
     createReviewMutation.mutate(result.data);
   }
 
+  if (isError) {
+    return (
+      <ThemedView style={styles.container}>
+        <SafeAreaView style={styles.safeArea}>
+          <ErrorState message={getErrorMessage(error)} onRetry={refetchBooking} />
+        </SafeAreaView>
+      </ThemedView>
+    );
+  }
+
   if (isLoading || !booking) {
     return (
       <ThemedView style={styles.container}>
-        <SafeAreaView style={styles.loadingContainer}>
-          <ActivityIndicator />
+        <SafeAreaView style={styles.safeArea}>
+          <DetailSkeleton />
         </SafeAreaView>
       </ThemedView>
     );
@@ -127,7 +148,7 @@ export function BookingDetailScreen() {
         <ThemedText type="title" style={styles.title}>
           {booking.service?.name ?? 'Booking'}
         </ThemedText>
-        <ThemedText type="smallBold" style={{ color: STATUS_COLORS[booking.status] }}>
+        <ThemedText type="smallBold" style={{ color: getStatusColor(booking.status, theme) }}>
           {booking.status}
         </ThemedText>
 
@@ -178,7 +199,7 @@ export function BookingDetailScreen() {
         )}
 
         {serverError && (
-          <ThemedText type="small" style={styles.error}>
+          <ThemedText type="small" themeColor="danger" style={styles.error}>
             {serverError}
           </ThemedText>
         )}
@@ -202,7 +223,7 @@ export function BookingDetailScreen() {
               style={styles.actionButton}
             >
               <ThemedView type="backgroundElement" style={styles.submitButton}>
-                <ThemedText type="smallBold" style={styles.destructiveText}>
+                <ThemedText type="smallBold" themeColor="danger">
                   {declineMutation.isPending ? 'Declining...' : 'Decline'}
                 </ThemedText>
               </ThemedView>
@@ -229,7 +250,7 @@ export function BookingDetailScreen() {
               style={styles.actionButton}
             >
               <ThemedView type="backgroundElement" style={styles.submitButton}>
-                <ThemedText type="smallBold" style={styles.destructiveText}>
+                <ThemedText type="smallBold" themeColor="danger">
                   {cancelMutation.isPending ? 'Cancelling...' : 'Cancel'}
                 </ThemedText>
               </ThemedView>
@@ -244,7 +265,7 @@ export function BookingDetailScreen() {
             style={styles.standaloneButton}
           >
             <ThemedView type="backgroundElement" style={styles.submitButton}>
-              <ThemedText type="smallBold" style={styles.destructiveText}>
+              <ThemedText type="smallBold" themeColor="danger">
                 {cancelMutation.isPending ? 'Cancelling...' : 'Cancel booking'}
               </ThemedText>
             </ThemedView>
@@ -290,7 +311,7 @@ export function BookingDetailScreen() {
                     </Pressable>
                   ))}
                 </ThemedView>
-                <TextInput
+                <ThemedTextInput
                   placeholder={`Leave a comment for ${otherParty?.fullName ?? 'them'} (optional)`}
                   value={comment}
                   onChangeText={setComment}
@@ -298,7 +319,7 @@ export function BookingDetailScreen() {
                   multiline
                 />
                 {(reviewError ?? (createReviewMutation.isError ? getErrorMessage(createReviewMutation.error) : null)) && (
-                  <ThemedText type="small" style={styles.error}>
+                  <ThemedText type="small" themeColor="danger" style={styles.error}>
                     {reviewError ?? getErrorMessage(createReviewMutation.error)}
                   </ThemedText>
                 )}

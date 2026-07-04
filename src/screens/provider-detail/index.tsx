@@ -1,12 +1,16 @@
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ActivityIndicator, FlatList, Image, Pressable, ScrollView } from 'react-native';
+import { FlatList, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ErrorState } from '@/components/error-state';
 import { ReviewsList } from '@/components/reviews-list';
+import { DetailSkeleton } from '@/components/skeleton';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { usePublicProviderProfile } from '@/hooks/services/discovery';
 import { useReviewsForUser } from '@/hooks/services/reviews';
+import { getErrorMessage } from '@/lib/utils';
 
 import { styles } from './index.styles';
 
@@ -14,14 +18,24 @@ export function ProviderDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
 
-  const { data: provider, isLoading } = usePublicProviderProfile(id);
+  const { data: provider, isLoading, isError, error, refetch } = usePublicProviderProfile(id);
   const { data: userReviews, isLoading: isLoadingReviews } = useReviewsForUser(provider?.userId);
+
+  if (isError) {
+    return (
+      <ThemedView style={styles.container}>
+        <SafeAreaView style={styles.safeArea}>
+          <ErrorState message={getErrorMessage(error)} onRetry={refetch} />
+        </SafeAreaView>
+      </ThemedView>
+    );
+  }
 
   if (isLoading || !provider) {
     return (
       <ThemedView style={styles.container}>
-        <SafeAreaView style={styles.loadingContainer}>
-          <ActivityIndicator />
+        <SafeAreaView style={styles.safeArea}>
+          <DetailSkeleton />
         </SafeAreaView>
       </ThemedView>
     );

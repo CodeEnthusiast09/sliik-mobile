@@ -19,7 +19,6 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 3,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#e5484d',
   },
   badgeText: {
     color: '#ffffff',

@@ -1,9 +1,10 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, TextInput } from 'react-native';
+import { Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
+import { ThemedTextInput } from '@/components/themed-text-input';
 import { ThemedView } from '@/components/themed-view';
 import { useRegister } from '@/hooks/services/auth/useRegister';
 import type { UserRole } from '@/interfaces/auth';
@@ -55,14 +56,14 @@ export function RegisterScreen() {
           {role === 'provider' ? 'Set up your provider account' : 'Create your account'}
         </ThemedText>
 
-        <TextInput
+        <ThemedTextInput
           placeholder="Full name"
           value={fullName}
           onChangeText={setFullName}
           style={styles.input}
           autoCapitalize="words"
         />
-        <TextInput
+        <ThemedTextInput
           placeholder="Email"
           value={email}
           onChangeText={setEmail}
@@ -70,7 +71,7 @@ export function RegisterScreen() {
           autoCapitalize="none"
           keyboardType="email-address"
         />
-        <TextInput
+        <ThemedTextInput
           placeholder="Password"
           value={password}
           onChangeText={setPassword}
@@ -78,7 +79,7 @@ export function RegisterScreen() {
           secureTextEntry
         />
         {role === 'provider' && (
-          <TextInput
+          <ThemedTextInput
             placeholder="Trade (e.g. hairdresser, barber)"
             value={tradeType}
             onChangeText={setTradeType}
@@ -87,7 +88,7 @@ export function RegisterScreen() {
         )}
 
         {(fieldError ?? serverError) && (
-          <ThemedText type="small" style={styles.error}>
+          <ThemedText type="small" themeColor="danger">
             {fieldError ?? serverError}
           </ThemedText>
         )}

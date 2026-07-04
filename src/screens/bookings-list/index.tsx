@@ -1,15 +1,19 @@
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, FlatList, Pressable } from 'react-native';
+import { FlatList, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { EmptyState } from '@/components/empty-state';
+import { ErrorState } from '@/components/error-state';
+import { ListSkeleton } from '@/components/skeleton';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { useTheme } from '@/hooks/common/use-theme';
 import { useMyBookings } from '@/hooks/services/bookings';
 import type { Booking } from '@/interfaces/booking';
-import { formatDateTimeLabel } from '@/lib/utils';
+import { formatDateTimeLabel, getErrorMessage } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth';
 
-import { STATUS_COLORS, styles } from './index.styles';
+import { getStatusColor, styles } from './index.styles';
 
 function otherPartyName(booking: Booking, role: string | null) {
   return role === 'customer' ? booking.provider?.fullName : booking.customer?.fullName;
@@ -18,7 +22,8 @@ function otherPartyName(booking: Booking, role: string | null) {
 export function BookingsListScreen() {
   const router = useRouter();
   const role = useAuthStore((state) => state.role);
-  const { data: bookings, isLoading, isRefetching, refetch } = useMyBookings();
+  const theme = useTheme();
+  const { data: bookings, isLoading, isError, error, isRefetching, refetch } = useMyBookings();
 
   return (
     <ThemedView style={styles.container}>
@@ -28,7 +33,9 @@ export function BookingsListScreen() {
         </ThemedText>
 
         {isLoading ? (
-          <ActivityIndicator style={styles.loading} />
+          <ListSkeleton />
+        ) : isError ? (
+          <ErrorState message={getErrorMessage(error)} onRetry={refetch} />
         ) : (
           <FlatList
             data={bookings}
@@ -36,11 +43,7 @@ export function BookingsListScreen() {
             contentContainerStyle={styles.listContent}
             refreshing={isRefetching}
             onRefresh={refetch}
-            ListEmptyComponent={
-              <ThemedText type="small" themeColor="textSecondary">
-                No bookings yet.
-              </ThemedText>
-            }
+            ListEmptyComponent={<EmptyState message="No bookings yet." />}
             renderItem={({ item }) => (
               <Pressable
                 onPress={() => router.push({ pathname: '/bookings/[id]', params: { id: item.id } })}
@@ -51,7 +54,7 @@ export function BookingsListScreen() {
                     {otherPartyName(item, role) ? `with ${otherPartyName(item, role)} · ` : ''}
                     {formatDateTimeLabel(item.scheduledAt)}
                   </ThemedText>
-                  <ThemedText type="smallBold" style={{ color: STATUS_COLORS[item.status] }}>
+                  <ThemedText type="smallBold" style={{ color: getStatusColor(item.status, theme) }}>
                     {item.status}
                   </ThemedText>
                 </ThemedView>

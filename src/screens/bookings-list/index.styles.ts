@@ -1,15 +1,22 @@
 import { StyleSheet } from 'react-native';
 
-import { Spacing } from '@/lib/constants';
+import { Spacing, ThemeColor } from '@/lib/constants';
 import type { BookingStatus } from '@/interfaces/booking';
 
-export const STATUS_COLORS: Record<BookingStatus, string> = {
-  pending: '#e0a800',
-  confirmed: '#2f9e44',
-  completed: '#60646C',
-  cancelled: '#e5484d',
-  declined: '#e5484d',
-};
+export function getStatusColor(status: BookingStatus, theme: Record<ThemeColor, string>): string {
+  switch (status) {
+    case 'pending':
+      return theme.warning;
+    case 'confirmed':
+      return theme.success;
+    case 'cancelled':
+    case 'declined':
+      return theme.danger;
+    case 'completed':
+    default:
+      return theme.textSecondary;
+  }
+}
 
 export const styles = StyleSheet.create({
   container: {
@@ -22,9 +29,6 @@ export const styles = StyleSheet.create({
   title: {
     paddingTop: Spacing.two,
     paddingBottom: Spacing.three,
-  },
-  loading: {
-    marginTop: Spacing.four,
   },
   listContent: {
     gap: Spacing.two,

@@ -1,9 +1,12 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, TextInput } from 'react-native';
+import { Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ErrorState } from '@/components/error-state';
+import { DetailSkeleton } from '@/components/skeleton';
 import { ThemedText } from '@/components/themed-text';
+import { ThemedTextInput } from '@/components/themed-text-input';
 import { ThemedView } from '@/components/themed-view';
 import {
   useAcceptResponse,
@@ -23,7 +26,7 @@ export function OfferDetailScreen() {
   const role = useAuthStore((state) => state.role);
   const { id } = useLocalSearchParams<{ id: string }>();
 
-  const { data: offer, isLoading } = useOffer(id);
+  const { data: offer, isLoading, isError, error, refetch } = useOffer(id);
   const { data: provider } = useProviderProfile(role === 'provider');
   const cancelMutation = useCancelOffer();
   const respondMutation = useRespondToOffer();
@@ -49,11 +52,21 @@ export function OfferDetailScreen() {
     respondMutation.mutate({ offerId: offer.id, payload: result.data });
   }
 
+  if (isError) {
+    return (
+      <ThemedView style={styles.container}>
+        <SafeAreaView style={styles.safeArea}>
+          <ErrorState message={getErrorMessage(error)} onRetry={refetch} />
+        </SafeAreaView>
+      </ThemedView>
+    );
+  }
+
   if (isLoading || !offer) {
     return (
       <ThemedView style={styles.container}>
-        <SafeAreaView style={styles.loadingContainer}>
-          <ActivityIndicator />
+        <SafeAreaView style={styles.safeArea}>
+          <DetailSkeleton />
         </SafeAreaView>
       </ThemedView>
     );
@@ -92,7 +105,7 @@ export function OfferDetailScreen() {
           </ThemedView>
 
           {serverError && (
-            <ThemedText type="small" style={styles.error}>
+            <ThemedText type="small" themeColor="danger" style={styles.error}>
               {serverError}
             </ThemedText>
           )}
@@ -104,7 +117,7 @@ export function OfferDetailScreen() {
               style={styles.standaloneButton}
             >
               <ThemedView type="backgroundElement" style={styles.submitButton}>
-                <ThemedText type="smallBold" style={styles.destructiveText}>
+                <ThemedText type="smallBold" themeColor="danger">
                   {cancelMutation.isPending ? 'Cancelling...' : 'Cancel offer'}
                 </ThemedText>
               </ThemedView>
@@ -167,21 +180,21 @@ export function OfferDetailScreen() {
               <ThemedText type="subtitle" style={styles.sectionTitle}>
                 Respond with a price
               </ThemedText>
-              <TextInput
+              <ThemedTextInput
                 placeholder="Your price"
                 value={price}
                 onChangeText={setPrice}
                 style={styles.input}
                 keyboardType="decimal-pad"
               />
-              <TextInput
+              <ThemedTextInput
                 placeholder="Message (optional)"
                 value={message}
                 onChangeText={setMessage}
                 style={styles.input}
               />
               {fieldError && (
-                <ThemedText type="small" style={styles.error}>
+                <ThemedText type="small" themeColor="danger" style={styles.error}>
                   {fieldError}
                 </ThemedText>
               )}

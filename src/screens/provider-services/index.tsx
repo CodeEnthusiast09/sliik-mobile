@@ -1,16 +1,20 @@
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, FlatList, Pressable } from 'react-native';
+import { FlatList, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { EmptyState } from '@/components/empty-state';
+import { ErrorState } from '@/components/error-state';
+import { ListSkeleton } from '@/components/skeleton';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useServices } from '@/hooks/services/provider-services';
+import { getErrorMessage } from '@/lib/utils';
 
 import { styles } from './index.styles';
 
 export function ProviderServicesScreen() {
   const router = useRouter();
-  const { data: services, isLoading } = useServices();
+  const { data: services, isLoading, isError, error, isRefetching, refetch } = useServices();
 
   return (
     <ThemedView style={styles.container}>
@@ -25,17 +29,17 @@ export function ProviderServicesScreen() {
         </ThemedView>
 
         {isLoading ? (
-          <ActivityIndicator />
+          <ListSkeleton />
+        ) : isError ? (
+          <ErrorState message={getErrorMessage(error)} onRetry={refetch} />
         ) : (
           <FlatList
             data={services}
             keyExtractor={(service) => service.id}
             contentContainerStyle={styles.listContent}
-            ListEmptyComponent={
-              <ThemedText type="small" themeColor="textSecondary">
-                No services yet. Add one to let customers book you.
-              </ThemedText>
-            }
+            refreshing={isRefetching}
+            onRefresh={refetch}
+            ListEmptyComponent={<EmptyState message="No services yet. Add one to let customers book you." />}
             renderItem={({ item }) => (
               <Pressable
                 onPress={() => router.push({ pathname: '/services/[id]', params: { id: item.id } })}

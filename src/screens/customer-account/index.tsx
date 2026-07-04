@@ -1,10 +1,14 @@
+import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useState } from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, TextInput } from 'react-native';
+import { Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ErrorState } from '@/components/error-state';
 import { ReviewsList } from '@/components/reviews-list';
+import { DetailSkeleton } from '@/components/skeleton';
 import { ThemedText } from '@/components/themed-text';
+import { ThemedTextInput } from '@/components/themed-text-input';
 import { ThemedView } from '@/components/themed-view';
 import { useCustomerProfile, useUpdateCustomerProfile } from '@/hooks/services/customer';
 import { useReviewsForUser } from '@/hooks/services/reviews';
@@ -20,7 +24,7 @@ import { styles } from './index.styles';
 export function CustomerAccountScreen() {
   const clearAuth = useAuthStore((state) => state.clearAuth);
 
-  const { data: profile, isLoading } = useCustomerProfile();
+  const { data: profile, isLoading, isError, error: profileError, refetch } = useCustomerProfile();
   const updateProfileMutation = useUpdateCustomerProfile();
   const uploadImageMutation = useUploadImage();
   const { data: userReviews, isLoading: isLoadingReviews } = useReviewsForUser(profile?.userId);
@@ -85,11 +89,21 @@ export function CustomerAccountScreen() {
     clearAuth();
   }
 
+  if (isError) {
+    return (
+      <ThemedView style={styles.container}>
+        <SafeAreaView style={styles.safeArea}>
+          <ErrorState message={getErrorMessage(profileError)} onRetry={refetch} />
+        </SafeAreaView>
+      </ThemedView>
+    );
+  }
+
   if (isLoading) {
     return (
       <ThemedView style={styles.container}>
-        <SafeAreaView style={styles.loadingContainer}>
-          <ActivityIndicator />
+        <SafeAreaView style={styles.safeArea}>
+          <DetailSkeleton />
         </SafeAreaView>
       </ThemedView>
     );
@@ -111,24 +125,24 @@ export function CustomerAccountScreen() {
             </ThemedView>
           </Pressable>
 
-          <TextInput
+          <ThemedTextInput
             placeholder="Full name"
             value={fullName}
             onChangeText={setFullName}
             style={styles.input}
             autoCapitalize="words"
           />
-          <TextInput
+          <ThemedTextInput
             placeholder="Phone"
             value={phone}
             onChangeText={setPhone}
             style={styles.input}
             keyboardType="phone-pad"
           />
-          <TextInput placeholder="City" value={city} onChangeText={setCity} style={styles.input} />
+          <ThemedTextInput placeholder="City" value={city} onChangeText={setCity} style={styles.input} />
 
           {(fieldError ?? serverError) && (
-            <ThemedText type="small" style={styles.error}>
+            <ThemedText type="small" themeColor="danger">
               {fieldError ?? serverError}
             </ThemedText>
           )}
@@ -152,7 +166,7 @@ export function CustomerAccountScreen() {
           />
 
           <Pressable onPress={handleLogout} style={styles.logoutButton}>
-            <ThemedText type="smallBold" style={styles.logoutText}>
+            <ThemedText type="smallBold" themeColor="danger">
               Log out
             </ThemedText>
           </Pressable>

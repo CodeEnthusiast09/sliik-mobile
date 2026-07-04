@@ -21,7 +21,6 @@ export const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: '#8888884D',
     borderRadius: Spacing.two,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
@@ -38,7 +37,6 @@ export const styles = StyleSheet.create({
     marginRight: Spacing.two,
   },
   error: {
-    color: '#e5484d',
     marginBottom: Spacing.two,
   },
   loading: {

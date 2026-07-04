@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { ActivityIndicator, Alert, Platform, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ErrorState } from '@/components/error-state';
+import { DetailSkeleton } from '@/components/skeleton';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useAvailableSlots } from '@/hooks/services/bookings';
@@ -19,7 +21,7 @@ export function DealDetailScreen() {
   const role = useAuthStore((state) => state.role);
   const { id } = useLocalSearchParams<{ id: string }>();
 
-  const { data: deal, isLoading } = useDeal(id);
+  const { data: deal, isLoading, isError, error, refetch } = useDeal(id);
   const deleteMutation = useDeleteDeal();
   const claimMutation = useClaimDeal();
 
@@ -81,11 +83,21 @@ export function DealDetailScreen() {
     );
   }
 
+  if (isError) {
+    return (
+      <ThemedView style={styles.container}>
+        <SafeAreaView style={styles.safeArea}>
+          <ErrorState message={getErrorMessage(error)} onRetry={refetch} />
+        </SafeAreaView>
+      </ThemedView>
+    );
+  }
+
   if (isLoading || !deal) {
     return (
       <ThemedView style={styles.container}>
-        <SafeAreaView style={styles.loadingContainer}>
-          <ActivityIndicator />
+        <SafeAreaView style={styles.safeArea}>
+          <DetailSkeleton />
         </SafeAreaView>
       </ThemedView>
     );
@@ -123,7 +135,7 @@ export function DealDetailScreen() {
           </ThemedView>
 
           {serverError && (
-            <ThemedText type="small" style={styles.error}>
+            <ThemedText type="small" themeColor="danger" style={styles.error}>
               {serverError}
             </ThemedText>
           )}
@@ -135,7 +147,7 @@ export function DealDetailScreen() {
               style={styles.standaloneButton}
             >
               <ThemedView type="backgroundElement" style={styles.submitButton}>
-                <ThemedText type="smallBold" style={styles.destructiveText}>
+                <ThemedText type="smallBold" themeColor="danger">
                   {deleteMutation.isPending ? 'Cancelling...' : 'Cancel deal'}
                 </ThemedText>
               </ThemedView>
@@ -185,7 +197,7 @@ export function DealDetailScreen() {
               )}
 
               {fieldError && (
-                <ThemedText type="small" style={styles.error}>
+                <ThemedText type="small" themeColor="danger" style={styles.error}>
                   {fieldError}
                 </ThemedText>
               )}

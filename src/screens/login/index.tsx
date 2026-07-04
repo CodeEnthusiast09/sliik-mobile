@@ -1,9 +1,10 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, TextInput } from 'react-native';
+import { Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
+import { ThemedTextInput } from '@/components/themed-text-input';
 import { ThemedView } from '@/components/themed-view';
 import { useLogin } from '@/hooks/services/auth/useLogin';
 import { getErrorMessage } from '@/lib/utils';
@@ -42,7 +43,7 @@ export function LoginScreen() {
           Welcome back
         </ThemedText>
 
-        <TextInput
+        <ThemedTextInput
           placeholder="Email"
           value={email}
           onChangeText={setEmail}
@@ -50,7 +51,7 @@ export function LoginScreen() {
           autoCapitalize="none"
           keyboardType="email-address"
         />
-        <TextInput
+        <ThemedTextInput
           placeholder="Password"
           value={password}
           onChangeText={setPassword}
@@ -59,7 +60,7 @@ export function LoginScreen() {
         />
 
         {(fieldError ?? serverError) && (
-          <ThemedText type="small" style={styles.error}>
+          <ThemedText type="small" themeColor="danger">
             {fieldError ?? serverError}
           </ThemedText>
         )}

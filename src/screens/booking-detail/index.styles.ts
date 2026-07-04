@@ -10,11 +10,6 @@ export const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: Spacing.four,
   },
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   backButton: {
     paddingVertical: Spacing.three,
   },
@@ -30,7 +25,6 @@ export const styles = StyleSheet.create({
     gap: Spacing.half,
   },
   error: {
-    color: '#e5484d',
     marginTop: Spacing.three,
   },
   actionRow: {
@@ -49,9 +43,6 @@ export const styles = StyleSheet.create({
   standaloneButton: {
     marginTop: Spacing.four,
   },
-  destructiveText: {
-    color: '#e5484d',
-  },
   reviewSection: {
     marginTop: Spacing.four,
     gap: Spacing.two,
@@ -65,7 +56,6 @@ export const styles = StyleSheet.create({
   },
   commentInput: {
     borderWidth: 1,
-    borderColor: '#8888884D',
     borderRadius: Spacing.two,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,

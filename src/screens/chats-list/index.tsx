@@ -1,12 +1,15 @@
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, FlatList, Pressable } from 'react-native';
+import { FlatList, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { EmptyState } from '@/components/empty-state';
+import { ErrorState } from '@/components/error-state';
+import { ListSkeleton } from '@/components/skeleton';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useMyConversations } from '@/hooks/services/chat';
 import type { ChatConversationSummary } from '@/interfaces/chat';
-import { formatDateTimeLabel } from '@/lib/utils';
+import { formatDateTimeLabel, getErrorMessage } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth';
 
 import { styles } from './index.styles';
@@ -18,7 +21,7 @@ function otherParty(item: ChatConversationSummary, role: string | null) {
 export function ChatsListScreen() {
   const router = useRouter();
   const role = useAuthStore((state) => state.role);
-  const { data: conversations, isLoading, isRefetching, refetch } = useMyConversations();
+  const { data: conversations, isLoading, isError, error, isRefetching, refetch } = useMyConversations();
 
   return (
     <ThemedView style={styles.container}>
@@ -28,7 +31,9 @@ export function ChatsListScreen() {
         </ThemedText>
 
         {isLoading ? (
-          <ActivityIndicator style={styles.loading} />
+          <ListSkeleton />
+        ) : isError ? (
+          <ErrorState message={getErrorMessage(error)} onRetry={refetch} />
         ) : (
           <FlatList
             data={conversations}
@@ -37,9 +42,7 @@ export function ChatsListScreen() {
             refreshing={isRefetching}
             onRefresh={refetch}
             ListEmptyComponent={
-              <ThemedText type="small" themeColor="textSecondary">
-                No conversations yet. Message someone from a confirmed booking.
-              </ThemedText>
+              <EmptyState message="No conversations yet. Message someone from a confirmed booking." />
             }
             renderItem={({ item }) => {
               const other = otherParty(item, role);

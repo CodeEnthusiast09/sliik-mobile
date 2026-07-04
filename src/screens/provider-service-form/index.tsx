@@ -1,9 +1,10 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, TextInput } from 'react-native';
+import { Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
+import { ThemedTextInput } from '@/components/themed-text-input';
 import { ThemedView } from '@/components/themed-view';
 import {
   useCreateService,
@@ -93,22 +94,22 @@ export function ProviderServiceFormScreen() {
           {isEditing ? 'Edit service' : 'New service'}
         </ThemedText>
 
-        <TextInput placeholder="Service name" value={name} onChangeText={setName} style={styles.input} />
-        <TextInput
+        <ThemedTextInput placeholder="Service name" value={name} onChangeText={setName} style={styles.input} />
+        <ThemedTextInput
           placeholder="Description (optional)"
           value={description}
           onChangeText={setDescription}
           style={[styles.input, styles.descriptionInput]}
           multiline
         />
-        <TextInput
+        <ThemedTextInput
           placeholder="Price"
           value={price}
           onChangeText={setPrice}
           style={styles.input}
           keyboardType="decimal-pad"
         />
-        <TextInput
+        <ThemedTextInput
           placeholder="Duration (minutes)"
           value={durationMinutes}
           onChangeText={setDurationMinutes}
@@ -117,7 +118,7 @@ export function ProviderServiceFormScreen() {
         />
 
         {(fieldError ?? serverError) && (
-          <ThemedText type="small" style={styles.error}>
+          <ThemedText type="small" themeColor="danger">
             {fieldError ?? serverError}
           </ThemedText>
         )}
@@ -132,7 +133,7 @@ export function ProviderServiceFormScreen() {
 
         {isEditing && existingService?.isActive && (
           <Pressable onPress={handleDelete} disabled={deleteServiceMutation.isPending}>
-            <ThemedText type="small" style={styles.deleteText}>
+            <ThemedText type="small" themeColor="danger" style={styles.deleteText}>
               {deleteServiceMutation.isPending ? 'Removing...' : 'Deactivate service'}
             </ThemedText>
           </Pressable>
@@ -140,7 +141,7 @@ export function ProviderServiceFormScreen() {
 
         {isEditing && existingService && !existingService.isActive && (
           <Pressable onPress={handleReactivate} disabled={updateServiceMutation.isPending}>
-            <ThemedText type="small" style={styles.reactivateText}>
+            <ThemedText type="small" themeColor="tint" style={styles.reactivateText}>
               Reactivate service
             </ThemedText>
           </Pressable>

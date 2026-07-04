@@ -1,7 +1,11 @@
+import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
-import { ActivityIndicator, Alert, FlatList, Image, Platform, Pressable } from 'react-native';
+import { Alert, FlatList, Platform, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { EmptyState } from '@/components/empty-state';
+import { ErrorState } from '@/components/error-state';
+import { ListSkeleton } from '@/components/skeleton';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useAddPortfolioItem, useDeletePortfolioItem, usePortfolio } from '@/hooks/services/portfolio';
@@ -11,7 +15,7 @@ import { getErrorMessage } from '@/lib/utils';
 import { styles } from './index.styles';
 
 export function ProviderPortfolioScreen() {
-  const { data: portfolio, isLoading } = usePortfolio();
+  const { data: portfolio, isLoading, isError, error, isRefetching, refetch } = usePortfolio();
   const uploadImageMutation = useUploadImage();
   const addPortfolioItemMutation = useAddPortfolioItem();
   const deletePortfolioItemMutation = useDeletePortfolioItem();
@@ -72,13 +76,15 @@ export function ProviderPortfolioScreen() {
         </ThemedView>
 
         {addError && (
-          <ThemedText type="small" style={styles.error}>
+          <ThemedText type="small" themeColor="danger" style={styles.error}>
             {addError}
           </ThemedText>
         )}
 
         {isLoading ? (
-          <ActivityIndicator />
+          <ListSkeleton />
+        ) : isError ? (
+          <ErrorState message={getErrorMessage(error)} onRetry={refetch} />
         ) : (
           <FlatList
             data={portfolio}
@@ -86,10 +92,10 @@ export function ProviderPortfolioScreen() {
             numColumns={2}
             columnWrapperStyle={styles.gridRow}
             contentContainerStyle={styles.listContent}
+            refreshing={isRefetching}
+            onRefresh={refetch}
             ListEmptyComponent={
-              <ThemedText type="small" themeColor="textSecondary">
-                No portfolio photos yet. Add some to showcase your work.
-              </ThemedText>
+              <EmptyState message="No portfolio photos yet. Add some to showcase your work." />
             }
             renderItem={({ item }) => (
               <Pressable onPress={() => handleRemove(item.id)} style={styles.gridItem}>

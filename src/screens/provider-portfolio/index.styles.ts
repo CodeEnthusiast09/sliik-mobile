@@ -22,7 +22,6 @@ export const styles = StyleSheet.create({
     borderRadius: Spacing.three,
   },
   error: {
-    color: '#e5484d',
     marginBottom: Spacing.two,
   },
   listContent: {

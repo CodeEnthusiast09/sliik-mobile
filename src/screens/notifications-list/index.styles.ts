@@ -23,9 +23,6 @@ export const styles = StyleSheet.create({
     fontSize: 28,
     lineHeight: 32,
   },
-  loading: {
-    marginTop: Spacing.four,
-  },
   listContent: {
     gap: Spacing.two,
     paddingBottom: Spacing.six,

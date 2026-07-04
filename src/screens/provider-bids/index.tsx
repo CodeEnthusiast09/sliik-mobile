@@ -1,18 +1,22 @@
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, FlatList, Pressable } from 'react-native';
+import { FlatList, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { EmptyState } from '@/components/empty-state';
+import { ErrorState } from '@/components/error-state';
+import { ListSkeleton } from '@/components/skeleton';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { useTheme } from '@/hooks/common/use-theme';
 import { useMyResponses } from '@/hooks/services/offers';
-import { formatDateTimeLabel } from '@/lib/utils';
+import { formatDateTimeLabel, getErrorMessage } from '@/lib/utils';
 
-import { STATUS_COLORS } from '../bookings-list/index.styles';
 import { styles } from './index.styles';
 
 export function ProviderBidsScreen() {
   const router = useRouter();
-  const { data: responses, isLoading, isRefetching, refetch } = useMyResponses();
+  const theme = useTheme();
+  const { data: responses, isLoading, isError, error, isRefetching, refetch } = useMyResponses();
 
   return (
     <ThemedView style={styles.container}>
@@ -26,7 +30,9 @@ export function ProviderBidsScreen() {
         </ThemedText>
 
         {isLoading ? (
-          <ActivityIndicator style={styles.loading} />
+          <ListSkeleton />
+        ) : isError ? (
+          <ErrorState message={getErrorMessage(error)} onRetry={refetch} />
         ) : (
           <FlatList
             data={responses}
@@ -34,11 +40,7 @@ export function ProviderBidsScreen() {
             contentContainerStyle={styles.listContent}
             refreshing={isRefetching}
             onRefresh={refetch}
-            ListEmptyComponent={
-              <ThemedText type="small" themeColor="textSecondary">
-                No bids yet. Browse open offers to submit one.
-              </ThemedText>
-            }
+            ListEmptyComponent={<EmptyState message="No bids yet. Browse open offers to submit one." />}
             renderItem={({ item }) => (
               <Pressable
                 onPress={() => router.push({ pathname: '/offers/[id]', params: { id: item.offerId } })}
@@ -53,10 +55,10 @@ export function ProviderBidsScreen() {
                     type="smallBold"
                     style={
                       item.status === 'accepted'
-                        ? { color: STATUS_COLORS.confirmed }
+                        ? { color: theme.success }
                         : item.status === 'declined'
-                          ? { color: STATUS_COLORS.cancelled }
-                          : { color: STATUS_COLORS.pending }
+                          ? { color: theme.danger }
+                          : { color: theme.warning }
                     }
                   >
                     {item.status}

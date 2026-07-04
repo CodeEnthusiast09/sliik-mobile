@@ -1,15 +1,19 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, Pressable, TextInput } from 'react-native';
+import { FlatList, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { EmptyState } from '@/components/empty-state';
+import { ErrorState } from '@/components/error-state';
+import { DetailSkeleton, ListSkeleton } from '@/components/skeleton';
 import { ThemedText } from '@/components/themed-text';
+import { ThemedTextInput } from '@/components/themed-text-input';
 import { ThemedView } from '@/components/themed-view';
 import { useChatSocket } from '@/hooks/common/use-chat-socket';
 import { useBooking } from '@/hooks/services/bookings';
 import { useMessages } from '@/hooks/services/chat';
 import type { Message } from '@/interfaces/chat';
-import { formatTimeLabel } from '@/lib/utils';
+import { formatTimeLabel, getErrorMessage } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth';
 
 import { styles } from './index.styles';
@@ -34,8 +38,20 @@ export function ChatDetailScreen() {
   const role = useAuthStore((state) => state.role);
   const { id } = useLocalSearchParams<{ id: string }>();
 
-  const { data: booking, isLoading: isLoadingBooking } = useBooking(id);
-  const { data: messages, isLoading: isLoadingMessages } = useMessages(id);
+  const {
+    data: booking,
+    isLoading: isLoadingBooking,
+    isError: isBookingError,
+    error: bookingError,
+    refetch: refetchBooking,
+  } = useBooking(id);
+  const {
+    data: messages,
+    isLoading: isLoadingMessages,
+    isError: isMessagesError,
+    error: messagesError,
+    refetch: refetchMessages,
+  } = useMessages(id);
   const { sendMessage } = useChatSocket(id);
 
   const [text, setText] = useState('');
@@ -48,11 +64,21 @@ export function ChatDetailScreen() {
     setText('');
   }
 
-  if (isLoadingBooking || isLoadingMessages || !booking) {
+  if (isBookingError) {
     return (
       <ThemedView style={styles.container}>
-        <SafeAreaView style={styles.loadingContainer}>
-          <ActivityIndicator />
+        <SafeAreaView style={styles.safeArea}>
+          <ErrorState message={getErrorMessage(bookingError)} onRetry={refetchBooking} />
+        </SafeAreaView>
+      </ThemedView>
+    );
+  }
+
+  if (isLoadingBooking || !booking) {
+    return (
+      <ThemedView style={styles.container}>
+        <SafeAreaView style={styles.safeArea}>
+          <DetailSkeleton />
         </SafeAreaView>
       </ThemedView>
     );
@@ -77,24 +103,26 @@ export function ChatDetailScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           keyboardVerticalOffset={80}
         >
-          <FlatList
-            ref={listRef}
-            data={messages}
-            keyExtractor={(message) => message.id}
-            contentContainerStyle={styles.listContent}
-            onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
-            ListEmptyComponent={
-              <ThemedText type="small" themeColor="textSecondary">
-                No messages yet. Say hello!
-              </ThemedText>
-            }
-            renderItem={({ item }) => (
-              <MessageBubble message={item} isMine={item.senderId === myUserId} />
-            )}
-          />
+          {isLoadingMessages ? (
+            <ListSkeleton rows={4} rowHeight={48} />
+          ) : isMessagesError ? (
+            <ErrorState message={getErrorMessage(messagesError)} onRetry={refetchMessages} />
+          ) : (
+            <FlatList
+              ref={listRef}
+              data={messages}
+              keyExtractor={(message) => message.id}
+              contentContainerStyle={styles.listContent}
+              onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
+              ListEmptyComponent={<EmptyState message="No messages yet. Say hello!" />}
+              renderItem={({ item }) => (
+                <MessageBubble message={item} isMine={item.senderId === myUserId} />
+              )}
+            />
+          )}
 
           <ThemedView style={styles.inputRow}>
-            <TextInput
+            <ThemedTextInput
               placeholder="Type a message"
               value={text}
               onChangeText={setText}

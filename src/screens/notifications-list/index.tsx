@@ -1,12 +1,15 @@
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, FlatList, Pressable } from 'react-native';
+import { FlatList, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { EmptyState } from '@/components/empty-state';
+import { ErrorState } from '@/components/error-state';
+import { ListSkeleton } from '@/components/skeleton';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useMarkAllAsRead, useMarkAsRead, useNotifications } from '@/hooks/services/notifications';
 import type { AppNotification } from '@/interfaces/notification';
-import { formatDateTimeLabel } from '@/lib/utils';
+import { formatDateTimeLabel, getErrorMessage } from '@/lib/utils';
 
 import { styles } from './index.styles';
 
@@ -26,7 +29,7 @@ function targetRoute(notification: AppNotification) {
 
 export function NotificationsListScreen() {
   const router = useRouter();
-  const { data: notifications, isLoading, refetch, isRefetching } = useNotifications();
+  const { data: notifications, isLoading, isError, error, refetch, isRefetching } = useNotifications();
   const markAsReadMutation = useMarkAsRead();
   const markAllAsReadMutation = useMarkAllAsRead();
 
@@ -54,7 +57,9 @@ export function NotificationsListScreen() {
         </ThemedView>
 
         {isLoading ? (
-          <ActivityIndicator style={styles.loading} />
+          <ListSkeleton />
+        ) : isError ? (
+          <ErrorState message={getErrorMessage(error)} onRetry={refetch} />
         ) : (
           <FlatList
             data={notifications}
@@ -62,11 +67,7 @@ export function NotificationsListScreen() {
             contentContainerStyle={styles.listContent}
             refreshing={isRefetching}
             onRefresh={refetch}
-            ListEmptyComponent={
-              <ThemedText type="small" themeColor="textSecondary">
-                No notifications yet.
-              </ThemedText>
-            }
+            ListEmptyComponent={<EmptyState message="No notifications yet." />}
             renderItem={({ item }) => (
               <Pressable onPress={() => handlePress(item)}>
                 <ThemedView

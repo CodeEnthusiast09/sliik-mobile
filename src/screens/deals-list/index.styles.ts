@@ -25,9 +25,6 @@ export const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     borderRadius: Spacing.three,
   },
-  loading: {
-    marginTop: Spacing.four,
-  },
   listContent: {
     gap: Spacing.two,
     paddingBottom: Spacing.six,

@@ -11,11 +11,6 @@ export const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     gap: Spacing.two,
   },
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   backButton: {
     marginTop: Spacing.two,
   },
@@ -32,7 +27,6 @@ export const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: '#8888884D',
     borderRadius: Spacing.two,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
@@ -44,7 +38,6 @@ export const styles = StyleSheet.create({
   bankRow: {
     paddingVertical: Spacing.two,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#8888884D',
   },
   selectedBank: {
     marginBottom: Spacing.one,
@@ -56,9 +49,6 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  error: {
-    color: '#e5484d',
   },
   submitButton: {
     marginTop: Spacing.two,

@@ -2,12 +2,15 @@ import { useRouter } from 'expo-router';
 import { ActivityIndicator, FlatList, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { EmptyState } from '@/components/empty-state';
+import { ErrorState } from '@/components/error-state';
+import { ListSkeleton } from '@/components/skeleton';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useMyOffers, useOpenOffers } from '@/hooks/services/offers';
 import { useProviderProfile } from '@/hooks/services/provider';
 import type { Offer } from '@/interfaces/offer';
-import { formatDateTimeLabel } from '@/lib/utils';
+import { formatDateTimeLabel, getErrorMessage } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth';
 
 import { styles } from './index.styles';
@@ -23,7 +26,7 @@ export function OffersListScreen() {
 
 function CustomerOffersList() {
   const router = useRouter();
-  const { data: offers, isLoading, isRefetching, refetch } = useMyOffers();
+  const { data: offers, isLoading, isError, error, isRefetching, refetch } = useMyOffers();
 
   return (
     <ThemedView style={styles.container}>
@@ -38,7 +41,9 @@ function CustomerOffersList() {
         </ThemedView>
 
         {isLoading ? (
-          <ActivityIndicator style={styles.loading} />
+          <ListSkeleton />
+        ) : isError ? (
+          <ErrorState message={getErrorMessage(error)} onRetry={refetch} />
         ) : (
           <FlatList
             data={offers}
@@ -47,9 +52,7 @@ function CustomerOffersList() {
             refreshing={isRefetching}
             onRefresh={refetch}
             ListEmptyComponent={
-              <ThemedText type="small" themeColor="textSecondary">
-                No offers posted yet. Post one to get price offers from providers.
-              </ThemedText>
+              <EmptyState message="No offers posted yet. Post one to get price offers from providers." />
             }
             renderItem={({ item }) => (
               <Pressable onPress={() => router.push({ pathname: '/offers/[id]', params: { id: item.id } })}>
@@ -72,8 +75,14 @@ function CustomerOffersList() {
 
 function ProviderOffersFeed() {
   const router = useRouter();
-  const { data: provider, isLoading: isLoadingProvider } = useProviderProfile();
-  const { data: offers, isLoading, isRefetching, refetch } = useOpenOffers();
+  const {
+    data: provider,
+    isLoading: isLoadingProvider,
+    isError: isProviderError,
+    error: providerError,
+    refetch: refetchProvider,
+  } = useProviderProfile();
+  const { data: offers, isLoading, isError, error, isRefetching, refetch } = useOpenOffers();
 
   return (
     <ThemedView style={styles.container}>
@@ -87,7 +96,9 @@ function ProviderOffersFeed() {
           </Pressable>
         </ThemedView>
 
-        {isLoadingProvider ? (
+        {isProviderError ? (
+          <ErrorState message={getErrorMessage(providerError)} onRetry={refetchProvider} />
+        ) : isLoadingProvider ? (
           <ActivityIndicator style={styles.loading} />
         ) : !provider?.city ? (
           <ThemedView type="backgroundElement" style={styles.row}>
@@ -96,7 +107,9 @@ function ProviderOffersFeed() {
             </ThemedText>
           </ThemedView>
         ) : isLoading ? (
-          <ActivityIndicator style={styles.loading} />
+          <ListSkeleton />
+        ) : isError ? (
+          <ErrorState message={getErrorMessage(error)} onRetry={refetch} />
         ) : (
           <FlatList
             data={offers}
@@ -104,11 +117,7 @@ function ProviderOffersFeed() {
             contentContainerStyle={styles.listContent}
             refreshing={isRefetching}
             onRefresh={refetch}
-            ListEmptyComponent={
-              <ThemedText type="small" themeColor="textSecondary">
-                No open offers in {provider.city} right now.
-              </ThemedText>
-            }
+            ListEmptyComponent={<EmptyState message={`No open offers in ${provider.city} right now.`} />}
             renderItem={({ item }) => (
               <Pressable onPress={() => router.push({ pathname: '/offers/[id]', params: { id: item.id } })}>
                 <ThemedView type="backgroundElement" style={styles.row}>

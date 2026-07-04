@@ -10,11 +10,6 @@ export const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: Spacing.four,
   },
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   backButton: {
     paddingVertical: Spacing.three,
   },

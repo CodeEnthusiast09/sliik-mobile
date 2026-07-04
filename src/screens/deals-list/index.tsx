@@ -1,12 +1,15 @@
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, FlatList, Pressable } from 'react-native';
+import { FlatList, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { EmptyState } from '@/components/empty-state';
+import { ErrorState } from '@/components/error-state';
+import { ListSkeleton } from '@/components/skeleton';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useActiveDeals, useMyDeals } from '@/hooks/services/deals';
 import type { Deal } from '@/interfaces/deal';
-import { formatDateTimeLabel } from '@/lib/utils';
+import { formatDateTimeLabel, getErrorMessage } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth';
 
 import { styles } from './index.styles';
@@ -22,7 +25,7 @@ export function DealsListScreen() {
 
 function CustomerDealsFeed() {
   const router = useRouter();
-  const { data: deals, isLoading, isRefetching, refetch } = useActiveDeals();
+  const { data: deals, isLoading, isError, error, isRefetching, refetch } = useActiveDeals();
 
   return (
     <ThemedView style={styles.container}>
@@ -32,7 +35,9 @@ function CustomerDealsFeed() {
         </ThemedText>
 
         {isLoading ? (
-          <ActivityIndicator style={styles.loading} />
+          <ListSkeleton />
+        ) : isError ? (
+          <ErrorState message={getErrorMessage(error)} onRetry={refetch} />
         ) : (
           <FlatList
             data={deals}
@@ -40,11 +45,7 @@ function CustomerDealsFeed() {
             contentContainerStyle={styles.listContent}
             refreshing={isRefetching}
             onRefresh={refetch}
-            ListEmptyComponent={
-              <ThemedText type="small" themeColor="textSecondary">
-                No active deals right now. Check back soon.
-              </ThemedText>
-            }
+            ListEmptyComponent={<EmptyState message="No active deals right now. Check back soon." />}
             renderItem={({ item }) => (
               <Pressable onPress={() => router.push({ pathname: '/deals/[id]', params: { id: item.id } })}>
                 <ThemedView type="backgroundElement" style={styles.row}>
@@ -68,7 +69,7 @@ function CustomerDealsFeed() {
 
 function ProviderDealsList() {
   const router = useRouter();
-  const { data: deals, isLoading, isRefetching, refetch } = useMyDeals();
+  const { data: deals, isLoading, isError, error, isRefetching, refetch } = useMyDeals();
 
   return (
     <ThemedView style={styles.container}>
@@ -83,7 +84,9 @@ function ProviderDealsList() {
         </ThemedView>
 
         {isLoading ? (
-          <ActivityIndicator style={styles.loading} />
+          <ListSkeleton />
+        ) : isError ? (
+          <ErrorState message={getErrorMessage(error)} onRetry={refetch} />
         ) : (
           <FlatList
             data={deals}
@@ -92,9 +95,7 @@ function ProviderDealsList() {
             refreshing={isRefetching}
             onRefresh={refetch}
             ListEmptyComponent={
-              <ThemedText type="small" themeColor="textSecondary">
-                No deals yet. Post one to attract customers with a flash discount.
-              </ThemedText>
+              <EmptyState message="No deals yet. Post one to attract customers with a flash discount." />
             }
             renderItem={({ item }) => {
               const isLive = item.slotsRemaining > 0 && new Date(item.expiresAt) > new Date();

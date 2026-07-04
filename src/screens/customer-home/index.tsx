@@ -1,11 +1,16 @@
+import { Image } from 'expo-image';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, Image, Pressable, ScrollView, TextInput } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { EmptyState } from '@/components/empty-state';
+import { ErrorState } from '@/components/error-state';
 import { NotificationBell } from '@/components/notification-bell';
+import { ListSkeleton } from '@/components/skeleton';
 import { ThemedText } from '@/components/themed-text';
+import { ThemedTextInput } from '@/components/themed-text-input';
 import { ThemedView } from '@/components/themed-view';
 import { useProviders } from '@/hooks/services/discovery';
 import type { ProviderProfile } from '@/interfaces/provider';
@@ -125,7 +130,7 @@ export function CustomerHomeScreen() {
           <NotificationBell onPress={() => router.push('/home/notifications')} />
         </ThemedView>
 
-        <TextInput
+        <ThemedTextInput
           placeholder="Search by city"
           value={cityInput}
           onChangeText={setCityInput}
@@ -174,17 +179,15 @@ export function CustomerHomeScreen() {
         </ScrollView>
 
         {locationError && (
-          <ThemedText type="small" style={styles.error}>
+          <ThemedText type="small" themeColor="danger" style={styles.error}>
             {locationError}
           </ThemedText>
         )}
 
         {isLoading ? (
-          <ActivityIndicator style={styles.loading} />
+          <ListSkeleton />
         ) : isError ? (
-          <ThemedText type="small" style={styles.error}>
-            {getErrorMessage(error)}
-          </ThemedText>
+          <ErrorState message={getErrorMessage(error)} onRetry={refetch} />
         ) : (
           <FlatList
             data={displayProviders}
@@ -196,11 +199,7 @@ export function CustomerHomeScreen() {
               if (hasNextPage && !isFetchingNextPage) fetchNextPage();
             }}
             onEndReachedThreshold={0.5}
-            ListEmptyComponent={
-              <ThemedText type="small" themeColor="textSecondary">
-                No providers found. Try a different filter.
-              </ThemedText>
-            }
+            ListEmptyComponent={<EmptyState message="No providers found. Try a different filter." />}
             ListFooterComponent={isFetchingNextPage ? <ActivityIndicator style={styles.loading} /> : null}
             renderItem={({ item }) => {
               const rating = Number(item.avgRating);

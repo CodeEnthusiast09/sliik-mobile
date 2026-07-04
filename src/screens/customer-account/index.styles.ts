@@ -9,11 +9,6 @@ export const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   scrollContent: {
     paddingHorizontal: Spacing.four,
     paddingBottom: Spacing.six,
@@ -35,14 +30,10 @@ export const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: '#8888884D',
     borderRadius: Spacing.two,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
     fontSize: 16,
-  },
-  error: {
-    color: '#e5484d',
   },
   submitButton: {
     marginTop: Spacing.two,
@@ -54,9 +45,6 @@ export const styles = StyleSheet.create({
     marginTop: Spacing.four,
     alignItems: 'center',
     paddingVertical: Spacing.two,
-  },
-  logoutText: {
-    color: '#e5484d',
   },
   sectionTitle: {
     fontSize: 20,

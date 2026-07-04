@@ -9,11 +9,6 @@ export const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   scrollContent: {
     paddingHorizontal: Spacing.four,
     paddingBottom: Spacing.six,
@@ -40,7 +35,6 @@ export const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: '#8888884D',
     borderRadius: Spacing.two,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
@@ -48,9 +42,6 @@ export const styles = StyleSheet.create({
   },
   timeInput: {
     flex: 1,
-  },
-  error: {
-    color: '#e5484d',
   },
   submitButton: {
     marginTop: Spacing.two,
@@ -67,8 +58,5 @@ export const styles = StyleSheet.create({
   },
   dayOffInfo: {
     gap: Spacing.half,
-  },
-  removeText: {
-    color: '#e5484d',
   },
 });

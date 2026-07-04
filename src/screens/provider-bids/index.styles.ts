@@ -18,9 +18,6 @@ export const styles = StyleSheet.create({
     lineHeight: 32,
     marginBottom: Spacing.two,
   },
-  loading: {
-    marginTop: Spacing.four,
-  },
   listContent: {
     gap: Spacing.two,
     paddingBottom: Spacing.six,

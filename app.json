@@ -50,7 +50,8 @@
         }
       ],
       "expo-web-browser",
-      "expo-notifications"
+      "expo-notifications",
+      "expo-image"
     ],
     "experiments": {
       "typedRoutes": true,

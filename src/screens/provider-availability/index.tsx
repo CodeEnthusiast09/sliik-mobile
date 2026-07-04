@@ -1,8 +1,11 @@
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Switch, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, Switch, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ErrorState } from '@/components/error-state';
+import { DetailSkeleton } from '@/components/skeleton';
 import { ThemedText } from '@/components/themed-text';
+import { ThemedTextInput } from '@/components/themed-text-input';
 import { ThemedView } from '@/components/themed-view';
 import {
   useAddDayOff,
@@ -35,8 +38,20 @@ function buildDefaultRows(): DayRow[] {
 }
 
 export function ProviderAvailabilityScreen() {
-  const { data: schedule, isLoading: isLoadingSchedule } = useSchedule();
-  const { data: daysOff, isLoading: isLoadingDaysOff } = useDaysOff();
+  const {
+    data: schedule,
+    isLoading: isLoadingSchedule,
+    isError: isScheduleError,
+    error: scheduleFetchError,
+    refetch: refetchSchedule,
+  } = useSchedule();
+  const {
+    data: daysOff,
+    isLoading: isLoadingDaysOff,
+    isError: isDaysOffError,
+    error: daysOffFetchError,
+    refetch: refetchDaysOff,
+  } = useDaysOff();
   const setScheduleMutation = useSetSchedule();
   const addDayOffMutation = useAddDayOff();
   const removeDayOffMutation = useRemoveDayOff();
@@ -121,11 +136,27 @@ export function ProviderAvailabilityScreen() {
     ? getErrorMessage(addDayOffMutation.error)
     : null;
 
+  if (isScheduleError || isDaysOffError) {
+    return (
+      <ThemedView style={styles.container}>
+        <SafeAreaView style={styles.safeArea}>
+          <ErrorState
+            message={getErrorMessage(scheduleFetchError ?? daysOffFetchError)}
+            onRetry={() => {
+              refetchSchedule();
+              refetchDaysOff();
+            }}
+          />
+        </SafeAreaView>
+      </ThemedView>
+    );
+  }
+
   if (isLoadingSchedule || isLoadingDaysOff) {
     return (
       <ThemedView style={styles.container}>
-        <SafeAreaView style={styles.loadingContainer}>
-          <ActivityIndicator />
+        <SafeAreaView style={styles.safeArea}>
+          <DetailSkeleton />
         </SafeAreaView>
       </ThemedView>
     );
@@ -148,14 +179,14 @@ export function ProviderAvailabilityScreen() {
               </View>
               {row.enabled && (
                 <View style={styles.timeRow}>
-                  <TextInput
+                  <ThemedTextInput
                     value={row.startTime}
                     onChangeText={(value) => updateDayTime(row.dayOfWeek, 'startTime', value)}
                     style={[styles.input, styles.timeInput]}
                     placeholder="09:00"
                   />
                   <ThemedText type="default">to</ThemedText>
-                  <TextInput
+                  <ThemedTextInput
                     value={row.endTime}
                     onChangeText={(value) => updateDayTime(row.dayOfWeek, 'endTime', value)}
                     style={[styles.input, styles.timeInput]}
@@ -167,7 +198,7 @@ export function ProviderAvailabilityScreen() {
           ))}
 
           {(scheduleError ?? scheduleServerError) && (
-            <ThemedText type="small" style={styles.error}>
+            <ThemedText type="small" themeColor="danger">
               {scheduleError ?? scheduleServerError}
             </ThemedText>
           )}
@@ -195,7 +226,7 @@ export function ProviderAvailabilityScreen() {
                 )}
               </View>
               <Pressable onPress={() => removeDayOffMutation.mutate(dayOff.id)}>
-                <ThemedText type="small" style={styles.removeText}>
+                <ThemedText type="small" themeColor="danger">
                   Remove
                 </ThemedText>
               </Pressable>
@@ -207,13 +238,13 @@ export function ProviderAvailabilityScreen() {
             </ThemedText>
           )}
 
-          <TextInput
+          <ThemedTextInput
             placeholder="Date (YYYY-MM-DD)"
             value={dayOffDate}
             onChangeText={setDayOffDate}
             style={styles.input}
           />
-          <TextInput
+          <ThemedTextInput
             placeholder="Reason (optional)"
             value={dayOffReason}
             onChangeText={setDayOffReason}
@@ -221,7 +252,7 @@ export function ProviderAvailabilityScreen() {
           />
 
           {(dayOffError ?? dayOffServerError) && (
-            <ThemedText type="small" style={styles.error}>
+            <ThemedText type="small" themeColor="danger">
               {dayOffError ?? dayOffServerError}
             </ThemedText>
           )}

@@ -1,9 +1,10 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, TextInput } from 'react-native';
+import { Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
+import { ThemedTextInput } from '@/components/themed-text-input';
 import { ThemedView } from '@/components/themed-view';
 import { useCreateDeal } from '@/hooks/services/deals';
 import { useServices } from '@/hooks/services/provider-services';
@@ -90,29 +91,29 @@ export function DealNewScreen() {
             )}
           </ScrollView>
 
-          <TextInput placeholder="Deal title" value={title} onChangeText={setTitle} style={styles.input} />
-          <TextInput
+          <ThemedTextInput placeholder="Deal title" value={title} onChangeText={setTitle} style={styles.input} />
+          <ThemedTextInput
             placeholder="Description (optional)"
             value={description}
             onChangeText={setDescription}
             style={[styles.input, styles.descriptionInput]}
             multiline
           />
-          <TextInput
+          <ThemedTextInput
             placeholder="Original price"
             value={originalPrice}
             onChangeText={setOriginalPrice}
             style={styles.input}
             keyboardType="decimal-pad"
           />
-          <TextInput
+          <ThemedTextInput
             placeholder="Deal price"
             value={dealPrice}
             onChangeText={setDealPrice}
             style={styles.input}
             keyboardType="decimal-pad"
           />
-          <TextInput
+          <ThemedTextInput
             placeholder="Number of slots"
             value={slotsTotal}
             onChangeText={setSlotsTotal}
@@ -124,13 +125,13 @@ export function DealNewScreen() {
             Expires
           </ThemedText>
           <ThemedView style={styles.row}>
-            <TextInput
+            <ThemedTextInput
               placeholder="Date (YYYY-MM-DD)"
               value={expiresDate}
               onChangeText={setExpiresDate}
               style={[styles.input, styles.rowInput]}
             />
-            <TextInput
+            <ThemedTextInput
               placeholder="Time (HH:MM)"
               value={expiresTime}
               onChangeText={setExpiresTime}
@@ -139,7 +140,7 @@ export function DealNewScreen() {
           </ThemedView>
 
           {(fieldError ?? serverError) && (
-            <ThemedText type="small" style={styles.error}>
+            <ThemedText type="small" themeColor="danger" style={styles.error}>
               {fieldError ?? serverError}
             </ThemedText>
           )}

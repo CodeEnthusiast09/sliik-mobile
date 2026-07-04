@@ -17,14 +17,10 @@ export const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: '#8888884D',
     borderRadius: Spacing.two,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
     fontSize: 16,
-  },
-  error: {
-    color: '#e5484d',
   },
   submitButton: {
     marginTop: Spacing.two,

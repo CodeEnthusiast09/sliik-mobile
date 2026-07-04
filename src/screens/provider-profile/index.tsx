@@ -1,12 +1,16 @@
+import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, TextInput } from 'react-native';
+import { Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ErrorState } from '@/components/error-state';
 import { NotificationBell } from '@/components/notification-bell';
 import { ReviewsList } from '@/components/reviews-list';
+import { DetailSkeleton } from '@/components/skeleton';
 import { ThemedText } from '@/components/themed-text';
+import { ThemedTextInput } from '@/components/themed-text-input';
 import { ThemedView } from '@/components/themed-view';
 import { usePayoutAccount } from '@/hooks/services/payouts';
 import { useProviderProfile, useUpdateProviderProfile } from '@/hooks/services/provider';
@@ -24,7 +28,7 @@ export function ProviderProfileScreen() {
   const router = useRouter();
   const clearAuth = useAuthStore((state) => state.clearAuth);
 
-  const { data: profile, isLoading } = useProviderProfile();
+  const { data: profile, isLoading, isError, error: profileError, refetch } = useProviderProfile();
   const { data: payoutAccount } = usePayoutAccount();
   const updateProfileMutation = useUpdateProviderProfile();
   const uploadImageMutation = useUploadImage();
@@ -99,11 +103,21 @@ export function ProviderProfileScreen() {
     clearAuth();
   }
 
+  if (isError) {
+    return (
+      <ThemedView style={styles.container}>
+        <SafeAreaView style={styles.safeArea}>
+          <ErrorState message={getErrorMessage(profileError)} onRetry={refetch} />
+        </SafeAreaView>
+      </ThemedView>
+    );
+  }
+
   if (isLoading) {
     return (
       <ThemedView style={styles.container}>
-        <SafeAreaView style={styles.loadingContainer}>
-          <ActivityIndicator />
+        <SafeAreaView style={styles.safeArea}>
+          <DetailSkeleton />
         </SafeAreaView>
       </ThemedView>
     );
@@ -128,35 +142,35 @@ export function ProviderProfileScreen() {
             </ThemedView>
           </Pressable>
 
-          <TextInput
+          <ThemedTextInput
             placeholder="Full name"
             value={fullName}
             onChangeText={setFullName}
             style={styles.input}
             autoCapitalize="words"
           />
-          <TextInput
+          <ThemedTextInput
             placeholder="Phone"
             value={phone}
             onChangeText={setPhone}
             style={styles.input}
             keyboardType="phone-pad"
           />
-          <TextInput
+          <ThemedTextInput
             placeholder="Trade (e.g. hairdresser, barber)"
             value={tradeType}
             onChangeText={setTradeType}
             style={styles.input}
           />
-          <TextInput
+          <ThemedTextInput
             placeholder="Years of experience"
             value={yearsExperience}
             onChangeText={setYearsExperience}
             style={styles.input}
             keyboardType="number-pad"
           />
-          <TextInput placeholder="City" value={city} onChangeText={setCity} style={styles.input} />
-          <TextInput
+          <ThemedTextInput placeholder="City" value={city} onChangeText={setCity} style={styles.input} />
+          <ThemedTextInput
             placeholder="Bio"
             value={bio}
             onChangeText={setBio}
@@ -165,7 +179,7 @@ export function ProviderProfileScreen() {
           />
 
           {(fieldError ?? serverError) && (
-            <ThemedText type="small" style={styles.error}>
+            <ThemedText type="small" themeColor="danger">
               {fieldError ?? serverError}
             </ThemedText>
           )}
@@ -198,7 +212,7 @@ export function ProviderProfileScreen() {
           />
 
           <Pressable onPress={handleLogout} style={styles.logoutButton}>
-            <ThemedText type="smallBold" style={styles.logoutText}>
+            <ThemedText type="smallBold" themeColor="danger">
               Log out
             </ThemedText>
           </Pressable>

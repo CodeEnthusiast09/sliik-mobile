@@ -17,7 +17,7 @@ export function NotificationBell({ onPress }: NotificationBellProps) {
     <Pressable onPress={onPress} style={styles.container}>
       <ThemedText style={styles.bell}>🔔</ThemedText>
       {!!unreadCount && (
-        <ThemedView style={styles.badge}>
+        <ThemedView type="danger" style={styles.badge}>
           <ThemedText style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</ThemedText>
         </ThemedView>
       )}

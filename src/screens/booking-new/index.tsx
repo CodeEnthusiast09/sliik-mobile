@@ -1,9 +1,13 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, TextInput } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { EmptyState } from '@/components/empty-state';
+import { ErrorState } from '@/components/error-state';
+import { DetailSkeleton } from '@/components/skeleton';
 import { ThemedText } from '@/components/themed-text';
+import { ThemedTextInput } from '@/components/themed-text-input';
 import { ThemedView } from '@/components/themed-view';
 import { useAvailableSlots, useCreateBooking } from '@/hooks/services/bookings';
 import { usePublicProviderProfile } from '@/hooks/services/discovery';
@@ -18,7 +22,13 @@ export function BookingNewScreen() {
   const router = useRouter();
   const { providerId, serviceId } = useLocalSearchParams<{ providerId: string; serviceId: string }>();
 
-  const { data: provider, isLoading: isLoadingProvider } = usePublicProviderProfile(providerId);
+  const {
+    data: provider,
+    isLoading: isLoadingProvider,
+    isError: isProviderError,
+    error: providerError,
+    refetch: refetchProvider,
+  } = usePublicProviderProfile(providerId);
   const service = provider?.services?.find((item) => item.id === serviceId);
 
   const [selectedDate, setSelectedDate] = useState(DATE_OPTIONS[0]);
@@ -71,11 +81,31 @@ export function BookingNewScreen() {
     ? getErrorMessage(createBookingMutation.error)
     : null;
 
-  if (isLoadingProvider || !provider || !service) {
+  if (isProviderError) {
     return (
       <ThemedView style={styles.container}>
-        <SafeAreaView style={styles.loadingContainer}>
-          <ActivityIndicator />
+        <SafeAreaView style={styles.safeArea}>
+          <ErrorState message={getErrorMessage(providerError)} onRetry={refetchProvider} />
+        </SafeAreaView>
+      </ThemedView>
+    );
+  }
+
+  if (isLoadingProvider || !provider) {
+    return (
+      <ThemedView style={styles.container}>
+        <SafeAreaView style={styles.safeArea}>
+          <DetailSkeleton />
+        </SafeAreaView>
+      </ThemedView>
+    );
+  }
+
+  if (!service) {
+    return (
+      <ThemedView style={styles.container}>
+        <SafeAreaView style={styles.safeArea}>
+          <EmptyState message="Service not found." />
         </SafeAreaView>
       </ThemedView>
     );
@@ -136,7 +166,7 @@ export function BookingNewScreen() {
             </ThemedText>
           )}
 
-          <TextInput
+          <ThemedTextInput
             placeholder="Notes for the provider (optional)"
             value={notes}
             onChangeText={setNotes}
@@ -145,7 +175,7 @@ export function BookingNewScreen() {
           />
 
           {(fieldError ?? serverError) && (
-            <ThemedText type="small" style={styles.error}>
+            <ThemedText type="small" themeColor="danger" style={styles.error}>
               {fieldError ?? serverError}
             </ThemedText>
           )}
