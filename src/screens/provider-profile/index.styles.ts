@@ -19,6 +19,11 @@ export const styles = StyleSheet.create({
     paddingBottom: Spacing.six,
     gap: Spacing.two,
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   avatar: {
     width: 96,
     height: 96,

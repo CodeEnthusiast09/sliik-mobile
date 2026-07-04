@@ -16,3 +16,10 @@ export function createChatSocket(accessToken: string): Socket {
     transports: ['websocket'],
   });
 }
+
+export function createNotificationsSocket(accessToken: string): Socket {
+  return io(`${socketBaseURL}/notifications`, {
+    auth: { token: accessToken },
+    transports: ['websocket'],
+  });
+}

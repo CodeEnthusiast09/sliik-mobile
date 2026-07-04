@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Image, Pressable, ScrollView, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { NotificationBell } from '@/components/notification-bell';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useProviders } from '@/hooks/services/discovery';
@@ -117,9 +118,12 @@ export function CustomerHomeScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <ThemedText type="title" style={styles.title}>
-          Sliik
-        </ThemedText>
+        <ThemedView style={styles.headerRow}>
+          <ThemedText type="title" style={styles.title}>
+            Sliik
+          </ThemedText>
+          <NotificationBell onPress={() => router.push('/home/notifications')} />
+        </ThemedView>
 
         <TextInput
           placeholder="Search by city"

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { NotificationBell } from '@/components/notification-bell';
 import { ReviewsList } from '@/components/reviews-list';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -12,7 +13,9 @@ import { useProviderProfile, useUpdateProviderProfile } from '@/hooks/services/p
 import { useReviewsForUser } from '@/hooks/services/reviews';
 import { useUploadImage } from '@/hooks/services/uploads';
 import { getErrorMessage } from '@/lib/utils';
+import { unregisterPushToken } from '@/services/notifications';
 import { useAuthStore } from '@/store/auth';
+import { usePushTokenStore } from '@/store/push-token';
 import { updateProviderProfileSchema } from '@/validations/provider-profile';
 
 import { styles } from './index.styles';
@@ -88,6 +91,14 @@ export function ProviderProfileScreen() {
     ? getErrorMessage(updateProfileMutation.error)
     : null;
 
+  async function handleLogout() {
+    const pushToken = usePushTokenStore.getState().token;
+    if (pushToken) {
+      await unregisterPushToken(pushToken).catch(() => {});
+    }
+    clearAuth();
+  }
+
   if (isLoading) {
     return (
       <ThemedView style={styles.container}>
@@ -102,7 +113,10 @@ export function ProviderProfileScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.scrollContent}>
-          <ThemedText type="title">Profile</ThemedText>
+          <ThemedView style={styles.headerRow}>
+            <ThemedText type="title">Profile</ThemedText>
+            <NotificationBell onPress={() => router.push('/profile/notifications')} />
+          </ThemedView>
 
           <Pressable onPress={handlePickAvatar}>
             <ThemedView type="backgroundElement" style={styles.avatar}>
@@ -183,7 +197,7 @@ export function ProviderProfileScreen() {
             isLoading={isLoadingReviews}
           />
 
-          <Pressable onPress={() => clearAuth()} style={styles.logoutButton}>
+          <Pressable onPress={handleLogout} style={styles.logoutButton}>
             <ThemedText type="smallBold" style={styles.logoutText}>
               Log out
             </ThemedText>

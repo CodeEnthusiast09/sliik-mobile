@@ -1,9 +1,14 @@
 import { Tabs } from 'expo-router';
 
+import { useNotificationsSocket } from '@/hooks/common/use-notifications-socket';
+import { usePushTokenRegistration } from '@/hooks/common/use-push-token-registration';
 import { useAuthStore } from '@/store/auth';
 
 export default function TabsLayout() {
   const role = useAuthStore((state) => state.role);
+
+  usePushTokenRegistration();
+  useNotificationsSocket();
 
   return (
     <Tabs screenOptions={{ headerShown: false }}>

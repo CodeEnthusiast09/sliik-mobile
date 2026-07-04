@@ -10,7 +10,9 @@ import { useCustomerProfile, useUpdateCustomerProfile } from '@/hooks/services/c
 import { useReviewsForUser } from '@/hooks/services/reviews';
 import { useUploadImage } from '@/hooks/services/uploads';
 import { getErrorMessage } from '@/lib/utils';
+import { unregisterPushToken } from '@/services/notifications';
 import { useAuthStore } from '@/store/auth';
+import { usePushTokenStore } from '@/store/push-token';
 import { updateCustomerProfileSchema } from '@/validations/customer-profile';
 
 import { styles } from './index.styles';
@@ -74,6 +76,14 @@ export function CustomerAccountScreen() {
   const serverError = updateProfileMutation.isError
     ? getErrorMessage(updateProfileMutation.error)
     : null;
+
+  async function handleLogout() {
+    const pushToken = usePushTokenStore.getState().token;
+    if (pushToken) {
+      await unregisterPushToken(pushToken).catch(() => {});
+    }
+    clearAuth();
+  }
 
   if (isLoading) {
     return (
@@ -141,7 +151,7 @@ export function CustomerAccountScreen() {
             isLoading={isLoadingReviews}
           />
 
-          <Pressable onPress={() => clearAuth()} style={styles.logoutButton}>
+          <Pressable onPress={handleLogout} style={styles.logoutButton}>
             <ThemedText type="smallBold" style={styles.logoutText}>
               Log out
             </ThemedText>

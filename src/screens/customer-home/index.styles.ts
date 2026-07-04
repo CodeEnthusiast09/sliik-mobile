@@ -10,6 +10,11 @@ export const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: Spacing.four,
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   title: {
     paddingTop: Spacing.two,
     paddingBottom: Spacing.three,
