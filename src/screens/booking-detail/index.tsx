@@ -15,6 +15,7 @@ import {
 } from '@/hooks/services/bookings';
 import { useInitiatePayment } from '@/hooks/services/payments';
 import { useCreateReview, useReviewsForBooking } from '@/hooks/services/reviews';
+import { CHATTABLE_STATUSES } from '@/lib/constants';
 import { formatDateTimeLabel, getErrorMessage } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth';
 import { createReviewSchema } from '@/validations/review';
@@ -146,6 +147,17 @@ export function BookingDetailScreen() {
             </ThemedText>
           )}
         </ThemedView>
+
+        {CHATTABLE_STATUSES.includes(booking.status) && (
+          <Pressable
+            onPress={() => router.push({ pathname: '/chats/[id]', params: { id: booking.id } })}
+            style={styles.standaloneButton}
+          >
+            <ThemedView type="backgroundElement" style={styles.submitButton}>
+              <ThemedText type="smallBold">Message {otherParty?.fullName ?? ''}</ThemedText>
+            </ThemedView>
+          </Pressable>
+        )}
 
         {canPayNow && (
           <Pressable

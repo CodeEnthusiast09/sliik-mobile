@@ -23,6 +23,7 @@ export default function TabsLayout() {
         <Tabs.Screen name="bookings" options={{ title: 'Bookings' }} />
         <Tabs.Screen name="offers" options={{ title: 'Offers' }} />
         <Tabs.Screen name="deals" options={{ title: 'Deals' }} />
+        <Tabs.Screen name="chats" options={{ title: 'Chats' }} />
       </Tabs.Protected>
     </Tabs>
   );

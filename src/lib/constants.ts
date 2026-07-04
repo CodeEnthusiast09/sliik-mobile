@@ -63,3 +63,7 @@ export const Spacing = {
 
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
 export const MaxContentWidth = 800;
+
+// Mirrors the backend's CHATTABLE_STATUSES (chat.service.ts) - chat only
+// opens once a provider confirms and stays open after completion.
+export const CHATTABLE_STATUSES = ['confirmed', 'completed'];
