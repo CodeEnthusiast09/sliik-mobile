@@ -16,7 +16,7 @@ export const styles = StyleSheet.create({
   },
   listContent: {
     gap: Spacing.two,
-    paddingBottom: Spacing.six,
+    paddingBottom: 140,
   },
   row: {
     padding: Spacing.three,

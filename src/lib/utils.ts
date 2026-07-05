@@ -1,6 +1,26 @@
 import { isAxiosError } from 'axios';
 
 import type { ApiResponse } from '@/interfaces/api-response';
+import type { BookingStatus } from '@/interfaces/booking';
+import type { ThemeColor } from '@/lib/constants';
+
+export function getStatusColor(
+  status: BookingStatus,
+  theme: Record<ThemeColor, string>,
+): string {
+  switch (status) {
+    case 'pending':
+      return theme.warning;
+    case 'confirmed':
+      return theme.success;
+    case 'cancelled':
+    case 'declined':
+      return theme.danger;
+    case 'completed':
+    default:
+      return theme.textSecondary;
+  }
+}
 
 // Haversine great-circle distance in km, mirrors the backend's GET /providers
 // radius filter formula - the API filters by radius but doesn't return or sort
@@ -18,7 +38,9 @@ export function calculateDistanceKm(
   const dLng = toRadians(lng2 - lng1);
   const a =
     Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * Math.sin(dLng / 2) ** 2;
+    Math.cos(toRadians(lat1)) *
+      Math.cos(toRadians(lat2)) *
+      Math.sin(dLng / 2) ** 2;
 
   return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
@@ -30,7 +52,11 @@ const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 // own slot computation (see providers.service.ts::getAvailableSlots).
 export function getNextDates(count: number): string[] {
   const today = new Date();
-  const todayUtc = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
+  const todayUtc = Date.UTC(
+    today.getUTCFullYear(),
+    today.getUTCMonth(),
+    today.getUTCDate(),
+  );
 
   return Array.from({ length: count }, (_, i) => {
     const date = new Date(todayUtc + i * 24 * 60 * 60 * 1000);
@@ -40,11 +66,13 @@ export function getNextDates(count: number): string[] {
 
 export function formatDateLabel(dateStr: string): string {
   const [today, tomorrow] = getNextDates(2);
-  if (dateStr === today) return 'Today';
-  if (dateStr === tomorrow) return 'Tomorrow';
-
   const date = new Date(`${dateStr}T00:00:00.000Z`);
-  return `${WEEKDAY_LABELS[date.getUTCDay()]} ${date.getUTCDate()}`;
+  const dayNumber = date.getUTCDate();
+
+  if (dateStr === today) return `Today ${dayNumber}`;
+  if (dateStr === tomorrow) return `Tomorrow ${dayNumber}`;
+
+  return `${WEEKDAY_LABELS[date.getUTCDay()]} ${dayNumber}`;
 }
 
 export function formatTimeLabel(isoDateTime: string): string {

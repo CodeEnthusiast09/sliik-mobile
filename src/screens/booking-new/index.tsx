@@ -1,26 +1,39 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView } from 'react-native';
+import {
+  ActivityIndicator,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Button } from '@/components/button';
+import { Chip } from '@/components/chip';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorState } from '@/components/error-state';
+import { ScreenHeader } from '@/components/screen-header';
 import { DetailSkeleton } from '@/components/skeleton';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedTextInput } from '@/components/themed-text-input';
-import { ThemedView } from '@/components/themed-view';
 import { useAvailableSlots, useCreateBooking } from '@/hooks/services/bookings';
 import { usePublicProviderProfile } from '@/hooks/services/discovery';
-import { formatDateLabel, formatTimeLabel, getErrorMessage, getNextDates } from '@/lib/utils';
+import {
+  formatDateLabel,
+  formatTimeLabel,
+  getErrorMessage,
+  getNextDates,
+} from '@/lib/utils';
+import { showToast } from '@/store/toast';
 import { createBookingSchema } from '@/validations/booking';
-
-import { styles } from './index.styles';
 
 const DATE_OPTIONS = getNextDates(14);
 
 export function BookingNewScreen() {
   const router = useRouter();
-  const { providerId, serviceId } = useLocalSearchParams<{ providerId: string; serviceId: string }>();
+  const { providerId, serviceId } = useLocalSearchParams<{
+    providerId: string;
+    serviceId: string;
+  }>();
 
   const {
     data: provider,
@@ -34,7 +47,6 @@ export function BookingNewScreen() {
   const [selectedDate, setSelectedDate] = useState(DATE_OPTIONS[0]);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [notes, setNotes] = useState('');
-  const [fieldError, setFieldError] = useState<string | null>(null);
 
   const { data: slotsData, isLoading: isLoadingSlots } = useAvailableSlots(
     providerId,
@@ -49,10 +61,8 @@ export function BookingNewScreen() {
   }
 
   function handleSubmit() {
-    setFieldError(null);
-
     if (!selectedSlot) {
-      setFieldError('Pick a time slot');
+      showToast('Pick a time slot', 'error');
       return;
     }
 
@@ -64,131 +74,154 @@ export function BookingNewScreen() {
     });
 
     if (!result.success) {
-      setFieldError(result.error.issues[0]?.message ?? 'Invalid input');
+      showToast(result.error.issues[0]?.message ?? 'Invalid input', 'error');
       return;
     }
 
     createBookingMutation.mutate(result.data, {
       onSuccess: (response) => {
         if (response.data) {
-          router.replace({ pathname: '/bookings/[id]', params: { id: response.data.id } });
+          router.replace({
+            pathname: '/bookings/[id]',
+            params: { id: response.data.id },
+          });
         }
       },
+      onError: (error) => showToast(getErrorMessage(error), 'error'),
     });
   }
 
-  const serverError = createBookingMutation.isError
-    ? getErrorMessage(createBookingMutation.error)
-    : null;
-
   if (isProviderError) {
     return (
-      <ThemedView style={styles.container}>
-        <SafeAreaView style={styles.safeArea}>
-          <ErrorState message={getErrorMessage(providerError)} onRetry={refetchProvider} />
+      <View className="flex-1 bg-[#FBF8F3]">
+        <SafeAreaView className="flex-1 px-6" edges={['top', 'bottom']}>
+          <ErrorState
+            message={getErrorMessage(providerError)}
+            onRetry={refetchProvider}
+          />
         </SafeAreaView>
-      </ThemedView>
+      </View>
     );
   }
 
   if (isLoadingProvider || !provider) {
     return (
-      <ThemedView style={styles.container}>
-        <SafeAreaView style={styles.safeArea}>
+      <View className="flex-1 bg-[#FBF8F3]">
+        <SafeAreaView className="flex-1 px-6" edges={['top', 'bottom']}>
           <DetailSkeleton />
         </SafeAreaView>
-      </ThemedView>
+      </View>
     );
   }
 
   if (!service) {
     return (
-      <ThemedView style={styles.container}>
-        <SafeAreaView style={styles.safeArea}>
+      <View className="flex-1 bg-[#FBF8F3]">
+        <SafeAreaView className="flex-1 px-6" edges={['top', 'bottom']}>
           <EmptyState message="Service not found." />
         </SafeAreaView>
-      </ThemedView>
+      </View>
     );
   }
 
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <ThemedText type="link">{'< Back'}</ThemedText>
-        </Pressable>
+    <View className="flex-1 bg-[#FBF8F3]">
+      <SafeAreaView className="flex-1 px-6" edges={['top', 'bottom']}>
+        <ScreenHeader
+          title="Book appointment"
+          notificationsHref="/home/notifications"
+          onBack={() => router.back()}
+        />
 
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <ThemedText type="title" style={styles.title}>
-            Book {service.name}
-          </ThemedText>
-          <ThemedText type="default" themeColor="textSecondary">
-            with {provider.fullName} · ₦{service.price} · {service.durationMinutes} min
-          </ThemedText>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerClassName="pb-8"
+        >
+          <View className="mt-5 gap-3 rounded-[20px] bg-[#F3F0EB] p-4">
+            <View>
+              <Text className="font-serif-bold text-[19px] text-[#26242A]">
+                {service.name}
+              </Text>
+              <Text className="mt-0.5 text-[14px] text-[#817F80]">
+                {provider.fullName}
+                {provider.city ? ` • ${provider.city}` : ''}
+              </Text>
+            </View>
+            <View className="flex-row items-center justify-between border-t border-[#E7E1D9] pt-3">
+              <Text className="text-[14px] font-bold text-[#4A473F]">
+                {service.durationMinutes} min
+              </Text>
+              <Text className="font-serif-bold text-[18px] text-[#4B2E46]">
+                ₦{service.price}
+              </Text>
+            </View>
+          </View>
 
-          <ThemedText type="subtitle" style={styles.sectionTitle}>
-            Pick a date
-          </ThemedText>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipRow}>
+          <Text className="mt-7 font-serif-bold text-[18px] text-[#26242A]">
+            Date
+          </Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            className="mt-3 h-11 flex-none"
+            contentContainerClassName="items-center gap-2 pr-6"
+          >
             {DATE_OPTIONS.map((date) => (
-              <Pressable key={date} onPress={() => handleSelectDate(date)}>
-                <ThemedView
-                  type={selectedDate === date ? 'backgroundSelected' : 'backgroundElement'}
-                  style={styles.chip}
-                >
-                  <ThemedText type="small">{formatDateLabel(date)}</ThemedText>
-                </ThemedView>
-              </Pressable>
+              <Chip
+                key={date}
+                label={formatDateLabel(date)}
+                selected={selectedDate === date}
+                onPress={() => handleSelectDate(date)}
+              />
             ))}
           </ScrollView>
 
-          <ThemedText type="subtitle" style={styles.sectionTitle}>
-            Pick a time
-          </ThemedText>
+          <Text className="mt-7 font-serif-bold text-[18px] text-[#26242A]">
+            Time slot
+          </Text>
           {isLoadingSlots ? (
-            <ActivityIndicator style={styles.loading} />
+            <ActivityIndicator className="mt-3" color="#4B2E46" />
           ) : slotsData?.slots.length ? (
-            <ThemedView style={styles.slotGrid}>
+            <View className="mt-3 flex-row flex-wrap gap-2.5">
               {slotsData.slots.map((slot) => (
-                <Pressable key={slot} onPress={() => setSelectedSlot(slot)}>
-                  <ThemedView
-                    type={selectedSlot === slot ? 'backgroundSelected' : 'backgroundElement'}
-                    style={styles.chip}
-                  >
-                    <ThemedText type="small">{formatTimeLabel(slot)}</ThemedText>
-                  </ThemedView>
-                </Pressable>
+                <Chip
+                  key={slot}
+                  label={formatTimeLabel(slot)}
+                  selected={selectedSlot === slot}
+                  onPress={() => setSelectedSlot(slot)}
+                />
               ))}
-            </ThemedView>
+            </View>
           ) : (
-            <ThemedText type="small" themeColor="textSecondary">
+            <Text className="mt-3 text-[14px] text-[#817F80]">
               No available times on this date.
-            </ThemedText>
+            </Text>
           )}
 
-          <ThemedTextInput
-            placeholder="Notes for the provider (optional)"
+          <Text className="mt-7 font-serif-bold text-[18px] text-[#26242A]">
+            Notes
+          </Text>
+          <TextInput
+            placeholder="Waist-length braids, medium size. I can come to studio."
+            placeholderTextColor="#A8A39B"
             value={notes}
             onChangeText={setNotes}
-            style={[styles.input, styles.notesInput]}
             multiline
+            className="mt-3 min-h-[90px] rounded-[16px] border border-[#ECE7E0] bg-white px-4 py-3 text-[15px] text-[#26242A]"
+            style={{ textAlignVertical: 'top' }}
           />
 
-          {(fieldError ?? serverError) && (
-            <ThemedText type="small" themeColor="danger" style={styles.error}>
-              {fieldError ?? serverError}
-            </ThemedText>
-          )}
-
-          <Pressable onPress={handleSubmit} disabled={createBookingMutation.isPending}>
-            <ThemedView type="backgroundElement" style={styles.submitButton}>
-              <ThemedText type="smallBold">
-                {createBookingMutation.isPending ? 'Booking...' : 'Request booking'}
-              </ThemedText>
-            </ThemedView>
-          </Pressable>
+          <View className="mt-7">
+            <Button
+              label={
+                createBookingMutation.isPending ? 'Booking…' : 'Request booking'
+              }
+              onPress={handleSubmit}
+              loading={createBookingMutation.isPending}
+            />
+          </View>
         </ScrollView>
       </SafeAreaView>
-    </ThemedView>
+    </View>
   );
 }

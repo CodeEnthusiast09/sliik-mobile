@@ -1,10 +1,7 @@
-import { Pressable } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Pressable, Text, View } from 'react-native';
 
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
 import { useUnreadCount } from '@/hooks/services/notifications';
-
-import { styles } from './index.styles';
 
 interface NotificationBellProps {
   onPress: () => void;
@@ -14,12 +11,18 @@ export function NotificationBell({ onPress }: NotificationBellProps) {
   const { data: unreadCount } = useUnreadCount();
 
   return (
-    <Pressable onPress={onPress} style={styles.container}>
-      <ThemedText style={styles.bell}>🔔</ThemedText>
+    <Pressable
+      onPress={onPress}
+      hitSlop={10}
+      className="h-9 w-9 items-center justify-center"
+    >
+      <Ionicons name="notifications-outline" size={28} color="#4B2E46" />
       {!!unreadCount && (
-        <ThemedView type="danger" style={styles.badge}>
-          <ThemedText style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</ThemedText>
-        </ThemedView>
+        <View className="absolute right-[-2px] top-[-2px] h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#E5484D] px-1">
+          <Text className="text-[11px] font-bold text-white">
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </Text>
+        </View>
       )}
     </Pressable>
   );

@@ -11,7 +11,7 @@ export const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: Spacing.four,
-    paddingBottom: Spacing.six,
+    paddingBottom: 140,
     gap: Spacing.two,
   },
   headerRow: {

@@ -1,22 +1,27 @@
-import { Image } from 'expo-image';
-import * as Location from 'expo-location';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, ScrollView } from 'react-native';
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Avatar } from '@/components/avatar';
+import { Chip } from '@/components/chip';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorState } from '@/components/error-state';
-import { NotificationBell } from '@/components/notification-bell';
+import { ScreenHeader } from '@/components/screen-header';
 import { ListSkeleton } from '@/components/skeleton';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedTextInput } from '@/components/themed-text-input';
-import { ThemedView } from '@/components/themed-view';
 import { useProviders } from '@/hooks/services/discovery';
 import type { ProviderProfile } from '@/interfaces/provider';
 import { calculateDistanceKm, getErrorMessage } from '@/lib/utils';
-
-import { styles } from './index.styles';
+import { useLocationStore } from '@/store/location';
 
 const RATING_OPTIONS: { label: string; value: number | undefined }[] = [
   { label: 'Any rating', value: undefined },
@@ -27,24 +32,24 @@ const RATING_OPTIONS: { label: string; value: number | undefined }[] = [
 
 export function CustomerHomeScreen() {
   const router = useRouter();
+  const userCoords = useLocationStore((state) => state.coords);
 
   const [cityInput, setCityInput] = useState('');
   const [appliedCity, setAppliedCity] = useState('');
-  const [selectedTradeType, setSelectedTradeType] = useState<string | null>(null);
+  const [selectedTradeType, setSelectedTradeType] = useState<string | null>(
+    null,
+  );
   const [minRating, setMinRating] = useState<number | undefined>(undefined);
-  const [nearMeEnabled, setNearMeEnabled] = useState(false);
-  const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [locationError, setLocationError] = useState<string | null>(null);
 
   const filters = useMemo(
     () => ({
       city: appliedCity || undefined,
       tradeType: selectedTradeType ?? undefined,
       minRating,
-      lat: nearMeEnabled ? userCoords?.lat : undefined,
-      lng: nearMeEnabled ? userCoords?.lng : undefined,
+      lat: userCoords?.lat,
+      lng: userCoords?.lng,
     }),
-    [appliedCity, selectedTradeType, minRating, nearMeEnabled, userCoords],
+    [appliedCity, selectedTradeType, minRating, userCoords],
   );
 
   const {
@@ -64,7 +69,10 @@ export function CustomerHomeScreen() {
   // already-selected categories disappear from the chip row.
   const { data: categorySeed } = useProviders({});
 
-  const providers = useMemo(() => data?.pages.flatMap((page) => page.data ?? []) ?? [], [data]);
+  const providers = useMemo(
+    () => data?.pages.flatMap((page) => page.data ?? []) ?? [],
+    [data],
+  );
 
   const tradeTypeOptions = useMemo(() => {
     const rows = categorySeed?.pages.flatMap((page) => page.data ?? []) ?? [];
@@ -80,19 +88,28 @@ export function CustomerHomeScreen() {
   }, [categorySeed]);
 
   const displayProviders = useMemo(() => {
-    if (!nearMeEnabled || !userCoords) return providers;
+    if (!userCoords) return providers;
     return [...providers].sort((a, b) => distanceOf(a) - distanceOf(b));
 
     function distanceOf(provider: ProviderProfile) {
-      if (!userCoords || provider.latitude == null || provider.longitude == null) return Infinity;
-      return calculateDistanceKm(userCoords.lat, userCoords.lng, provider.latitude, provider.longitude);
+      if (
+        !userCoords ||
+        provider.latitude == null ||
+        provider.longitude == null
+      )
+        return Infinity;
+      return calculateDistanceKm(
+        userCoords.lat,
+        userCoords.lng,
+        provider.latitude,
+        provider.longitude,
+      );
     }
-  }, [providers, nearMeEnabled, userCoords]);
+  }, [providers, userCoords]);
 
   function getDistanceLabel(provider: ProviderProfile) {
-    if (!nearMeEnabled || !userCoords || provider.latitude == null || provider.longitude == null) {
+    if (!userCoords || provider.latitude == null || provider.longitude == null)
       return null;
-    }
     const distance = calculateDistanceKm(
       userCoords.lat,
       userCoords.lng,
@@ -102,140 +119,138 @@ export function CustomerHomeScreen() {
     return `${distance.toFixed(1)} km away`;
   }
 
-  async function handleToggleNearMe() {
-    if (nearMeEnabled) {
-      setNearMeEnabled(false);
-      return;
-    }
-
-    setLocationError(null);
-    const permission = await Location.requestForegroundPermissionsAsync();
-    if (!permission.granted) {
-      setLocationError('Location permission denied');
-      return;
-    }
-
-    const position = await Location.getCurrentPositionAsync({});
-    setUserCoords({ lat: position.coords.latitude, lng: position.coords.longitude });
-    setNearMeEnabled(true);
-  }
-
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.headerRow}>
-          <ThemedText type="title" style={styles.title}>
-            Sliik
-          </ThemedText>
-          <NotificationBell onPress={() => router.push('/home/notifications')} />
-        </ThemedView>
+    <View className="flex-1 bg-[#FBF8F3]">
+      <SafeAreaView className="flex-1 px-6" edges={['top', 'bottom']}>
+        <ScreenHeader notificationsHref="/home/notifications" />
 
-        <ThemedTextInput
-          placeholder="Search by city"
-          value={cityInput}
-          onChangeText={setCityInput}
-          onSubmitEditing={() => setAppliedCity(cityInput.trim())}
-          returnKeyType="search"
-          style={styles.input}
-        />
+        <Text className="mt-4 font-serif-bold text-[30px] leading-[36px] text-[#26242A]">
+          Beauty near you
+        </Text>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipRow}>
-          <Pressable onPress={() => setSelectedTradeType(null)}>
-            <ThemedView
-              type={selectedTradeType === null ? 'backgroundSelected' : 'backgroundElement'}
-              style={styles.chip}
-            >
-              <ThemedText type="small">All</ThemedText>
-            </ThemedView>
-          </Pressable>
+        <View className="mt-5 flex-row items-center gap-3 rounded-2xl border border-[#ECE7E0] bg-white px-4 py-2.5">
+          <Ionicons name="search-outline" size={18} color="#948F86" />
+          <TextInput
+            placeholder="Search by city"
+            placeholderTextColor="#948F86"
+            value={cityInput}
+            onChangeText={setCityInput}
+            onSubmitEditing={() => setAppliedCity(cityInput.trim())}
+            returnKeyType="search"
+            className="flex-1 text-[15px] text-[#26242A]"
+          />
+        </View>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          className="mt-4 h-11 flex-none"
+          contentContainerClassName="items-center gap-2 pr-6"
+        >
+          <Chip
+            label="All"
+            selected={selectedTradeType === null}
+            onPress={() => setSelectedTradeType(null)}
+          />
           {tradeTypeOptions.map((tradeType) => (
-            <Pressable key={tradeType} onPress={() => setSelectedTradeType(tradeType)}>
-              <ThemedView
-                type={selectedTradeType === tradeType ? 'backgroundSelected' : 'backgroundElement'}
-                style={styles.chip}
-              >
-                <ThemedText type="small">{tradeType}</ThemedText>
-              </ThemedView>
-            </Pressable>
+            <Chip
+              key={tradeType}
+              label={tradeType}
+              selected={selectedTradeType === tradeType}
+              onPress={() => setSelectedTradeType(tradeType)}
+            />
           ))}
         </ScrollView>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipRow}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          className="mt-3 h-11 flex-none"
+          contentContainerClassName="items-center gap-2 pr-6"
+        >
           {RATING_OPTIONS.map((option) => (
-            <Pressable key={option.label} onPress={() => setMinRating(option.value)}>
-              <ThemedView
-                type={minRating === option.value ? 'backgroundSelected' : 'backgroundElement'}
-                style={styles.chip}
-              >
-                <ThemedText type="small">{option.label}</ThemedText>
-              </ThemedView>
-            </Pressable>
+            <Chip
+              key={option.label}
+              label={option.label}
+              selected={minRating === option.value}
+              onPress={() => setMinRating(option.value)}
+            />
           ))}
-          <Pressable onPress={handleToggleNearMe}>
-            <ThemedView type={nearMeEnabled ? 'backgroundSelected' : 'backgroundElement'} style={styles.chip}>
-              <ThemedText type="small">{nearMeEnabled ? 'Near me ✓' : 'Near me'}</ThemedText>
-            </ThemedView>
-          </Pressable>
         </ScrollView>
-
-        {locationError && (
-          <ThemedText type="small" themeColor="danger" style={styles.error}>
-            {locationError}
-          </ThemedText>
-        )}
 
         {isLoading ? (
-          <ListSkeleton />
+          <View className="mt-4">
+            <ListSkeleton />
+          </View>
         ) : isError ? (
           <ErrorState message={getErrorMessage(error)} onRetry={refetch} />
         ) : (
           <FlatList
             data={displayProviders}
             keyExtractor={(provider) => provider.id}
-            contentContainerStyle={styles.listContent}
+            contentContainerClassName="gap-3 pt-4 pb-32"
             refreshing={isRefetching}
             onRefresh={refetch}
             onEndReached={() => {
               if (hasNextPage && !isFetchingNextPage) fetchNextPage();
             }}
             onEndReachedThreshold={0.5}
-            ListEmptyComponent={<EmptyState message="No providers found. Try a different filter." />}
-            ListFooterComponent={isFetchingNextPage ? <ActivityIndicator style={styles.loading} /> : null}
+            ListEmptyComponent={
+              <EmptyState message="No providers found. Try a different filter." />
+            }
+            ListFooterComponent={
+              isFetchingNextPage ? <ActivityIndicator className="mt-4" /> : null
+            }
             renderItem={({ item }) => {
               const rating = Number(item.avgRating);
               const distanceLabel = getDistanceLabel(item);
               return (
                 <Pressable
-                  onPress={() => router.push({ pathname: '/home/[id]', params: { id: item.id } })}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/home/[id]',
+                      params: { id: item.id },
+                    })
+                  }
+                  className="flex-row items-center gap-3 rounded-[20px] border border-[#ECE7E0] bg-white p-3"
                 >
-                  <ThemedView type="backgroundElement" style={styles.card}>
-                    <ThemedView style={styles.cardAvatar}>
-                      {item.avatarUrl ? (
-                        <Image source={{ uri: item.avatarUrl }} style={styles.cardAvatarImage} />
-                      ) : (
-                        <ThemedText type="small">{item.fullName.charAt(0).toUpperCase()}</ThemedText>
-                      )}
-                    </ThemedView>
-                    <ThemedView style={styles.cardInfo}>
-                      <ThemedText type="default">{item.fullName}</ThemedText>
-                      <ThemedText type="small" themeColor="textSecondary">
-                        {item.tradeType}
-                        {item.city ? ` · ${item.city}` : ''}
-                      </ThemedText>
-                      <ThemedText type="small" themeColor="textSecondary">
-                        {item.totalReviews > 0
-                          ? `★ ${rating.toFixed(1)} (${item.totalReviews})`
-                          : 'No reviews yet'}
-                        {distanceLabel ? ` · ${distanceLabel}` : ''}
-                      </ThemedText>
-                    </ThemedView>
-                  </ThemedView>
+                  <Avatar
+                    uri={item.avatarUrl}
+                    name={item.fullName}
+                    size={68}
+                    shape="square"
+                  />
+
+                  <View className="flex-1 gap-1">
+                    <View className="flex-row items-center justify-between">
+                      <Text className="font-serif-bold text-[16px] text-[#26242A]">
+                        {item.fullName}
+                      </Text>
+                      {item.totalReviews > 0 ? (
+                        <View className="rounded-full bg-[#F3F0EB] px-2.5 py-1">
+                          <Text className="text-[12px] font-bold text-[#26242A]">
+                            {rating.toFixed(1)} ★
+                          </Text>
+                        </View>
+                      ) : null}
+                    </View>
+                    <Text className="text-[13px] text-[#817F80]">
+                      {item.tradeType}
+                      {item.city ? ` • ${item.city}` : ''}
+                    </Text>
+                    <Text className="text-[13px] text-[#817F80]">
+                      {item.totalReviews > 0
+                        ? `${item.totalReviews} reviews`
+                        : 'No reviews yet'}
+                      {distanceLabel ? ` • ${distanceLabel}` : ''}
+                    </Text>
+                  </View>
                 </Pressable>
               );
             }}
           />
         )}
       </SafeAreaView>
-    </ThemedView>
+    </View>
   );
 }

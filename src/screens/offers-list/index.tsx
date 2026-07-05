@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { ActivityIndicator, FlatList, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { DealsOffersTabs } from '@/components/deals-offers-tabs';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorState } from '@/components/error-state';
 import { ListSkeleton } from '@/components/skeleton';
@@ -26,11 +27,19 @@ export function OffersListScreen() {
 
 function CustomerOffersList() {
   const router = useRouter();
-  const { data: offers, isLoading, isError, error, isRefetching, refetch } = useMyOffers();
+  const {
+    data: offers,
+    isLoading,
+    isError,
+    error,
+    isRefetching,
+    refetch,
+  } = useMyOffers();
 
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
+        <DealsOffersTabs active="offers" />
         <ThemedView style={styles.header}>
           <ThemedText type="title">Offers</ThemedText>
           <Pressable onPress={() => router.push('/offers/new')}>
@@ -55,7 +64,14 @@ function CustomerOffersList() {
               <EmptyState message="No offers posted yet. Post one to get price offers from providers." />
             }
             renderItem={({ item }) => (
-              <Pressable onPress={() => router.push({ pathname: '/offers/[id]', params: { id: item.id } })}>
+              <Pressable
+                onPress={() =>
+                  router.push({
+                    pathname: '/offers/[id]',
+                    params: { id: item.id },
+                  })
+                }
+              >
                 <ThemedView type="backgroundElement" style={styles.row}>
                   <ThemedText type="default">{item.serviceType}</ThemedText>
                   <ThemedText type="small" themeColor="textSecondary">
@@ -82,11 +98,19 @@ function ProviderOffersFeed() {
     error: providerError,
     refetch: refetchProvider,
   } = useProviderProfile();
-  const { data: offers, isLoading, isError, error, isRefetching, refetch } = useOpenOffers();
+  const {
+    data: offers,
+    isLoading,
+    isError,
+    error,
+    isRefetching,
+    refetch,
+  } = useOpenOffers();
 
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
+        <DealsOffersTabs active="offers" />
         <ThemedView style={styles.header}>
           <ThemedText type="title">Offers</ThemedText>
           <Pressable onPress={() => router.push('/offers/my-bids')}>
@@ -97,7 +121,10 @@ function ProviderOffersFeed() {
         </ThemedView>
 
         {isProviderError ? (
-          <ErrorState message={getErrorMessage(providerError)} onRetry={refetchProvider} />
+          <ErrorState
+            message={getErrorMessage(providerError)}
+            onRetry={refetchProvider}
+          />
         ) : isLoadingProvider ? (
           <ActivityIndicator style={styles.loading} />
         ) : !provider?.city ? (
@@ -117,15 +144,31 @@ function ProviderOffersFeed() {
             contentContainerStyle={styles.listContent}
             refreshing={isRefetching}
             onRefresh={refetch}
-            ListEmptyComponent={<EmptyState message={`No open offers in ${provider.city} right now.`} />}
+            ListEmptyComponent={
+              <EmptyState
+                message={`No open offers in ${provider.city} right now.`}
+              />
+            }
             renderItem={({ item }) => (
-              <Pressable onPress={() => router.push({ pathname: '/offers/[id]', params: { id: item.id } })}>
+              <Pressable
+                onPress={() =>
+                  router.push({
+                    pathname: '/offers/[id]',
+                    params: { id: item.id },
+                  })
+                }
+              >
                 <ThemedView type="backgroundElement" style={styles.row}>
                   <ThemedText type="default">{item.serviceType}</ThemedText>
                   <ThemedText type="small" themeColor="textSecondary">
-                    {budgetLabel(item)} · Preferred: {formatDateTimeLabel(item.preferredFrom)}
+                    {budgetLabel(item)} · Preferred:{' '}
+                    {formatDateTimeLabel(item.preferredFrom)}
                   </ThemedText>
-                  <ThemedText type="small" themeColor="textSecondary" numberOfLines={2}>
+                  <ThemedText
+                    type="small"
+                    themeColor="textSecondary"
+                    numberOfLines={2}
+                  >
                     {item.description}
                   </ThemedText>
                 </ThemedView>

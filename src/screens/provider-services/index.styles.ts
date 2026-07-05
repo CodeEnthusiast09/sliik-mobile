@@ -23,7 +23,7 @@ export const styles = StyleSheet.create({
   },
   listContent: {
     gap: Spacing.two,
-    paddingBottom: Spacing.six,
+    paddingBottom: 140,
   },
   serviceRow: {
     padding: Spacing.three,

@@ -13,7 +13,10 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedTextInput } from '@/components/themed-text-input';
 import { ThemedView } from '@/components/themed-view';
 import { usePayoutAccount } from '@/hooks/services/payouts';
-import { useProviderProfile, useUpdateProviderProfile } from '@/hooks/services/provider';
+import {
+  useProviderProfile,
+  useUpdateProviderProfile,
+} from '@/hooks/services/provider';
 import { useReviewsForUser } from '@/hooks/services/reviews';
 import { useUploadImage } from '@/hooks/services/uploads';
 import { getErrorMessage } from '@/lib/utils';
@@ -28,11 +31,19 @@ export function ProviderProfileScreen() {
   const router = useRouter();
   const clearAuth = useAuthStore((state) => state.clearAuth);
 
-  const { data: profile, isLoading, isError, error: profileError, refetch } = useProviderProfile();
+  const {
+    data: profile,
+    isLoading,
+    isError,
+    error: profileError,
+    refetch,
+  } = useProviderProfile();
   const { data: payoutAccount } = usePayoutAccount();
   const updateProfileMutation = useUpdateProviderProfile();
   const uploadImageMutation = useUploadImage();
-  const { data: userReviews, isLoading: isLoadingReviews } = useReviewsForUser(profile?.userId);
+  const { data: userReviews, isLoading: isLoadingReviews } = useReviewsForUser(
+    profile?.userId,
+  );
 
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
@@ -49,7 +60,9 @@ export function ProviderProfileScreen() {
     setPhone(profile.phone ?? '');
     setBio(profile.bio ?? '');
     setTradeType(profile.tradeType ?? '');
-    setYearsExperience(profile.yearsExperience != null ? String(profile.yearsExperience) : '');
+    setYearsExperience(
+      profile.yearsExperience != null ? String(profile.yearsExperience) : '',
+    );
     setCity(profile.city ?? '');
   }
 
@@ -65,7 +78,9 @@ export function ProviderProfileScreen() {
     });
     if (result.canceled) return;
 
-    const uploadResponse = await uploadImageMutation.mutateAsync(result.assets[0]);
+    const uploadResponse = await uploadImageMutation.mutateAsync(
+      result.assets[0],
+    );
     if (uploadResponse.data) {
       updateProfileMutation.mutate({ avatarUrl: uploadResponse.data.url });
     }
@@ -107,7 +122,10 @@ export function ProviderProfileScreen() {
     return (
       <ThemedView style={styles.container}>
         <SafeAreaView style={styles.safeArea}>
-          <ErrorState message={getErrorMessage(profileError)} onRetry={refetch} />
+          <ErrorState
+            message={getErrorMessage(profileError)}
+            onRetry={refetch}
+          />
         </SafeAreaView>
       </ThemedView>
     );
@@ -129,13 +147,18 @@ export function ProviderProfileScreen() {
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <ThemedView style={styles.headerRow}>
             <ThemedText type="title">Profile</ThemedText>
-            <NotificationBell onPress={() => router.push('/profile/notifications')} />
+            <NotificationBell
+              onPress={() => router.push('/profile/notifications')}
+            />
           </ThemedView>
 
           <Pressable onPress={handlePickAvatar}>
             <ThemedView type="backgroundElement" style={styles.avatar}>
               {profile?.avatarUrl ? (
-                <Image source={{ uri: profile.avatarUrl }} style={styles.avatarImage} />
+                <Image
+                  source={{ uri: profile.avatarUrl }}
+                  style={styles.avatarImage}
+                />
               ) : (
                 <ThemedText type="small">Add photo</ThemedText>
               )}
@@ -169,7 +192,12 @@ export function ProviderProfileScreen() {
             style={styles.input}
             keyboardType="number-pad"
           />
-          <ThemedTextInput placeholder="City" value={city} onChangeText={setCity} style={styles.input} />
+          <ThemedTextInput
+            placeholder="City"
+            value={city}
+            onChangeText={setCity}
+            style={styles.input}
+          />
           <ThemedTextInput
             placeholder="Bio"
             value={bio}
@@ -184,7 +212,10 @@ export function ProviderProfileScreen() {
             </ThemedText>
           )}
 
-          <Pressable onPress={handleSave} disabled={updateProfileMutation.isPending}>
+          <Pressable
+            onPress={handleSave}
+            disabled={updateProfileMutation.isPending}
+          >
             <ThemedView type="backgroundElement" style={styles.submitButton}>
               <ThemedText type="smallBold">
                 {updateProfileMutation.isPending ? 'Saving...' : 'Save changes'}
@@ -192,11 +223,50 @@ export function ProviderProfileScreen() {
             </ThemedView>
           </Pressable>
 
-          <Pressable onPress={() => router.push('/profile/payout')} style={styles.row}>
+          <Pressable
+            onPress={() => router.push('/profile/payout')}
+            style={styles.row}
+          >
             <ThemedView type="backgroundElement" style={styles.rowContent}>
               <ThemedText type="default">Payout details</ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
                 {payoutAccount ? payoutAccount.accountName : 'Not set up'}
+              </ThemedText>
+            </ThemedView>
+          </Pressable>
+
+          <Pressable
+            onPress={() => router.push('/services')}
+            style={styles.row}
+          >
+            <ThemedView type="backgroundElement" style={styles.rowContent}>
+              <ThemedText type="default">Services</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                Manage what you offer
+              </ThemedText>
+            </ThemedView>
+          </Pressable>
+
+          <Pressable
+            onPress={() => router.push('/availability')}
+            style={styles.row}
+          >
+            <ThemedView type="backgroundElement" style={styles.rowContent}>
+              <ThemedText type="default">Availability</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                Set your weekly schedule
+              </ThemedText>
+            </ThemedView>
+          </Pressable>
+
+          <Pressable
+            onPress={() => router.push('/portfolio')}
+            style={styles.row}
+          >
+            <ThemedView type="backgroundElement" style={styles.rowContent}>
+              <ThemedText type="default">Portfolio</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                Showcase your best work
               </ThemedText>
             </ThemedView>
           </Pressable>

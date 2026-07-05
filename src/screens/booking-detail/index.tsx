@@ -1,15 +1,16 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useState } from 'react';
-import { Pressable } from 'react-native';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { DetailSkeleton } from '@/components/skeleton';
+import { Avatar } from '@/components/avatar';
+import { Button } from '@/components/button';
 import { ErrorState } from '@/components/error-state';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedTextInput } from '@/components/themed-text-input';
-import { ThemedView } from '@/components/themed-view';
-import { useTheme } from '@/hooks/common/use-theme';
+import { ScreenHeader } from '@/components/screen-header';
+import { DetailSkeleton } from '@/components/skeleton';
+import { StatusPill } from '@/components/status-pill';
 import {
   useBooking,
   useCancelBooking,
@@ -18,21 +19,32 @@ import {
   useDeclineBooking,
 } from '@/hooks/services/bookings';
 import { useInitiatePayment } from '@/hooks/services/payments';
-import { useCreateReview, useReviewsForBooking } from '@/hooks/services/reviews';
+import {
+  useCreateReview,
+  useReviewsForBooking,
+} from '@/hooks/services/reviews';
 import { CHATTABLE_STATUSES } from '@/lib/constants';
 import { formatDateTimeLabel, getErrorMessage } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth';
+import { showToast } from '@/store/toast';
 import { createReviewSchema } from '@/validations/review';
 
-import { getStatusColor } from '../bookings-list/index.styles';
-import { styles } from './index.styles';
+const PAYMENT_LABEL = {
+  unpaid: 'Payment pending',
+  paid: 'Paid',
+  refunded: 'Refunded',
+} as const;
+const PAYMENT_COLOR = {
+  unpaid: '#E0A800',
+  paid: '#2F9E44',
+  refunded: '#817F80',
+} as const;
 
 export function BookingDetailScreen() {
   const router = useRouter();
   const role = useAuthStore((state) => state.role);
   const { id } = useLocalSearchParams<{ id: string }>();
 
-  const theme = useTheme();
   const {
     data: booking,
     isLoading,
@@ -49,20 +61,28 @@ export function BookingDetailScreen() {
   const createReviewMutation = useCreateReview();
 
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-  const [paymentError, setPaymentError] = useState<string | null>(null);
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
-  const [reviewError, setReviewError] = useState<string | null>(null);
+  const [commentError, setCommentError] = useState(false);
+
+  const notificationsHref =
+    role === 'provider' ? '/profile/notifications' : '/home/notifications';
+
+  function onMutationError(error: unknown) {
+    showToast(getErrorMessage(error), 'error');
+  }
 
   async function handlePayNow() {
     if (!booking) return;
-    setPaymentError(null);
 
     try {
       const response = await initiatePaymentMutation.mutateAsync(booking.id);
       if (!response.data) return;
 
-      await WebBrowser.openAuthSessionAsync(response.data.checkoutUrl, 'sliik://payment/success');
+      await WebBrowser.openAuthSessionAsync(
+        response.data.checkoutUrl,
+        'sliik://payment/success',
+      );
 
       // Paystack's redirect fires whether the user actually paid or just
       // backed out, and the webhook that flips paymentStatus can lag
@@ -71,10 +91,11 @@ export function BookingDetailScreen() {
       for (let attempt = 0; attempt < 3; attempt++) {
         const result = await refetchBooking();
         if (result.data?.paymentStatus === 'paid') break;
-        if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 2000));
+        if (attempt < 2)
+          await new Promise((resolve) => setTimeout(resolve, 2000));
       }
     } catch (error) {
-      setPaymentError(getErrorMessage(error));
+      showToast(getErrorMessage(error), 'error');
     } finally {
       setIsProcessingPayment(false);
     }
@@ -82,7 +103,7 @@ export function BookingDetailScreen() {
 
   function handleSubmitReview() {
     if (!booking) return;
-    setReviewError(null);
+    setCommentError(false);
 
     const result = createReviewSchema.safeParse({
       bookingId: booking.id,
@@ -90,255 +111,344 @@ export function BookingDetailScreen() {
       comment: comment || undefined,
     });
     if (!result.success) {
-      setReviewError(result.error.issues[0]?.message ?? 'Invalid review');
+      setCommentError(true);
+      showToast(result.error.issues[0]?.message ?? 'Invalid review', 'error');
       return;
     }
 
-    createReviewMutation.mutate(result.data);
+    createReviewMutation.mutate(result.data, {
+      onError: (error) => {
+        setCommentError(true);
+        showToast(getErrorMessage(error), 'error');
+      },
+    });
   }
 
   if (isError) {
     return (
-      <ThemedView style={styles.container}>
-        <SafeAreaView style={styles.safeArea}>
-          <ErrorState message={getErrorMessage(error)} onRetry={refetchBooking} />
+      <View className="flex-1 bg-[#FBF8F3]">
+        <SafeAreaView className="flex-1 px-6" edges={['top', 'bottom']}>
+          <ErrorState
+            message={getErrorMessage(error)}
+            onRetry={refetchBooking}
+          />
         </SafeAreaView>
-      </ThemedView>
+      </View>
     );
   }
 
   if (isLoading || !booking) {
     return (
-      <ThemedView style={styles.container}>
-        <SafeAreaView style={styles.safeArea}>
+      <View className="flex-1 bg-[#FBF8F3]">
+        <SafeAreaView className="flex-1 px-6" edges={['top', 'bottom']}>
           <DetailSkeleton />
         </SafeAreaView>
-      </ThemedView>
+      </View>
     );
   }
 
   const otherParty = role === 'customer' ? booking.provider : booking.customer;
-  const myUserId = role === 'customer' ? booking.customer?.userId : booking.provider?.userId;
-  const myReview = bookingReviews?.find((review) => review.reviewerId === myUserId);
-  const theirReview = bookingReviews?.find((review) => review.reviewerId !== myUserId);
+  const myUserId =
+    role === 'customer' ? booking.customer?.userId : booking.provider?.userId;
+  const myReview = bookingReviews?.find(
+    (review) => review.reviewerId === myUserId,
+  );
+  const theirReview = bookingReviews?.find(
+    (review) => review.reviewerId !== myUserId,
+  );
   const canPayNow =
     role === 'customer' &&
     booking.paymentStatus === 'unpaid' &&
     booking.status !== 'cancelled' &&
     booking.status !== 'declined';
-  const serverError =
-    paymentError ??
-    (confirmMutation.isError
-      ? getErrorMessage(confirmMutation.error)
-      : declineMutation.isError
-        ? getErrorMessage(declineMutation.error)
-        : cancelMutation.isError
-          ? getErrorMessage(cancelMutation.error)
-          : completeMutation.isError
-            ? getErrorMessage(completeMutation.error)
-            : null);
 
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <ThemedText type="link">{'< Back'}</ThemedText>
-        </Pressable>
+    <View className="flex-1 bg-[#FBF8F3]">
+      <SafeAreaView className="flex-1 px-6" edges={['top', 'bottom']}>
+        <ScreenHeader
+          title="Booking detail"
+          notificationsHref={notificationsHref}
+          onBack={() => router.back()}
+        />
 
-        <ThemedText type="title" style={styles.title}>
-          {booking.service?.name ?? 'Booking'}
-        </ThemedText>
-        <ThemedText type="smallBold" style={{ color: getStatusColor(booking.status, theme) }}>
-          {booking.status}
-        </ThemedText>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerClassName="pb-8"
+        >
+          <View className="mt-4 flex-row items-center justify-between">
+            <Text className="font-serif-bold text-[28px] leading-[34px] text-[#26242A]">
+              {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+            </Text>
+            <StatusPill status={booking.status} />
+          </View>
 
-        <ThemedView type="backgroundElement" style={styles.card}>
-          <ThemedText type="default">{formatDateTimeLabel(booking.scheduledAt)}</ThemedText>
-          {otherParty && (
-            <ThemedText type="small" themeColor="textSecondary">
-              {role === 'customer' ? 'Provider' : 'Customer'}: {otherParty.fullName}
-            </ThemedText>
-          )}
-          <ThemedText type="small" themeColor="textSecondary">
-            Total: ₦{booking.totalAmount} · Payment: {booking.paymentStatus}
-          </ThemedText>
-          {booking.notes && (
-            <ThemedText type="small" themeColor="textSecondary">
-              Notes: {booking.notes}
-            </ThemedText>
-          )}
-        </ThemedView>
+          <View className="mt-5 gap-3 rounded-[20px] border border-[#ECE7E0] bg-white p-4">
+            <View className="flex-row items-center gap-3">
+              <Avatar
+                uri={otherParty?.avatarUrl}
+                name={otherParty?.fullName ?? '?'}
+                size={56}
+              />
+              <View className="flex-1">
+                <Text className="font-serif-bold text-[17px] text-[#26242A]">
+                  {booking.service?.name ?? 'Booking'}
+                </Text>
+                <Text className="mt-0.5 text-[13px] text-[#817F80]">
+                  {otherParty?.fullName ??
+                    (role === 'customer' ? 'Provider' : 'Customer')}{' '}
+                  • {formatDateTimeLabel(booking.scheduledAt)}
+                </Text>
+              </View>
+            </View>
 
-        {CHATTABLE_STATUSES.includes(booking.status) && (
-          <Pressable
-            onPress={() => router.push({ pathname: '/chats/[id]', params: { id: booking.id } })}
-            style={styles.standaloneButton}
-          >
-            <ThemedView type="backgroundElement" style={styles.submitButton}>
-              <ThemedText type="smallBold">Message {otherParty?.fullName ?? ''}</ThemedText>
-            </ThemedView>
-          </Pressable>
-        )}
+            {booking.notes ? (
+              <Text className="text-[13px] text-[#817F80]">
+                Notes: {booking.notes}
+              </Text>
+            ) : null}
 
-        {canPayNow && (
-          <Pressable
-            onPress={handlePayNow}
-            disabled={initiatePaymentMutation.isPending || isProcessingPayment}
-            style={styles.standaloneButton}
-          >
-            <ThemedView type="backgroundElement" style={styles.submitButton}>
-              <ThemedText type="smallBold">
-                {initiatePaymentMutation.isPending
-                  ? 'Opening checkout...'
-                  : isProcessingPayment
-                    ? 'Checking payment...'
-                    : 'Pay now'}
-              </ThemedText>
-            </ThemedView>
-          </Pressable>
-        )}
+            <View className="flex-row items-center justify-between border-t border-[#E7E1D9] pt-3">
+              <Text className="text-[15px] font-bold text-[#4A473F]">
+                Total
+              </Text>
+              <Text className="font-serif-bold text-[20px] text-[#4B2E46]">
+                ₦{booking.totalAmount}
+              </Text>
+            </View>
 
-        {serverError && (
-          <ThemedText type="small" themeColor="danger" style={styles.error}>
-            {serverError}
-          </ThemedText>
-        )}
-
-        {role === 'provider' && booking.status === 'pending' && (
-          <ThemedView style={styles.actionRow}>
-            <Pressable
-              onPress={() => confirmMutation.mutate(booking.id)}
-              disabled={confirmMutation.isPending || declineMutation.isPending}
-              style={styles.actionButton}
-            >
-              <ThemedView type="backgroundElement" style={styles.submitButton}>
-                <ThemedText type="smallBold">
-                  {confirmMutation.isPending ? 'Confirming...' : 'Confirm'}
-                </ThemedText>
-              </ThemedView>
-            </Pressable>
-            <Pressable
-              onPress={() => declineMutation.mutate(booking.id)}
-              disabled={confirmMutation.isPending || declineMutation.isPending}
-              style={styles.actionButton}
-            >
-              <ThemedView type="backgroundElement" style={styles.submitButton}>
-                <ThemedText type="smallBold" themeColor="danger">
-                  {declineMutation.isPending ? 'Declining...' : 'Decline'}
-                </ThemedText>
-              </ThemedView>
-            </Pressable>
-          </ThemedView>
-        )}
-
-        {role === 'provider' && booking.status === 'confirmed' && (
-          <ThemedView style={styles.actionRow}>
-            <Pressable
-              onPress={() => completeMutation.mutate(booking.id)}
-              disabled={completeMutation.isPending || cancelMutation.isPending}
-              style={styles.actionButton}
-            >
-              <ThemedView type="backgroundElement" style={styles.submitButton}>
-                <ThemedText type="smallBold">
-                  {completeMutation.isPending ? 'Completing...' : 'Mark complete'}
-                </ThemedText>
-              </ThemedView>
-            </Pressable>
-            <Pressable
-              onPress={() => cancelMutation.mutate(booking.id)}
-              disabled={completeMutation.isPending || cancelMutation.isPending}
-              style={styles.actionButton}
-            >
-              <ThemedView type="backgroundElement" style={styles.submitButton}>
-                <ThemedText type="smallBold" themeColor="danger">
-                  {cancelMutation.isPending ? 'Cancelling...' : 'Cancel'}
-                </ThemedText>
-              </ThemedView>
-            </Pressable>
-          </ThemedView>
-        )}
-
-        {role === 'customer' && (booking.status === 'pending' || booking.status === 'confirmed') && (
-          <Pressable
-            onPress={() => cancelMutation.mutate(booking.id)}
-            disabled={cancelMutation.isPending}
-            style={styles.standaloneButton}
-          >
-            <ThemedView type="backgroundElement" style={styles.submitButton}>
-              <ThemedText type="smallBold" themeColor="danger">
-                {cancelMutation.isPending ? 'Cancelling...' : 'Cancel booking'}
-              </ThemedText>
-            </ThemedView>
-          </Pressable>
-        )}
-
-        {booking.status === 'completed' && (
-          <ThemedView style={styles.reviewSection}>
-            <ThemedText type="subtitle">Reviews</ThemedText>
-
-            {theirReview && (
-              <ThemedView type="backgroundElement" style={styles.card}>
-                <ThemedText type="small" themeColor="textSecondary">
-                  What {otherParty?.fullName} said:
-                </ThemedText>
-                <ThemedText type="default">
-                  {'★'.repeat(theirReview.rating)}
-                  {'☆'.repeat(5 - theirReview.rating)}
-                </ThemedText>
-                {theirReview.comment && (
-                  <ThemedText type="default">{theirReview.comment}</ThemedText>
-                )}
-              </ThemedView>
-            )}
-
-            {myReview ? (
-              <ThemedView type="backgroundElement" style={styles.card}>
-                <ThemedText type="small" themeColor="textSecondary">
-                  Your review:
-                </ThemedText>
-                <ThemedText type="default">
-                  {'★'.repeat(myReview.rating)}
-                  {'☆'.repeat(5 - myReview.rating)}
-                </ThemedText>
-                {myReview.comment && <ThemedText type="default">{myReview.comment}</ThemedText>}
-              </ThemedView>
-            ) : (
-              <>
-                <ThemedView style={styles.starRow}>
-                  {[1, 2, 3, 4, 5].map((value) => (
-                    <Pressable key={value} onPress={() => setRating(value)}>
-                      <ThemedText style={styles.star}>{value <= rating ? '★' : '☆'}</ThemedText>
-                    </Pressable>
-                  ))}
-                </ThemedView>
-                <ThemedTextInput
-                  placeholder={`Leave a comment for ${otherParty?.fullName ?? 'them'} (optional)`}
-                  value={comment}
-                  onChangeText={setComment}
-                  style={styles.commentInput}
-                  multiline
-                />
-                {(reviewError ?? (createReviewMutation.isError ? getErrorMessage(createReviewMutation.error) : null)) && (
-                  <ThemedText type="small" themeColor="danger" style={styles.error}>
-                    {reviewError ?? getErrorMessage(createReviewMutation.error)}
-                  </ThemedText>
-                )}
-                <Pressable
-                  onPress={handleSubmitReview}
-                  disabled={createReviewMutation.isPending}
-                  style={styles.standaloneButton}
+            <View className="flex-row items-center justify-between">
+              <View
+                style={{
+                  backgroundColor: `${PAYMENT_COLOR[booking.paymentStatus]}1F`,
+                }}
+                className="self-start rounded-full px-3 py-1.5"
+              >
+                <Text
+                  style={{ color: PAYMENT_COLOR[booking.paymentStatus] }}
+                  className="text-[12px] font-bold"
                 >
-                  <ThemedView type="backgroundElement" style={styles.submitButton}>
-                    <ThemedText type="smallBold">
-                      {createReviewMutation.isPending ? 'Submitting...' : 'Submit review'}
-                    </ThemedText>
-                  </ThemedView>
-                </Pressable>
-              </>
-            )}
-          </ThemedView>
-        )}
+                  {PAYMENT_LABEL[booking.paymentStatus]}
+                </Text>
+              </View>
+              {canPayNow ? (
+                <Text className="text-[12px] text-[#817F80]">
+                  Paystack secure checkout
+                </Text>
+              ) : null}
+            </View>
+          </View>
+
+          <View className="mt-5 flex-row gap-3">
+            {canPayNow ? (
+              <View className="flex-1">
+                <Button
+                  label={
+                    initiatePaymentMutation.isPending
+                      ? 'Opening checkout…'
+                      : isProcessingPayment
+                        ? 'Checking payment…'
+                        : 'Pay now'
+                  }
+                  onPress={handlePayNow}
+                  disabled={
+                    initiatePaymentMutation.isPending || isProcessingPayment
+                  }
+                />
+              </View>
+            ) : null}
+
+            {CHATTABLE_STATUSES.includes(booking.status) ? (
+              <View className="flex-1">
+                <Button
+                  variant="social"
+                  label="Message"
+                  leftIcon={
+                    <Ionicons
+                      name="chatbubble-outline"
+                      size={18}
+                      color="#26242A"
+                    />
+                  }
+                  onPress={() =>
+                    router.push({
+                      pathname: '/chats/[id]',
+                      params: { id: booking.id },
+                    })
+                  }
+                />
+              </View>
+            ) : null}
+          </View>
+
+          {role === 'provider' && booking.status === 'pending' ? (
+            <View className="mt-3 flex-row gap-3">
+              <View className="flex-1">
+                <Button
+                  label={confirmMutation.isPending ? 'Confirming…' : 'Confirm'}
+                  onPress={() =>
+                    confirmMutation.mutate(booking.id, {
+                      onError: onMutationError,
+                    })
+                  }
+                  disabled={
+                    confirmMutation.isPending || declineMutation.isPending
+                  }
+                />
+              </View>
+              <View className="flex-1">
+                <Button
+                  variant="social"
+                  label={declineMutation.isPending ? 'Declining…' : 'Decline'}
+                  onPress={() =>
+                    declineMutation.mutate(booking.id, {
+                      onError: onMutationError,
+                    })
+                  }
+                  disabled={
+                    confirmMutation.isPending || declineMutation.isPending
+                  }
+                />
+              </View>
+            </View>
+          ) : null}
+
+          {role === 'provider' && booking.status === 'confirmed' ? (
+            <View className="mt-3 flex-row gap-3">
+              <View className="flex-1">
+                <Button
+                  label={
+                    completeMutation.isPending ? 'Completing…' : 'Mark complete'
+                  }
+                  onPress={() =>
+                    completeMutation.mutate(booking.id, {
+                      onError: onMutationError,
+                    })
+                  }
+                  disabled={
+                    completeMutation.isPending || cancelMutation.isPending
+                  }
+                />
+              </View>
+              <View className="flex-1">
+                <Button
+                  variant="social"
+                  label={cancelMutation.isPending ? 'Cancelling…' : 'Cancel'}
+                  onPress={() =>
+                    cancelMutation.mutate(booking.id, {
+                      onError: onMutationError,
+                    })
+                  }
+                  disabled={
+                    completeMutation.isPending || cancelMutation.isPending
+                  }
+                />
+              </View>
+            </View>
+          ) : null}
+
+          {role === 'customer' &&
+          (booking.status === 'pending' || booking.status === 'confirmed') ? (
+            <View className="mt-3">
+              <Button
+                variant="social"
+                label={
+                  cancelMutation.isPending ? 'Cancelling…' : 'Cancel booking'
+                }
+                onPress={() =>
+                  cancelMutation.mutate(booking.id, {
+                    onError: onMutationError,
+                  })
+                }
+                disabled={cancelMutation.isPending}
+              />
+            </View>
+          ) : null}
+
+          {booking.status === 'completed' ? (
+            <View className="mt-7 gap-3">
+              <Text className="font-serif-bold text-[18px] text-[#26242A]">
+                After completion
+              </Text>
+              <Text className="text-[14px] text-[#817F80]">
+                Leave a mutual review.
+              </Text>
+
+              {theirReview ? (
+                <View className="gap-1 rounded-[20px] border border-[#ECE7E0] bg-white p-4">
+                  <Text className="text-[13px] text-[#817F80]">
+                    What {otherParty?.fullName} said:
+                  </Text>
+                  <Text className="text-[16px] text-[#E0A800]">
+                    {'★'.repeat(theirReview.rating)}
+                    {'☆'.repeat(5 - theirReview.rating)}
+                  </Text>
+                  {theirReview.comment ? (
+                    <Text className="text-[14px] text-[#26242A]">
+                      {theirReview.comment}
+                    </Text>
+                  ) : null}
+                </View>
+              ) : null}
+
+              {myReview ? (
+                <View className="gap-1 rounded-[20px] border border-[#ECE7E0] bg-white p-4">
+                  <Text className="text-[13px] text-[#817F80]">
+                    Your review:
+                  </Text>
+                  <Text className="text-[16px] text-[#E0A800]">
+                    {'★'.repeat(myReview.rating)}
+                    {'☆'.repeat(5 - myReview.rating)}
+                  </Text>
+                  {myReview.comment ? (
+                    <Text className="text-[14px] text-[#26242A]">
+                      {myReview.comment}
+                    </Text>
+                  ) : null}
+                </View>
+              ) : (
+                <View className="gap-3 rounded-[20px] border border-[#ECE7E0] bg-white p-4">
+                  <View className="flex-row gap-1">
+                    {[1, 2, 3, 4, 5].map((value) => (
+                      <Pressable
+                        key={value}
+                        onPress={() => setRating(value)}
+                        hitSlop={4}
+                      >
+                        <Text className="text-[26px] text-[#E0A800]">
+                          {value <= rating ? '★' : '☆'}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                  <TextInput
+                    placeholder="What stood out about the service?"
+                    placeholderTextColor="#A8A39B"
+                    value={comment}
+                    onChangeText={(text) => {
+                      setComment(text);
+                      if (commentError) setCommentError(false);
+                    }}
+                    multiline
+                    className={`min-h-[70px] rounded-[14px] border px-4 py-3 text-[15px] text-[#26242A] ${
+                      commentError ? 'border-[#E5484D]' : 'border-[#ECE7E0]'
+                    }`}
+                    style={{ textAlignVertical: 'top' }}
+                  />
+                  <Button
+                    label={
+                      createReviewMutation.isPending
+                        ? 'Submitting…'
+                        : 'Submit review'
+                    }
+                    onPress={handleSubmitReview}
+                    disabled={createReviewMutation.isPending}
+                  />
+                </View>
+              )}
+            </View>
+          ) : null}
+        </ScrollView>
       </SafeAreaView>
-    </ThemedView>
+    </View>
   );
 }
