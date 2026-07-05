@@ -2,6 +2,7 @@ import { useMutation } from '@tanstack/react-query';
 
 import { register } from '@/services/auth';
 import { useAuthStore } from '@/store/auth';
+import { useLocationStore } from '@/store/location';
 import type { RegisterInput } from '@/validations/auth';
 
 export function useRegister() {
@@ -12,6 +13,9 @@ export function useRegister() {
     onSuccess: (response) => {
       if (response.data) {
         setAuth(response.data.accessToken, response.data.role);
+        if (response.data.role === 'customer') {
+          useLocationStore.getState().requestLocation();
+        }
       }
     },
   });
