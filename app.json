@@ -8,13 +8,12 @@
     "scheme": "sliik",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "bundleIdentifier": "com.sliik.app",
-      "icon": "./assets/expo.icon"
+      "bundleIdentifier": "com.sliik.app"
     },
     "android": {
       "package": "com.sliik.app",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#4B2E46",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -23,6 +22,7 @@
     },
     "web": {
       "output": "static",
+      "bundler": "metro",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
@@ -30,9 +30,13 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#0F0B08",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "resizeMode": "cover",
+          "dark": {
+            "backgroundColor": "#0F0B08",
+            "image": "./assets/images/splash-icon-dark.png"
+          }
         }
       ],
       [

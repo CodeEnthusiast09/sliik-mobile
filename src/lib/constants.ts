@@ -15,7 +15,7 @@ export const Colors = {
     backgroundSelected: '#E0E1E6',
     textSecondary: '#60646C',
     border: '#8888884D',
-    tint: '#3c87f7',
+    tint: '#4B2E46',
     danger: '#e5484d',
     warning: '#e0a800',
     success: '#2f9e44',
@@ -27,7 +27,7 @@ export const Colors = {
     backgroundSelected: '#2E3135',
     textSecondary: '#B0B4BA',
     border: '#FFFFFF33',
-    tint: '#3c87f7',
+    tint: '#C79BB2',
     danger: '#e5484d',
     warning: '#e0a800',
     success: '#2f9e44',
@@ -35,6 +35,26 @@ export const Colors = {
 } as const;
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
+
+/**
+ * Fixed brand palette. Unlike `Colors` (which flips per theme), these stay
+ * constant so brand surfaces (logo, filled buttons, splash) read the same in
+ * light and dark mode. Sampled from the Sliik logo.
+ */
+export const Brand = {
+  plum: '#4B2E46',
+  plumPressed: '#3C2438',
+  plumLight: '#C79BB2',
+  cream: '#F7EFE4',
+  charcoal: '#202124',
+} as const;
+
+/** Fraunces display serif weights (loaded via @expo-google-fonts/fraunces). */
+export const DisplayFont = {
+  regular: 'Fraunces_400Regular',
+  semibold: 'Fraunces_600SemiBold',
+  bold: 'Fraunces_700Bold',
+} as const;
 
 export const Fonts = Platform.select({
   ios: {

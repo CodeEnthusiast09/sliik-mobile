@@ -2,10 +2,10 @@ import { z } from 'zod';
 
 export const registerSchema = z
   .object({
-    email: z.email(),
-    password: z.string().min(8),
+    email: z.email('Enter a valid email address'),
+    password: z.string().min(8, 'Password must be at least 8 characters'),
     role: z.enum(['customer', 'provider']),
-    fullName: z.string().min(1),
+    fullName: z.string().min(1, 'Enter your full name'),
     tradeType: z.string().min(1).optional(),
   })
   .superRefine((data, ctx) => {
@@ -21,8 +21,14 @@ export const registerSchema = z
 export type RegisterInput = z.infer<typeof registerSchema>;
 
 export const loginSchema = z.object({
-  email: z.email(),
-  password: z.string().min(1),
+  email: z.email('Enter a valid email address'),
+  password: z.string().min(1, 'Enter your password'),
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;
+
+export const forgotPasswordSchema = z.object({
+  email: z.email('Enter a valid email address'),
+});
+
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
