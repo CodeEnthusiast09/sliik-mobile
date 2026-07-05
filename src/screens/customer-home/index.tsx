@@ -186,6 +186,7 @@ export function CustomerHomeScreen() {
               <ErrorState message={getErrorMessage(error)} onRetry={refetch} />
             ) : (
               <FlatList
+                showsVerticalScrollIndicator={false}
                 data={displayProviders}
                 keyExtractor={(provider) => provider.id}
                 contentContainerClassName="gap-3 pb-32"

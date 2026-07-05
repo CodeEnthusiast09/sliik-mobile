@@ -14,7 +14,14 @@ import { styles } from './index.styles';
 
 export function ProviderServicesScreen() {
   const router = useRouter();
-  const { data: services, isLoading, isError, error, isRefetching, refetch } = useServices();
+  const {
+    data: services,
+    isLoading,
+    isError,
+    error,
+    isRefetching,
+    refetch,
+  } = useServices();
 
   return (
     <ThemedView style={styles.container}>
@@ -34,15 +41,23 @@ export function ProviderServicesScreen() {
           <ErrorState message={getErrorMessage(error)} onRetry={refetch} />
         ) : (
           <FlatList
+            showsVerticalScrollIndicator={false}
             data={services}
             keyExtractor={(service) => service.id}
             contentContainerStyle={styles.listContent}
             refreshing={isRefetching}
             onRefresh={refetch}
-            ListEmptyComponent={<EmptyState message="No services yet. Add one to let customers book you." />}
+            ListEmptyComponent={
+              <EmptyState message="No services yet. Add one to let customers book you." />
+            }
             renderItem={({ item }) => (
               <Pressable
-                onPress={() => router.push({ pathname: '/services/[id]', params: { id: item.id } })}
+                onPress={() =>
+                  router.push({
+                    pathname: '/services/[id]',
+                    params: { id: item.id },
+                  })
+                }
               >
                 <ThemedView type="backgroundElement" style={styles.serviceRow}>
                   <ThemedText type="default">{item.name}</ThemedText>

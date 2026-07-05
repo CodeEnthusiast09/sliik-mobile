@@ -21,7 +21,14 @@ function otherParty(item: ChatConversationSummary, role: string | null) {
 export function ChatsListScreen() {
   const router = useRouter();
   const role = useAuthStore((state) => state.role);
-  const { data: conversations, isLoading, isError, error, isRefetching, refetch } = useMyConversations();
+  const {
+    data: conversations,
+    isLoading,
+    isError,
+    error,
+    isRefetching,
+    refetch,
+  } = useMyConversations();
 
   return (
     <ThemedView style={styles.container}>
@@ -36,6 +43,7 @@ export function ChatsListScreen() {
           <ErrorState message={getErrorMessage(error)} onRetry={refetch} />
         ) : (
           <FlatList
+            showsVerticalScrollIndicator={false}
             data={conversations}
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.listContent}
@@ -47,11 +55,19 @@ export function ChatsListScreen() {
             renderItem={({ item }) => {
               const other = otherParty(item, role);
               const lastMessage = item.conversation.messages[0];
-              const isUnread = !!lastMessage && lastMessage.senderId === other?.userId && lastMessage.readAt === null;
+              const isUnread =
+                !!lastMessage &&
+                lastMessage.senderId === other?.userId &&
+                lastMessage.readAt === null;
 
               return (
                 <Pressable
-                  onPress={() => router.push({ pathname: '/chats/[id]', params: { id: item.id } })}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/chats/[id]',
+                      params: { id: item.id },
+                    })
+                  }
                 >
                   <ThemedView type="backgroundElement" style={styles.row}>
                     <ThemedText type={isUnread ? 'smallBold' : 'default'}>

@@ -7,7 +7,11 @@ import { ErrorState } from '@/components/error-state';
 import { ListSkeleton } from '@/components/skeleton';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { useMarkAllAsRead, useMarkAsRead, useNotifications } from '@/hooks/services/notifications';
+import {
+  useMarkAllAsRead,
+  useMarkAsRead,
+  useNotifications,
+} from '@/hooks/services/notifications';
 import type { AppNotification } from '@/interfaces/notification';
 import { formatDateTimeLabel, getErrorMessage } from '@/lib/utils';
 
@@ -16,7 +20,10 @@ import { styles } from './index.styles';
 function targetRoute(notification: AppNotification) {
   const data = notification.data;
   if (data?.bookingId) {
-    return { pathname: '/bookings/[id]' as const, params: { id: data.bookingId } };
+    return {
+      pathname: '/bookings/[id]' as const,
+      params: { id: data.bookingId },
+    };
   }
   if (data?.offerId) {
     return { pathname: '/offers/[id]' as const, params: { id: data.offerId } };
@@ -29,7 +36,14 @@ function targetRoute(notification: AppNotification) {
 
 export function NotificationsListScreen() {
   const router = useRouter();
-  const { data: notifications, isLoading, isError, error, refetch, isRefetching } = useNotifications();
+  const {
+    data: notifications,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    isRefetching,
+  } = useNotifications();
   const markAsReadMutation = useMarkAsRead();
   const markAllAsReadMutation = useMarkAllAsRead();
 
@@ -62,6 +76,7 @@ export function NotificationsListScreen() {
           <ErrorState message={getErrorMessage(error)} onRetry={refetch} />
         ) : (
           <FlatList
+            showsVerticalScrollIndicator={false}
             data={notifications}
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.listContent}
@@ -71,7 +86,9 @@ export function NotificationsListScreen() {
             renderItem={({ item }) => (
               <Pressable onPress={() => handlePress(item)}>
                 <ThemedView
-                  type={item.readAt ? 'backgroundElement' : 'backgroundSelected'}
+                  type={
+                    item.readAt ? 'backgroundElement' : 'backgroundSelected'
+                  }
                   style={styles.card}
                 >
                   <ThemedText type="smallBold">{item.title}</ThemedText>

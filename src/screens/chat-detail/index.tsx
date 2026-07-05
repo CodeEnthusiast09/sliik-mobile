@@ -1,6 +1,11 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
-import { FlatList, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
+import {
+  FlatList,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmptyState } from '@/components/empty-state';
@@ -18,7 +23,13 @@ import { useAuthStore } from '@/store/auth';
 
 import { styles } from './index.styles';
 
-function MessageBubble({ message, isMine }: { message: Message; isMine: boolean }) {
+function MessageBubble({
+  message,
+  isMine,
+}: {
+  message: Message;
+  isMine: boolean;
+}) {
   return (
     <ThemedView
       type={isMine ? 'backgroundSelected' : 'backgroundElement'}
@@ -68,7 +79,10 @@ export function ChatDetailScreen() {
     return (
       <ThemedView style={styles.container}>
         <SafeAreaView style={styles.safeArea}>
-          <ErrorState message={getErrorMessage(bookingError)} onRetry={refetchBooking} />
+          <ErrorState
+            message={getErrorMessage(bookingError)}
+            onRetry={refetchBooking}
+          />
         </SafeAreaView>
       </ThemedView>
     );
@@ -85,7 +99,8 @@ export function ChatDetailScreen() {
   }
 
   const otherParty = role === 'customer' ? booking.provider : booking.customer;
-  const myUserId = role === 'customer' ? booking.customer?.userId : booking.provider?.userId;
+  const myUserId =
+    role === 'customer' ? booking.customer?.userId : booking.provider?.userId;
 
   return (
     <ThemedView style={styles.container}>
@@ -106,17 +121,28 @@ export function ChatDetailScreen() {
           {isLoadingMessages ? (
             <ListSkeleton rows={4} rowHeight={48} />
           ) : isMessagesError ? (
-            <ErrorState message={getErrorMessage(messagesError)} onRetry={refetchMessages} />
+            <ErrorState
+              message={getErrorMessage(messagesError)}
+              onRetry={refetchMessages}
+            />
           ) : (
             <FlatList
+              showsVerticalScrollIndicator={false}
               ref={listRef}
               data={messages}
               keyExtractor={(message) => message.id}
               contentContainerStyle={styles.listContent}
-              onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
-              ListEmptyComponent={<EmptyState message="No messages yet. Say hello!" />}
+              onContentSizeChange={() =>
+                listRef.current?.scrollToEnd({ animated: true })
+              }
+              ListEmptyComponent={
+                <EmptyState message="No messages yet. Say hello!" />
+              }
               renderItem={({ item }) => (
-                <MessageBubble message={item} isMine={item.senderId === myUserId} />
+                <MessageBubble
+                  message={item}
+                  isMine={item.senderId === myUserId}
+                />
               )}
             />
           )}

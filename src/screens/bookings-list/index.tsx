@@ -50,6 +50,7 @@ export function BookingsListScreen() {
             <ErrorState message={getErrorMessage(error)} onRetry={refetch} />
           ) : (
             <FlatList
+              showsVerticalScrollIndicator={false}
               data={bookings}
               keyExtractor={(booking) => booking.id}
               contentContainerClassName="gap-3 pt-4 pb-32"

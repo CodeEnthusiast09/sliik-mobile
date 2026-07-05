@@ -8,14 +8,25 @@ import { ErrorState } from '@/components/error-state';
 import { ListSkeleton } from '@/components/skeleton';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { useAddPortfolioItem, useDeletePortfolioItem, usePortfolio } from '@/hooks/services/portfolio';
+import {
+  useAddPortfolioItem,
+  useDeletePortfolioItem,
+  usePortfolio,
+} from '@/hooks/services/portfolio';
 import { useUploadImage } from '@/hooks/services/uploads';
 import { getErrorMessage } from '@/lib/utils';
 
 import { styles } from './index.styles';
 
 export function ProviderPortfolioScreen() {
-  const { data: portfolio, isLoading, isError, error, isRefetching, refetch } = usePortfolio();
+  const {
+    data: portfolio,
+    isLoading,
+    isError,
+    error,
+    isRefetching,
+    refetch,
+  } = usePortfolio();
   const uploadImageMutation = useUploadImage();
   const addPortfolioItemMutation = useAddPortfolioItem();
   const deletePortfolioItemMutation = useDeletePortfolioItem();
@@ -30,7 +41,9 @@ export function ProviderPortfolioScreen() {
     });
     if (result.canceled) return;
 
-    const uploadResponse = await uploadImageMutation.mutateAsync(result.assets[0]);
+    const uploadResponse = await uploadImageMutation.mutateAsync(
+      result.assets[0],
+    );
     if (uploadResponse.data) {
       addPortfolioItemMutation.mutate({ imageUrl: uploadResponse.data.url });
     }
@@ -56,7 +69,8 @@ export function ProviderPortfolioScreen() {
     ]);
   }
 
-  const isAdding = uploadImageMutation.isPending || addPortfolioItemMutation.isPending;
+  const isAdding =
+    uploadImageMutation.isPending || addPortfolioItemMutation.isPending;
   const addError = uploadImageMutation.isError
     ? getErrorMessage(uploadImageMutation.error)
     : addPortfolioItemMutation.isError
@@ -70,7 +84,9 @@ export function ProviderPortfolioScreen() {
           <ThemedText type="title">Portfolio</ThemedText>
           <Pressable onPress={handleAddPhoto} disabled={isAdding}>
             <ThemedView type="backgroundElement" style={styles.addButton}>
-              <ThemedText type="smallBold">{isAdding ? 'Adding...' : '+ Add'}</ThemedText>
+              <ThemedText type="smallBold">
+                {isAdding ? 'Adding...' : '+ Add'}
+              </ThemedText>
             </ThemedView>
           </Pressable>
         </ThemedView>
@@ -87,6 +103,7 @@ export function ProviderPortfolioScreen() {
           <ErrorState message={getErrorMessage(error)} onRetry={refetch} />
         ) : (
           <FlatList
+            showsVerticalScrollIndicator={false}
             data={portfolio}
             keyExtractor={(item) => item.id}
             numColumns={2}
@@ -98,8 +115,14 @@ export function ProviderPortfolioScreen() {
               <EmptyState message="No portfolio photos yet. Add some to showcase your work." />
             }
             renderItem={({ item }) => (
-              <Pressable onPress={() => handleRemove(item.id)} style={styles.gridItem}>
-                <Image source={{ uri: item.imageUrl }} style={styles.gridImage} />
+              <Pressable
+                onPress={() => handleRemove(item.id)}
+                style={styles.gridItem}
+              >
+                <Image
+                  source={{ uri: item.imageUrl }}
+                  style={styles.gridImage}
+                />
                 <ThemedView type="backgroundElement" style={styles.deleteBadge}>
                   <ThemedText type="small">Remove</ThemedText>
                 </ThemedView>

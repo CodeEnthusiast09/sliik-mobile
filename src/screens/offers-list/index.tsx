@@ -55,6 +55,7 @@ function CustomerOffersList() {
           <ErrorState message={getErrorMessage(error)} onRetry={refetch} />
         ) : (
           <FlatList
+            showsVerticalScrollIndicator={false}
             data={offers}
             keyExtractor={(offer) => offer.id}
             contentContainerStyle={styles.listContent}
@@ -139,6 +140,7 @@ function ProviderOffersFeed() {
           <ErrorState message={getErrorMessage(error)} onRetry={refetch} />
         ) : (
           <FlatList
+            showsVerticalScrollIndicator={false}
             data={offers}
             keyExtractor={(offer) => offer.id}
             contentContainerStyle={styles.listContent}

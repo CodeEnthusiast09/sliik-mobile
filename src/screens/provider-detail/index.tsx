@@ -18,8 +18,16 @@ export function ProviderDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
 
-  const { data: provider, isLoading, isError, error, refetch } = usePublicProviderProfile(id);
-  const { data: userReviews, isLoading: isLoadingReviews } = useReviewsForUser(provider?.userId);
+  const {
+    data: provider,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = usePublicProviderProfile(id);
+  const { data: userReviews, isLoading: isLoadingReviews } = useReviewsForUser(
+    provider?.userId,
+  );
 
   if (isError) {
     return (
@@ -54,9 +62,14 @@ export function ProviderDetailScreen() {
           <ThemedView style={styles.header}>
             <ThemedView style={styles.avatar}>
               {provider.avatarUrl ? (
-                <Image source={{ uri: provider.avatarUrl }} style={styles.avatarImage} />
+                <Image
+                  source={{ uri: provider.avatarUrl }}
+                  style={styles.avatarImage}
+                />
               ) : (
-                <ThemedText type="subtitle">{provider.fullName.charAt(0).toUpperCase()}</ThemedText>
+                <ThemedText type="subtitle">
+                  {provider.fullName.charAt(0).toUpperCase()}
+                </ThemedText>
               )}
             </ThemedView>
             <ThemedText type="title" style={styles.name}>
@@ -73,7 +86,8 @@ export function ProviderDetailScreen() {
             </ThemedText>
             {provider.yearsExperience > 0 && (
               <ThemedText type="small" themeColor="textSecondary">
-                {provider.yearsExperience} year{provider.yearsExperience === 1 ? '' : 's'} of experience
+                {provider.yearsExperience} year
+                {provider.yearsExperience === 1 ? '' : 's'} of experience
               </ThemedText>
             )}
           </ThemedView>
@@ -126,12 +140,21 @@ export function ProviderDetailScreen() {
               {provider.deals.map((deal) => (
                 <Pressable
                   key={deal.id}
-                  onPress={() => router.push({ pathname: '/deals/[id]', params: { id: deal.id } })}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/deals/[id]',
+                      params: { id: deal.id },
+                    })
+                  }
                 >
-                  <ThemedView type="backgroundElement" style={styles.serviceRow}>
+                  <ThemedView
+                    type="backgroundElement"
+                    style={styles.serviceRow}
+                  >
                     <ThemedText type="default">{deal.title}</ThemedText>
                     <ThemedText type="small" themeColor="textSecondary">
-                      ₦{deal.dealPrice} (was ₦{deal.originalPrice}) · {deal.slotsRemaining} slot
+                      ₦{deal.dealPrice} (was ₦{deal.originalPrice}) ·{' '}
+                      {deal.slotsRemaining} slot
                       {deal.slotsRemaining === 1 ? '' : 's'} left
                     </ThemedText>
                     <ThemedText type="link">View deal</ThemedText>
@@ -146,6 +169,7 @@ export function ProviderDetailScreen() {
           </ThemedText>
           {provider.portfolio?.length ? (
             <FlatList
+              showsVerticalScrollIndicator={false}
               data={provider.portfolio}
               keyExtractor={(item) => item.id}
               numColumns={2}
@@ -153,7 +177,10 @@ export function ProviderDetailScreen() {
               scrollEnabled={false}
               renderItem={({ item }) => (
                 <ThemedView style={styles.gridItem}>
-                  <Image source={{ uri: item.imageUrl }} style={styles.gridImage} />
+                  <Image
+                    source={{ uri: item.imageUrl }}
+                    style={styles.gridImage}
+                  />
                 </ThemedView>
               )}
             />

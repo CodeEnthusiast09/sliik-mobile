@@ -10,7 +10,11 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedTextInput } from '@/components/themed-text-input';
 import { ThemedView } from '@/components/themed-view';
 import { useTheme } from '@/hooks/common/use-theme';
-import { useBanks, useCreatePayoutAccount, usePayoutAccount } from '@/hooks/services/payouts';
+import {
+  useBanks,
+  useCreatePayoutAccount,
+  usePayoutAccount,
+} from '@/hooks/services/payouts';
 import type { Bank } from '@/interfaces/provider';
 import { getErrorMessage } from '@/lib/utils';
 import { createPayoutAccountSchema } from '@/validations/payout';
@@ -45,7 +49,9 @@ export function ProviderPayoutScreen() {
   const filteredBanks = useMemo(() => {
     if (!banks) return [];
     if (!search) return banks;
-    return banks.filter((bank) => bank.name.toLowerCase().includes(search.toLowerCase()));
+    return banks.filter((bank) =>
+      bank.name.toLowerCase().includes(search.toLowerCase()),
+    );
   }, [banks, search]);
 
   function handleSubmit() {
@@ -74,7 +80,10 @@ export function ProviderPayoutScreen() {
     return (
       <ThemedView style={styles.container}>
         <SafeAreaView style={styles.safeArea}>
-          <ErrorState message={getErrorMessage(accountError)} onRetry={refetchAccount} />
+          <ErrorState
+            message={getErrorMessage(accountError)}
+            onRetry={refetchAccount}
+          />
         </SafeAreaView>
       </ThemedView>
     );
@@ -113,12 +122,19 @@ export function ProviderPayoutScreen() {
           </ThemedView>
         ) : (
           <>
-            <ThemedText type="small" themeColor="textSecondary" style={styles.hint}>
+            <ThemedText
+              type="small"
+              themeColor="textSecondary"
+              style={styles.hint}
+            >
               Set up your payout account to start receiving bookings.
             </ThemedText>
 
             {selectedBank ? (
-              <Pressable onPress={() => setSelectedBank(null)} style={styles.selectedBank}>
+              <Pressable
+                onPress={() => setSelectedBank(null)}
+                style={styles.selectedBank}
+              >
                 <ThemedView type="backgroundElement" style={styles.rowContent}>
                   <ThemedText type="default">{selectedBank.name}</ThemedText>
                   <ThemedText type="small" themeColor="textSecondary">
@@ -137,17 +153,26 @@ export function ProviderPayoutScreen() {
                 {isLoadingBanks ? (
                   <ActivityIndicator />
                 ) : isBanksError ? (
-                  <ErrorState message={getErrorMessage(banksError)} onRetry={refetchBanks} />
+                  <ErrorState
+                    message={getErrorMessage(banksError)}
+                    onRetry={refetchBanks}
+                  />
                 ) : (
                   <FlatList
+                    showsVerticalScrollIndicator={false}
                     data={filteredBanks}
                     keyExtractor={(bank) => `${bank.code}-${bank.name}`}
                     style={styles.bankList}
-                    ListEmptyComponent={<EmptyState message="No banks found." />}
+                    ListEmptyComponent={
+                      <EmptyState message="No banks found." />
+                    }
                     renderItem={({ item }) => (
                       <Pressable
                         onPress={() => setSelectedBank(item)}
-                        style={[styles.bankRow, { borderBottomColor: theme.border }]}
+                        style={[
+                          styles.bankRow,
+                          { borderBottomColor: theme.border },
+                        ]}
                       >
                         <ThemedText type="default">{item.name}</ThemedText>
                       </Pressable>
@@ -174,10 +199,18 @@ export function ProviderPayoutScreen() {
             )}
 
             {selectedBank && (
-              <Pressable onPress={handleSubmit} disabled={createPayoutAccountMutation.isPending}>
-                <ThemedView type="backgroundElement" style={styles.submitButton}>
+              <Pressable
+                onPress={handleSubmit}
+                disabled={createPayoutAccountMutation.isPending}
+              >
+                <ThemedView
+                  type="backgroundElement"
+                  style={styles.submitButton}
+                >
                   <ThemedText type="smallBold">
-                    {createPayoutAccountMutation.isPending ? 'Setting up...' : 'Set up payouts'}
+                    {createPayoutAccountMutation.isPending
+                      ? 'Setting up...'
+                      : 'Set up payouts'}
                   </ThemedText>
                 </ThemedView>
               </Pressable>

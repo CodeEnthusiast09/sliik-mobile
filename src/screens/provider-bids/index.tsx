@@ -16,7 +16,14 @@ import { styles } from './index.styles';
 export function ProviderBidsScreen() {
   const router = useRouter();
   const theme = useTheme();
-  const { data: responses, isLoading, isError, error, isRefetching, refetch } = useMyResponses();
+  const {
+    data: responses,
+    isLoading,
+    isError,
+    error,
+    isRefetching,
+    refetch,
+  } = useMyResponses();
 
   return (
     <ThemedView style={styles.container}>
@@ -35,21 +42,33 @@ export function ProviderBidsScreen() {
           <ErrorState message={getErrorMessage(error)} onRetry={refetch} />
         ) : (
           <FlatList
+            showsVerticalScrollIndicator={false}
             data={responses}
             keyExtractor={(response) => response.id}
             contentContainerStyle={styles.listContent}
             refreshing={isRefetching}
             onRefresh={refetch}
-            ListEmptyComponent={<EmptyState message="No bids yet. Browse open offers to submit one." />}
+            ListEmptyComponent={
+              <EmptyState message="No bids yet. Browse open offers to submit one." />
+            }
             renderItem={({ item }) => (
               <Pressable
-                onPress={() => router.push({ pathname: '/offers/[id]', params: { id: item.offerId } })}
+                onPress={() =>
+                  router.push({
+                    pathname: '/offers/[id]',
+                    params: { id: item.offerId },
+                  })
+                }
               >
                 <ThemedView type="backgroundElement" style={styles.row}>
-                  <ThemedText type="default">{item.offer?.serviceType ?? 'Offer'}</ThemedText>
+                  <ThemedText type="default">
+                    {item.offer?.serviceType ?? 'Offer'}
+                  </ThemedText>
                   <ThemedText type="small" themeColor="textSecondary">
                     Your price: ₦{item.offeredPrice}
-                    {item.offer ? ` · Preferred: ${formatDateTimeLabel(item.offer.preferredFrom)}` : ''}
+                    {item.offer
+                      ? ` · Preferred: ${formatDateTimeLabel(item.offer.preferredFrom)}`
+                      : ''}
                   </ThemedText>
                   <ThemedText
                     type="smallBold"
