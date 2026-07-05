@@ -9,9 +9,10 @@ import {
 import { QueryClientProvider } from '@tanstack/react-query';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useColorScheme } from 'react-native';
 
+import { AnimatedSplashScreen } from '@/components/animated-splash';
 import { ToastHost } from '@/components/toast';
 import { useNotificationDeeplink } from '@/hooks/common/use-notification-deeplink';
 import { queryClient } from '@/lib/query-client';
@@ -28,6 +29,7 @@ export default function RootLayout() {
     Fraunces_600SemiBold,
     Fraunces_700Bold,
   });
+  const [splashAnimationDone, setSplashAnimationDone] = useState(false);
 
   useNotificationDeeplink();
 
@@ -39,8 +41,12 @@ export default function RootLayout() {
     }
   }, [isReady]);
 
-  if (!isReady) {
-    return null;
+  if (!isReady || !splashAnimationDone) {
+    return (
+      <AnimatedSplashScreen
+        onAnimationEnd={() => setSplashAnimationDone(true)}
+      />
+    );
   }
 
   return (
