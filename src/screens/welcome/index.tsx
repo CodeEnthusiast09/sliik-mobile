@@ -33,8 +33,8 @@ export function WelcomeScreen() {
             Book beauty & grooming, your way
           </Text>
           <Text className="mt-3 text-[14px] leading-[20px] text-white/80">
-            Discover top professionals near you, book instantly or post an
-            offer.
+            Discover top professionals near you, or grow your business as a
+            provider.
           </Text>
 
           <View className="mt-6 gap-3">
