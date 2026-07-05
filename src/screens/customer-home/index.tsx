@@ -25,9 +25,9 @@ import { useLocationStore } from '@/store/location';
 
 const RATING_OPTIONS: { label: string; value: number | undefined }[] = [
   { label: 'Any rating', value: undefined },
-  { label: '3+', value: 3 },
-  { label: '4+', value: 4 },
-  { label: '4.5+', value: 4.5 },
+  { label: '★ 3.0 & up', value: 3 },
+  { label: '★ 4.0 & up', value: 4 },
+  { label: '★ 4.5 & up', value: 4.5 },
 ];
 
 export function CustomerHomeScreen() {
