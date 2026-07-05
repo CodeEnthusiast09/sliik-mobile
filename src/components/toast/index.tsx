@@ -50,11 +50,21 @@ export function ToastHost() {
 
   if (!message) return null;
 
-  const { background, text } = resolveColors(variant, theme.success, theme.danger, theme.warning);
+  const { background, text } = resolveColors(
+    variant,
+    theme.success,
+    theme.danger,
+    theme.warning,
+  );
 
   return (
-    <View pointerEvents="none" style={[styles.host, { paddingTop: insets.top + Spacing.four }]}>
-      <Animated.View style={[styles.toast, { backgroundColor: background }, animatedStyle]}>
+    <View
+      pointerEvents="none"
+      style={[styles.host, { paddingTop: insets.top + Spacing.six }]}
+    >
+      <Animated.View
+        style={[styles.toast, { backgroundColor: background }, animatedStyle]}
+      >
         <ThemedText type="smallBold" style={{ color: text }}>
           {message}
         </ThemedText>

@@ -127,11 +127,13 @@ export function BookingDetailScreen() {
   if (isError) {
     return (
       <View className="flex-1 bg-[#FBF8F3]">
-        <SafeAreaView className="flex-1 px-6" edges={['top', 'bottom']}>
-          <ErrorState
-            message={getErrorMessage(error)}
-            onRetry={refetchBooking}
-          />
+        <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
+          <View className="flex-1 px-6">
+            <ErrorState
+              message={getErrorMessage(error)}
+              onRetry={refetchBooking}
+            />
+          </View>
         </SafeAreaView>
       </View>
     );
@@ -140,8 +142,10 @@ export function BookingDetailScreen() {
   if (isLoading || !booking) {
     return (
       <View className="flex-1 bg-[#FBF8F3]">
-        <SafeAreaView className="flex-1 px-6" edges={['top', 'bottom']}>
-          <DetailSkeleton />
+        <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
+          <View className="flex-1 px-6">
+            <DetailSkeleton />
+          </View>
         </SafeAreaView>
       </View>
     );
@@ -164,290 +168,312 @@ export function BookingDetailScreen() {
 
   return (
     <View className="flex-1 bg-[#FBF8F3]">
-      <SafeAreaView className="flex-1 px-6" edges={['top', 'bottom']}>
-        <ScreenHeader
-          title="Booking detail"
-          notificationsHref={notificationsHref}
-          onBack={() => router.back()}
-        />
+      <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
+        <View className="flex-1 px-6">
+          <ScreenHeader
+            title="Booking detail"
+            notificationsHref={notificationsHref}
+            onBack={() => router.back()}
+          />
 
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerClassName="pb-8"
-        >
-          <View className="mt-4 flex-row items-center justify-between">
-            <Text className="font-serif-bold text-[28px] leading-[34px] text-[#26242A]">
-              {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-            </Text>
-            <StatusPill status={booking.status} />
-          </View>
-
-          <View className="mt-5 gap-3 rounded-[20px] border border-[#ECE7E0] bg-white p-4">
-            <View className="flex-row items-center gap-3">
-              <Avatar
-                uri={otherParty?.avatarUrl}
-                name={otherParty?.fullName ?? '?'}
-                size={56}
-              />
-              <View className="flex-1">
-                <Text className="font-serif-bold text-[17px] text-[#26242A]">
-                  {booking.service?.name ?? 'Booking'}
-                </Text>
-                <Text className="mt-0.5 text-[13px] text-[#817F80]">
-                  {otherParty?.fullName ??
-                    (role === 'customer' ? 'Provider' : 'Customer')}{' '}
-                  • {formatDateTimeLabel(booking.scheduledAt)}
-                </Text>
-              </View>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerClassName="pb-8"
+          >
+            <View className="mt-4 flex-row items-center justify-between">
+              <Text className="font-serif-bold text-[28px] leading-[34px] text-[#26242A]">
+                {booking.status.charAt(0).toUpperCase() +
+                  booking.status.slice(1)}
+              </Text>
+              <StatusPill status={booking.status} />
             </View>
 
-            {booking.notes ? (
-              <Text className="text-[13px] text-[#817F80]">
-                Notes: {booking.notes}
-              </Text>
-            ) : null}
-
-            <View className="flex-row items-center justify-between border-t border-[#E7E1D9] pt-3">
-              <Text className="text-[15px] font-bold text-[#4A473F]">
-                Total
-              </Text>
-              <Text className="font-serif-bold text-[20px] text-[#4B2E46]">
-                ₦{booking.totalAmount}
-              </Text>
-            </View>
-
-            <View className="flex-row items-center justify-between">
-              <View
-                style={{
-                  backgroundColor: `${PAYMENT_COLOR[booking.paymentStatus]}1F`,
-                }}
-                className="self-start rounded-full px-3 py-1.5"
-              >
-                <Text
-                  style={{ color: PAYMENT_COLOR[booking.paymentStatus] }}
-                  className="text-[12px] font-bold"
-                >
-                  {PAYMENT_LABEL[booking.paymentStatus]}
-                </Text>
+            <View className="mt-5 gap-3 rounded-[20px] border border-[#ECE7E0] bg-white p-4">
+              <View className="flex-row items-center gap-3">
+                <Avatar
+                  uri={otherParty?.avatarUrl}
+                  name={otherParty?.fullName ?? '?'}
+                  size={56}
+                />
+                <View className="flex-1">
+                  <Text className="font-serif-bold text-[17px] text-[#26242A]">
+                    {booking.service?.name ?? 'Booking'}
+                  </Text>
+                  <Text className="mt-0.5 text-[13px] text-[#817F80]">
+                    {otherParty?.fullName ??
+                      (role === 'customer' ? 'Provider' : 'Customer')}{' '}
+                    • {formatDateTimeLabel(booking.scheduledAt)}
+                  </Text>
+                </View>
               </View>
-              {canPayNow ? (
-                <Text className="text-[12px] text-[#817F80]">
-                  Paystack secure checkout
+
+              {booking.notes ? (
+                <Text className="text-[13px] text-[#817F80]">
+                  Notes: {booking.notes}
                 </Text>
               ) : null}
-            </View>
-          </View>
 
-          <View className="mt-5 flex-row gap-3">
-            {canPayNow ? (
-              <View className="flex-1">
-                <Button
-                  label={
-                    initiatePaymentMutation.isPending
-                      ? 'Opening checkout…'
-                      : isProcessingPayment
-                        ? 'Checking payment…'
-                        : 'Pay now'
-                  }
-                  onPress={handlePayNow}
-                  disabled={
-                    initiatePaymentMutation.isPending || isProcessingPayment
-                  }
-                />
+              <View className="flex-row items-center justify-between border-t border-[#E7E1D9] pt-3">
+                <Text className="text-[15px] font-bold text-[#4A473F]">
+                  Total
+                </Text>
+                <Text className="font-serif-bold text-[20px] text-[#4B2E46]">
+                  ₦{booking.totalAmount}
+                </Text>
+              </View>
+
+              <View className="flex-row items-center justify-between">
+                <View
+                  style={{
+                    backgroundColor: `${PAYMENT_COLOR[booking.paymentStatus]}1F`,
+                  }}
+                  className="self-start rounded-full px-3 py-1.5"
+                >
+                  <Text
+                    style={{ color: PAYMENT_COLOR[booking.paymentStatus] }}
+                    className="text-[12px] font-bold"
+                  >
+                    {PAYMENT_LABEL[booking.paymentStatus]}
+                  </Text>
+                </View>
+                {canPayNow ? (
+                  <Text className="text-[12px] text-[#817F80]">
+                    Paystack secure checkout
+                  </Text>
+                ) : null}
+              </View>
+            </View>
+
+            <View className="mt-5 flex-row gap-3">
+              {canPayNow ? (
+                <View className="flex-1">
+                  <Button
+                    label={
+                      initiatePaymentMutation.isPending
+                        ? 'Opening checkout…'
+                        : isProcessingPayment
+                          ? 'Checking payment…'
+                          : 'Pay now'
+                    }
+                    onPress={handlePayNow}
+                    disabled={
+                      initiatePaymentMutation.isPending || isProcessingPayment
+                    }
+                  />
+                </View>
+              ) : null}
+
+              {CHATTABLE_STATUSES.includes(booking.status) ? (
+                <View className="flex-1">
+                  <Button
+                    variant="social"
+                    label="Message"
+                    leftIcon={
+                      <Ionicons
+                        name="chatbubble-outline"
+                        size={18}
+                        color="#26242A"
+                      />
+                    }
+                    onPress={() =>
+                      router.push({
+                        pathname: '/chats/[id]',
+                        params: { id: booking.id },
+                      })
+                    }
+                  />
+                </View>
+              ) : null}
+            </View>
+
+            {role === 'provider' && booking.status === 'pending' ? (
+              <View className="mt-3 flex-row gap-3">
+                <View className="flex-1">
+                  <Button
+                    label={
+                      confirmMutation.isPending ? 'Confirming…' : 'Confirm'
+                    }
+                    onPress={() =>
+                      confirmMutation.mutate(booking.id, {
+                        onError: onMutationError,
+                      })
+                    }
+                    disabled={
+                      confirmMutation.isPending || declineMutation.isPending
+                    }
+                  />
+                </View>
+                <View className="flex-1">
+                  <Button
+                    variant="social"
+                    label={declineMutation.isPending ? 'Declining…' : 'Decline'}
+                    onPress={() =>
+                      declineMutation.mutate(booking.id, {
+                        onError: onMutationError,
+                      })
+                    }
+                    disabled={
+                      confirmMutation.isPending || declineMutation.isPending
+                    }
+                  />
+                </View>
               </View>
             ) : null}
 
-            {CHATTABLE_STATUSES.includes(booking.status) ? (
-              <View className="flex-1">
-                <Button
-                  variant="social"
-                  label="Message"
-                  leftIcon={
-                    <Ionicons
-                      name="chatbubble-outline"
-                      size={18}
-                      color="#26242A"
-                    />
-                  }
-                  onPress={() =>
-                    router.push({
-                      pathname: '/chats/[id]',
-                      params: { id: booking.id },
-                    })
-                  }
-                />
+            {role === 'provider' && booking.status === 'confirmed' ? (
+              <View className="mt-3 flex-row gap-3">
+                <View className="flex-1">
+                  <Button
+                    label={
+                      completeMutation.isPending
+                        ? 'Completing…'
+                        : 'Mark complete'
+                    }
+                    onPress={() =>
+                      completeMutation.mutate(booking.id, {
+                        onError: onMutationError,
+                      })
+                    }
+                    disabled={
+                      completeMutation.isPending || cancelMutation.isPending
+                    }
+                  />
+                </View>
+                <View className="flex-1">
+                  <Button
+                    variant="social"
+                    label={cancelMutation.isPending ? 'Cancelling…' : 'Cancel'}
+                    onPress={() =>
+                      cancelMutation.mutate(booking.id, {
+                        onError: onMutationError,
+                      })
+                    }
+                    disabled={
+                      completeMutation.isPending || cancelMutation.isPending
+                    }
+                  />
+                </View>
               </View>
             ) : null}
-          </View>
 
-          {role === 'provider' && booking.status === 'pending' ? (
-            <View className="mt-3 flex-row gap-3">
-              <View className="flex-1">
-                <Button
-                  label={confirmMutation.isPending ? 'Confirming…' : 'Confirm'}
-                  onPress={() =>
-                    confirmMutation.mutate(booking.id, {
-                      onError: onMutationError,
-                    })
-                  }
-                  disabled={
-                    confirmMutation.isPending || declineMutation.isPending
-                  }
-                />
-              </View>
-              <View className="flex-1">
+            {role === 'customer' &&
+            (booking.status === 'pending' || booking.status === 'confirmed') ? (
+              <View className="mt-3">
                 <Button
                   variant="social"
-                  label={declineMutation.isPending ? 'Declining…' : 'Decline'}
-                  onPress={() =>
-                    declineMutation.mutate(booking.id, {
-                      onError: onMutationError,
-                    })
-                  }
-                  disabled={
-                    confirmMutation.isPending || declineMutation.isPending
-                  }
-                />
-              </View>
-            </View>
-          ) : null}
-
-          {role === 'provider' && booking.status === 'confirmed' ? (
-            <View className="mt-3 flex-row gap-3">
-              <View className="flex-1">
-                <Button
                   label={
-                    completeMutation.isPending ? 'Completing…' : 'Mark complete'
+                    cancelMutation.isPending ? 'Cancelling…' : 'Cancel booking'
                   }
-                  onPress={() =>
-                    completeMutation.mutate(booking.id, {
-                      onError: onMutationError,
-                    })
-                  }
-                  disabled={
-                    completeMutation.isPending || cancelMutation.isPending
-                  }
-                />
-              </View>
-              <View className="flex-1">
-                <Button
-                  variant="social"
-                  label={cancelMutation.isPending ? 'Cancelling…' : 'Cancel'}
                   onPress={() =>
                     cancelMutation.mutate(booking.id, {
                       onError: onMutationError,
                     })
                   }
-                  disabled={
-                    completeMutation.isPending || cancelMutation.isPending
-                  }
+                  disabled={cancelMutation.isPending}
                 />
               </View>
-            </View>
-          ) : null}
+            ) : null}
 
-          {role === 'customer' &&
-          (booking.status === 'pending' || booking.status === 'confirmed') ? (
-            <View className="mt-3">
-              <Button
-                variant="social"
-                label={
-                  cancelMutation.isPending ? 'Cancelling…' : 'Cancel booking'
-                }
-                onPress={() =>
-                  cancelMutation.mutate(booking.id, {
-                    onError: onMutationError,
-                  })
-                }
-                disabled={cancelMutation.isPending}
-              />
-            </View>
-          ) : null}
+            {booking.status === 'declined' || booking.status === 'cancelled' ? (
+              <View className="mt-5 items-center gap-2 rounded-[20px] border border-[#ECE7E0] bg-white p-6">
+                <Ionicons
+                  name="close-circle-outline"
+                  size={30}
+                  color="#817F80"
+                />
+                <Text className="text-center text-[14px] text-[#817F80]">
+                  {booking.status === 'declined'
+                    ? 'This booking was declined.'
+                    : 'This booking was cancelled.'}
+                </Text>
+              </View>
+            ) : null}
 
-          {booking.status === 'completed' ? (
-            <View className="mt-7 gap-3">
-              <Text className="font-serif-bold text-[18px] text-[#26242A]">
-                After completion
-              </Text>
-              <Text className="text-[14px] text-[#817F80]">
-                Leave a mutual review.
-              </Text>
+            {booking.status === 'completed' ? (
+              <View className="mt-7 gap-3">
+                <Text className="font-serif-bold text-[18px] text-[#26242A]">
+                  After completion
+                </Text>
+                <Text className="text-[14px] text-[#817F80]">
+                  Leave a mutual review.
+                </Text>
 
-              {theirReview ? (
-                <View className="gap-1 rounded-[20px] border border-[#ECE7E0] bg-white p-4">
-                  <Text className="text-[13px] text-[#817F80]">
-                    What {otherParty?.fullName} said:
-                  </Text>
-                  <Text className="text-[16px] text-[#E0A800]">
-                    {'★'.repeat(theirReview.rating)}
-                    {'☆'.repeat(5 - theirReview.rating)}
-                  </Text>
-                  {theirReview.comment ? (
-                    <Text className="text-[14px] text-[#26242A]">
-                      {theirReview.comment}
+                {theirReview ? (
+                  <View className="gap-1 rounded-[20px] border border-[#ECE7E0] bg-white p-4">
+                    <Text className="text-[13px] text-[#817F80]">
+                      What {otherParty?.fullName} said:
                     </Text>
-                  ) : null}
-                </View>
-              ) : null}
-
-              {myReview ? (
-                <View className="gap-1 rounded-[20px] border border-[#ECE7E0] bg-white p-4">
-                  <Text className="text-[13px] text-[#817F80]">
-                    Your review:
-                  </Text>
-                  <Text className="text-[16px] text-[#E0A800]">
-                    {'★'.repeat(myReview.rating)}
-                    {'☆'.repeat(5 - myReview.rating)}
-                  </Text>
-                  {myReview.comment ? (
-                    <Text className="text-[14px] text-[#26242A]">
-                      {myReview.comment}
+                    <Text className="text-[16px] text-[#E0A800]">
+                      {'★'.repeat(theirReview.rating)}
+                      {'☆'.repeat(5 - theirReview.rating)}
                     </Text>
-                  ) : null}
-                </View>
-              ) : (
-                <View className="gap-3 rounded-[20px] border border-[#ECE7E0] bg-white p-4">
-                  <View className="flex-row gap-1">
-                    {[1, 2, 3, 4, 5].map((value) => (
-                      <Pressable
-                        key={value}
-                        onPress={() => setRating(value)}
-                        hitSlop={4}
-                      >
-                        <Text className="text-[26px] text-[#E0A800]">
-                          {value <= rating ? '★' : '☆'}
-                        </Text>
-                      </Pressable>
-                    ))}
+                    {theirReview.comment ? (
+                      <Text className="text-[14px] text-[#26242A]">
+                        {theirReview.comment}
+                      </Text>
+                    ) : null}
                   </View>
-                  <TextInput
-                    placeholder="What stood out about the service?"
-                    placeholderTextColor="#A8A39B"
-                    value={comment}
-                    onChangeText={(text) => {
-                      setComment(text);
-                      if (commentError) setCommentError(false);
-                    }}
-                    multiline
-                    className={`min-h-[70px] rounded-[14px] border px-4 py-3 text-[15px] text-[#26242A] ${
-                      commentError ? 'border-[#E5484D]' : 'border-[#ECE7E0]'
-                    }`}
-                    style={{ textAlignVertical: 'top' }}
-                  />
-                  <Button
-                    label={
-                      createReviewMutation.isPending
-                        ? 'Submitting…'
-                        : 'Submit review'
-                    }
-                    onPress={handleSubmitReview}
-                    disabled={createReviewMutation.isPending}
-                  />
-                </View>
-              )}
-            </View>
-          ) : null}
-        </ScrollView>
+                ) : null}
+
+                {myReview ? (
+                  <View className="gap-1 rounded-[20px] border border-[#ECE7E0] bg-white p-4">
+                    <Text className="text-[13px] text-[#817F80]">
+                      Your review:
+                    </Text>
+                    <Text className="text-[16px] text-[#E0A800]">
+                      {'★'.repeat(myReview.rating)}
+                      {'☆'.repeat(5 - myReview.rating)}
+                    </Text>
+                    {myReview.comment ? (
+                      <Text className="text-[14px] text-[#26242A]">
+                        {myReview.comment}
+                      </Text>
+                    ) : null}
+                  </View>
+                ) : (
+                  <View className="gap-3 rounded-[20px] border border-[#ECE7E0] bg-white p-4">
+                    <View className="flex-row gap-1">
+                      {[1, 2, 3, 4, 5].map((value) => (
+                        <Pressable
+                          key={value}
+                          onPress={() => setRating(value)}
+                          hitSlop={4}
+                        >
+                          <Text className="text-[26px] text-[#E0A800]">
+                            {value <= rating ? '★' : '☆'}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                    <TextInput
+                      placeholder="What stood out about the service?"
+                      placeholderTextColor="#A8A39B"
+                      value={comment}
+                      onChangeText={(text) => {
+                        setComment(text);
+                        if (commentError) setCommentError(false);
+                      }}
+                      multiline
+                      className={`min-h-[70px] rounded-[14px] border px-4 py-3 text-[15px] text-[#26242A] ${
+                        commentError ? 'border-[#E5484D]' : 'border-[#ECE7E0]'
+                      }`}
+                      style={{ textAlignVertical: 'top' }}
+                    />
+                    <Button
+                      label={
+                        createReviewMutation.isPending
+                          ? 'Submitting…'
+                          : 'Submit review'
+                      }
+                      onPress={handleSubmitReview}
+                      disabled={createReviewMutation.isPending}
+                    />
+                  </View>
+                )}
+              </View>
+            ) : null}
+          </ScrollView>
+        </View>
       </SafeAreaView>
     </View>
   );

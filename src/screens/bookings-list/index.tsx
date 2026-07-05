@@ -34,67 +34,69 @@ export function BookingsListScreen() {
 
   return (
     <View className="flex-1 bg-[#FBF8F3]">
-      <SafeAreaView className="flex-1 px-6" edges={['top', 'bottom']}>
-        <ScreenHeader notificationsHref={notificationsHref} />
+      <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
+        <View className="flex-1 px-6">
+          <ScreenHeader notificationsHref={notificationsHref} />
 
-        <Text className="mt-4 font-serif-bold text-[30px] leading-[36px] text-[#26242A]">
-          Your bookings
-        </Text>
+          <Text className="mt-4 font-serif-bold text-[30px] leading-[36px] text-[#26242A]">
+            Your bookings
+          </Text>
 
-        {isLoading ? (
-          <View className="mt-4">
-            <ListSkeleton />
-          </View>
-        ) : isError ? (
-          <ErrorState message={getErrorMessage(error)} onRetry={refetch} />
-        ) : (
-          <FlatList
-            data={bookings}
-            keyExtractor={(booking) => booking.id}
-            contentContainerClassName="gap-3 pt-4 pb-32"
-            refreshing={isRefetching}
-            onRefresh={refetch}
-            ListEmptyComponent={<EmptyState message="No bookings yet." />}
-            renderItem={({ item }) => {
-              const party = otherParty(item, role);
-              return (
-                <Pressable
-                  onPress={() =>
-                    router.push({
-                      pathname: '/bookings/[id]',
-                      params: { id: item.id },
-                    })
-                  }
-                  className="flex-row items-center gap-3 rounded-[20px] border border-[#ECE7E0] bg-white p-3"
-                >
-                  <Avatar
-                    uri={party?.avatarUrl}
-                    name={party?.fullName ?? '?'}
-                    size={56}
-                  />
+          {isLoading ? (
+            <View className="mt-4">
+              <ListSkeleton />
+            </View>
+          ) : isError ? (
+            <ErrorState message={getErrorMessage(error)} onRetry={refetch} />
+          ) : (
+            <FlatList
+              data={bookings}
+              keyExtractor={(booking) => booking.id}
+              contentContainerClassName="gap-3 pt-4 pb-32"
+              refreshing={isRefetching}
+              onRefresh={refetch}
+              ListEmptyComponent={<EmptyState message="No bookings yet." />}
+              renderItem={({ item }) => {
+                const party = otherParty(item, role);
+                return (
+                  <Pressable
+                    onPress={() =>
+                      router.push({
+                        pathname: '/bookings/[id]',
+                        params: { id: item.id },
+                      })
+                    }
+                    className="flex-row items-center gap-3 rounded-[20px] border border-[#ECE7E0] bg-white p-3"
+                  >
+                    <Avatar
+                      uri={party?.avatarUrl}
+                      name={party?.fullName ?? '?'}
+                      size={56}
+                    />
 
-                  <View className="flex-1 gap-1">
-                    <View className="flex-row items-center justify-between">
-                      <Text className="font-serif-bold text-[16px] text-[#26242A]">
-                        {item.service?.name ?? 'Service'}
-                      </Text>
-                      <StatusPill status={item.status} />
-                    </View>
-                    {party?.fullName ? (
+                    <View className="flex-1 gap-1">
+                      <View className="flex-row items-center justify-between">
+                        <Text className="font-serif-bold text-[16px] text-[#26242A]">
+                          {item.service?.name ?? 'Service'}
+                        </Text>
+                        <StatusPill status={item.status} />
+                      </View>
+                      {party?.fullName ? (
+                        <Text className="text-[13px] text-[#817F80]">
+                          {party.fullName}
+                        </Text>
+                      ) : null}
                       <Text className="text-[13px] text-[#817F80]">
-                        {party.fullName}
+                        {formatDateTimeLabel(item.scheduledAt)} • ₦
+                        {item.totalAmount}
                       </Text>
-                    ) : null}
-                    <Text className="text-[13px] text-[#817F80]">
-                      {formatDateTimeLabel(item.scheduledAt)} • ₦
-                      {item.totalAmount}
-                    </Text>
-                  </View>
-                </Pressable>
-              );
-            }}
-          />
-        )}
+                    </View>
+                  </Pressable>
+                );
+              }}
+            />
+          )}
+        </View>
       </SafeAreaView>
     </View>
   );

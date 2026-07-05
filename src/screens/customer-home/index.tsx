@@ -121,135 +121,139 @@ export function CustomerHomeScreen() {
 
   return (
     <View className="flex-1 bg-[#FBF8F3]">
-      <SafeAreaView className="flex-1 px-6" edges={['top', 'bottom']}>
-        <ScreenHeader notificationsHref="/home/notifications" />
+      <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
+        <View className="flex-1 px-6">
+          <ScreenHeader notificationsHref="/home/notifications" />
 
-        <Text className="mt-4 font-serif-bold text-[30px] leading-[36px] text-[#26242A]">
-          Beauty near you
-        </Text>
+          <Text className="mt-4 font-serif-bold text-[30px] leading-[36px] text-[#26242A]">
+            Beauty near you
+          </Text>
 
-        <View className="mt-5 flex-row items-center gap-3 rounded-2xl border border-[#ECE7E0] bg-white px-4 py-2.5">
-          <Ionicons name="search-outline" size={18} color="#948F86" />
-          <TextInput
-            placeholder="Search by city"
-            placeholderTextColor="#948F86"
-            value={cityInput}
-            onChangeText={setCityInput}
-            onSubmitEditing={() => setAppliedCity(cityInput.trim())}
-            returnKeyType="search"
-            className="flex-1 text-[15px] text-[#26242A]"
-          />
-        </View>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          className="mt-4 h-11 flex-none"
-          contentContainerClassName="items-center gap-2 pr-6"
-        >
-          <Chip
-            label="All"
-            selected={selectedTradeType === null}
-            onPress={() => setSelectedTradeType(null)}
-          />
-          {tradeTypeOptions.map((tradeType) => (
-            <Chip
-              key={tradeType}
-              label={tradeType}
-              selected={selectedTradeType === tradeType}
-              onPress={() => setSelectedTradeType(tradeType)}
+          <View className="mt-5 flex-row items-center gap-3 rounded-2xl border border-[#ECE7E0] bg-white px-4 py-2.5">
+            <Ionicons name="search-outline" size={18} color="#948F86" />
+            <TextInput
+              placeholder="Search by city"
+              placeholderTextColor="#948F86"
+              value={cityInput}
+              onChangeText={setCityInput}
+              onSubmitEditing={() => setAppliedCity(cityInput.trim())}
+              returnKeyType="search"
+              className="flex-1 text-[15px] text-[#26242A]"
             />
-          ))}
-        </ScrollView>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          className="mt-3 h-11 flex-none"
-          contentContainerClassName="items-center gap-2 pr-6"
-        >
-          {RATING_OPTIONS.map((option) => (
-            <Chip
-              key={option.label}
-              label={option.label}
-              selected={minRating === option.value}
-              onPress={() => setMinRating(option.value)}
-            />
-          ))}
-        </ScrollView>
-
-        {isLoading ? (
-          <View className="mt-4">
-            <ListSkeleton />
           </View>
-        ) : isError ? (
-          <ErrorState message={getErrorMessage(error)} onRetry={refetch} />
-        ) : (
-          <FlatList
-            data={displayProviders}
-            keyExtractor={(provider) => provider.id}
-            contentContainerClassName="gap-3 pt-4 pb-32"
-            refreshing={isRefetching}
-            onRefresh={refetch}
-            onEndReached={() => {
-              if (hasNextPage && !isFetchingNextPage) fetchNextPage();
-            }}
-            onEndReachedThreshold={0.5}
-            ListEmptyComponent={
-              <EmptyState message="No providers found. Try a different filter." />
-            }
-            ListFooterComponent={
-              isFetchingNextPage ? <ActivityIndicator className="mt-4" /> : null
-            }
-            renderItem={({ item }) => {
-              const rating = Number(item.avgRating);
-              const distanceLabel = getDistanceLabel(item);
-              return (
-                <Pressable
-                  onPress={() =>
-                    router.push({
-                      pathname: '/home/[id]',
-                      params: { id: item.id },
-                    })
-                  }
-                  className="flex-row items-center gap-3 rounded-[20px] border border-[#ECE7E0] bg-white p-3"
-                >
-                  <Avatar
-                    uri={item.avatarUrl}
-                    name={item.fullName}
-                    size={68}
-                    shape="square"
-                  />
 
-                  <View className="flex-1 gap-1">
-                    <View className="flex-row items-center justify-between">
-                      <Text className="font-serif-bold text-[16px] text-[#26242A]">
-                        {item.fullName}
-                      </Text>
-                      {item.totalReviews > 0 ? (
-                        <View className="rounded-full bg-[#F3F0EB] px-2.5 py-1">
-                          <Text className="text-[12px] font-bold text-[#26242A]">
-                            {rating.toFixed(1)} ★
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            className="mt-4 h-11 flex-none"
+            contentContainerClassName="items-center gap-2 pr-6"
+          >
+            <Chip
+              label="All"
+              selected={selectedTradeType === null}
+              onPress={() => setSelectedTradeType(null)}
+            />
+            {tradeTypeOptions.map((tradeType) => (
+              <Chip
+                key={tradeType}
+                label={tradeType}
+                selected={selectedTradeType === tradeType}
+                onPress={() => setSelectedTradeType(tradeType)}
+              />
+            ))}
+          </ScrollView>
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            className="mt-3 h-11 flex-none"
+            contentContainerClassName="items-center gap-2 pr-6"
+          >
+            {RATING_OPTIONS.map((option) => (
+              <Chip
+                key={option.label}
+                label={option.label}
+                selected={minRating === option.value}
+                onPress={() => setMinRating(option.value)}
+              />
+            ))}
+          </ScrollView>
+
+          <View className="mt-4 flex-1">
+            {isLoading ? (
+              <ListSkeleton />
+            ) : isError ? (
+              <ErrorState message={getErrorMessage(error)} onRetry={refetch} />
+            ) : (
+              <FlatList
+                data={displayProviders}
+                keyExtractor={(provider) => provider.id}
+                contentContainerClassName="gap-3 pb-32"
+                refreshing={isRefetching}
+                onRefresh={refetch}
+                onEndReached={() => {
+                  if (hasNextPage && !isFetchingNextPage) fetchNextPage();
+                }}
+                onEndReachedThreshold={0.5}
+                ListEmptyComponent={
+                  <EmptyState message="No providers found. Try a different filter." />
+                }
+                ListFooterComponent={
+                  isFetchingNextPage ? (
+                    <ActivityIndicator className="mt-4" />
+                  ) : null
+                }
+                renderItem={({ item }) => {
+                  const rating = Number(item.avgRating);
+                  const distanceLabel = getDistanceLabel(item);
+                  return (
+                    <Pressable
+                      onPress={() =>
+                        router.push({
+                          pathname: '/home/[id]',
+                          params: { id: item.id },
+                        })
+                      }
+                      className="flex-row items-center gap-3 rounded-[20px] border border-[#ECE7E0] bg-white p-3"
+                    >
+                      <Avatar
+                        uri={item.avatarUrl}
+                        name={item.fullName}
+                        size={68}
+                        shape="square"
+                      />
+
+                      <View className="flex-1 gap-1">
+                        <View className="flex-row items-center justify-between">
+                          <Text className="font-serif-bold text-[16px] text-[#26242A]">
+                            {item.fullName}
                           </Text>
+                          {item.totalReviews > 0 ? (
+                            <View className="rounded-full bg-[#F3F0EB] px-2.5 py-1">
+                              <Text className="text-[12px] font-bold text-[#26242A]">
+                                {rating.toFixed(1)} ★
+                              </Text>
+                            </View>
+                          ) : null}
                         </View>
-                      ) : null}
-                    </View>
-                    <Text className="text-[13px] text-[#817F80]">
-                      {item.tradeType}
-                      {item.city ? ` • ${item.city}` : ''}
-                    </Text>
-                    <Text className="text-[13px] text-[#817F80]">
-                      {item.totalReviews > 0
-                        ? `${item.totalReviews} reviews`
-                        : 'No reviews yet'}
-                      {distanceLabel ? ` • ${distanceLabel}` : ''}
-                    </Text>
-                  </View>
-                </Pressable>
-              );
-            }}
-          />
-        )}
+                        <Text className="text-[13px] text-[#817F80]">
+                          {item.tradeType}
+                          {item.city ? ` • ${item.city}` : ''}
+                        </Text>
+                        <Text className="text-[13px] text-[#817F80]">
+                          {item.totalReviews > 0
+                            ? `${item.totalReviews} reviews`
+                            : 'No reviews yet'}
+                          {distanceLabel ? ` • ${distanceLabel}` : ''}
+                        </Text>
+                      </View>
+                    </Pressable>
+                  );
+                }}
+              />
+            )}
+          </View>
+        </View>
       </SafeAreaView>
     </View>
   );
