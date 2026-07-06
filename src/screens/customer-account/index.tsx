@@ -1,5 +1,6 @@
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -22,6 +23,7 @@ import { updateCustomerProfileSchema } from '@/validations/customer-profile';
 import { styles } from './index.styles';
 
 export function CustomerAccountScreen() {
+  const router = useRouter();
   const clearAuth = useAuthStore((state) => state.clearAuth);
 
   const { data: profile, isLoading, isError, error: profileError, refetch } = useCustomerProfile();
@@ -87,6 +89,7 @@ export function CustomerAccountScreen() {
       await unregisterPushToken(pushToken).catch(() => {});
     }
     clearAuth();
+    router.replace('/login');
   }
 
   if (isError) {

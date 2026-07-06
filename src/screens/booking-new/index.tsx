@@ -18,6 +18,7 @@ import { DetailSkeleton } from '@/components/skeleton';
 import { useAvailableSlots, useCreateBooking } from '@/hooks/services/bookings';
 import { usePublicProviderProfile } from '@/hooks/services/discovery';
 import {
+  formatCurrency,
   formatDateLabel,
   formatTimeLabel,
   getErrorMessage,
@@ -160,7 +161,7 @@ export function BookingNewScreen() {
                   {service.durationMinutes} min
                 </Text>
                 <Text className="font-serif-bold text-[18px] text-[#4B2E46]">
-                  ₦{service.price}
+                  ₦{formatCurrency(service.price)}
                 </Text>
               </View>
             </View>
