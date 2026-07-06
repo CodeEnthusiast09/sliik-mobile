@@ -1,13 +1,13 @@
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
-import { Alert, FlatList, Platform, Pressable } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Alert, FlatList, Platform, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmptyState } from '@/components/empty-state';
 import { ErrorState } from '@/components/error-state';
+import { ScreenHeader } from '@/components/screen-header';
 import { ListSkeleton } from '@/components/skeleton';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
 import {
   useAddPortfolioItem,
   useDeletePortfolioItem,
@@ -16,9 +16,8 @@ import {
 import { useUploadImage } from '@/hooks/services/uploads';
 import { getErrorMessage } from '@/lib/utils';
 
-import { styles } from './index.styles';
-
 export function ProviderPortfolioScreen() {
+  const router = useRouter();
   const {
     data: portfolio,
     isLoading,
@@ -78,59 +77,75 @@ export function ProviderPortfolioScreen() {
       : null;
 
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.header}>
-          <ThemedText type="title">Portfolio</ThemedText>
-          <Pressable onPress={handleAddPhoto} disabled={isAdding}>
-            <ThemedView type="backgroundElement" style={styles.addButton}>
-              <ThemedText type="smallBold">
-                {isAdding ? 'Adding...' : '+ Add'}
-              </ThemedText>
-            </ThemedView>
-          </Pressable>
-        </ThemedView>
-
-        {addError && (
-          <ThemedText type="small" themeColor="danger" style={styles.error}>
-            {addError}
-          </ThemedText>
-        )}
-
-        {isLoading ? (
-          <ListSkeleton />
-        ) : isError ? (
-          <ErrorState message={getErrorMessage(error)} onRetry={refetch} />
-        ) : (
-          <FlatList
-            showsVerticalScrollIndicator={false}
-            data={portfolio}
-            keyExtractor={(item) => item.id}
-            numColumns={2}
-            columnWrapperStyle={styles.gridRow}
-            contentContainerStyle={styles.listContent}
-            refreshing={isRefetching}
-            onRefresh={refetch}
-            ListEmptyComponent={
-              <EmptyState message="No portfolio photos yet. Add some to showcase your work." />
-            }
-            renderItem={({ item }) => (
-              <Pressable
-                onPress={() => handleRemove(item.id)}
-                style={styles.gridItem}
-              >
-                <Image
-                  source={{ uri: item.imageUrl }}
-                  style={styles.gridImage}
-                />
-                <ThemedView type="backgroundElement" style={styles.deleteBadge}>
-                  <ThemedText type="small">Remove</ThemedText>
-                </ThemedView>
-              </Pressable>
-            )}
+    <View className="flex-1 bg-[#FBF8F3]">
+      <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
+        <View className="flex-1 px-6">
+          <ScreenHeader
+            notificationsHref="/profile/notifications"
+            onBack={() => router.back()}
           />
-        )}
+
+          <View className="mt-2 flex-row items-center justify-between">
+            <Text className="font-serif-bold text-[28px] leading-[34px] text-[#26242A]">
+              Portfolio
+            </Text>
+            <Pressable
+              onPress={handleAddPhoto}
+              disabled={isAdding}
+              className={`rounded-full bg-[#4B2E46] px-4 py-2.5 ${isAdding ? 'opacity-50' : ''}`}
+            >
+              <Text className="text-[13px] font-bold text-white">
+                {isAdding ? 'Adding…' : '+ Add'}
+              </Text>
+            </Pressable>
+          </View>
+
+          {addError ? (
+            <Text className="mt-3 text-[13px] text-[#E5484D]">
+              {addError}
+            </Text>
+          ) : null}
+
+          <View className="mt-4 flex-1">
+            {isLoading ? (
+              <ListSkeleton />
+            ) : isError ? (
+              <ErrorState message={getErrorMessage(error)} onRetry={refetch} />
+            ) : (
+              <FlatList
+                showsVerticalScrollIndicator={false}
+                data={portfolio}
+                keyExtractor={(item) => item.id}
+                numColumns={2}
+                columnWrapperClassName="gap-2"
+                contentContainerClassName="gap-2 pb-32"
+                refreshing={isRefetching}
+                onRefresh={refetch}
+                ListEmptyComponent={
+                  <EmptyState message="No portfolio photos yet. Add some to showcase your work." />
+                }
+                renderItem={({ item }) => (
+                  <Pressable
+                    onPress={() => handleRemove(item.id)}
+                    className="aspect-square flex-1 overflow-hidden rounded-[16px]"
+                  >
+                    <Image
+                      source={{ uri: item.imageUrl }}
+                      style={{ width: '100%', height: '100%' }}
+                      contentFit="cover"
+                    />
+                    <View className="absolute bottom-2 right-2 rounded-full bg-black/60 px-2.5 py-1">
+                      <Text className="text-[11px] font-bold text-white">
+                        Remove
+                      </Text>
+                    </View>
+                  </Pressable>
+                )}
+              />
+            )}
+          </View>
+        </View>
       </SafeAreaView>
-    </ThemedView>
+    </View>
   );
 }

@@ -1,12 +1,13 @@
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, Switch, View } from 'react-native';
+import { Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Button } from '@/components/button';
+import { DateTimeField } from '@/components/date-time-field';
 import { ErrorState } from '@/components/error-state';
+import { ScreenHeader } from '@/components/screen-header';
 import { DetailSkeleton } from '@/components/skeleton';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedTextInput } from '@/components/themed-text-input';
-import { ThemedView } from '@/components/themed-view';
 import {
   useAddDayOff,
   useDaysOff,
@@ -17,9 +18,15 @@ import {
 import { getErrorMessage } from '@/lib/utils';
 import { addDayOffSchema, setScheduleSchema } from '@/validations/availability';
 
-import { styles } from './index.styles';
-
-const DAY_LABELS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const DAY_LABELS = [
+  'Sunday',
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+];
 
 interface DayRow {
   dayOfWeek: number;
@@ -38,6 +45,7 @@ function buildDefaultRows(): DayRow[] {
 }
 
 export function ProviderAvailabilityScreen() {
+  const router = useRouter();
   const {
     data: schedule,
     isLoading: isLoadingSchedule,
@@ -138,134 +146,182 @@ export function ProviderAvailabilityScreen() {
 
   if (isScheduleError || isDaysOffError) {
     return (
-      <ThemedView style={styles.container}>
-        <SafeAreaView style={styles.safeArea}>
-          <ErrorState
-            message={getErrorMessage(scheduleFetchError ?? daysOffFetchError)}
-            onRetry={() => {
-              refetchSchedule();
-              refetchDaysOff();
-            }}
-          />
+      <View className="flex-1 bg-[#FBF8F3]">
+        <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
+          <View className="flex-1 px-6">
+            <ErrorState
+              message={getErrorMessage(scheduleFetchError ?? daysOffFetchError)}
+              onRetry={() => {
+                refetchSchedule();
+                refetchDaysOff();
+              }}
+            />
+          </View>
         </SafeAreaView>
-      </ThemedView>
+      </View>
     );
   }
 
   if (isLoadingSchedule || isLoadingDaysOff) {
     return (
-      <ThemedView style={styles.container}>
-        <SafeAreaView style={styles.safeArea}>
-          <DetailSkeleton />
+      <View className="flex-1 bg-[#FBF8F3]">
+        <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
+          <View className="flex-1 px-6">
+            <DetailSkeleton />
+          </View>
         </SafeAreaView>
-      </ThemedView>
+      </View>
     );
   }
 
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <ThemedText type="title">Availability</ThemedText>
+    <View className="flex-1 bg-[#FBF8F3]">
+      <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
+        <View className="flex-1 px-6">
+          <ScreenHeader
+            title="Availability"
+            notificationsHref="/profile/notifications"
+            onBack={() => router.back()}
+          />
 
-          <ThemedText type="subtitle" style={styles.sectionTitle}>
-            Weekly schedule
-          </ThemedText>
-          {rows.map((row) => (
-            <ThemedView key={row.dayOfWeek} type="backgroundElement" style={styles.dayRow}>
-              <View style={styles.dayRowHeader}>
-                <ThemedText type="default">{DAY_LABELS[row.dayOfWeek]}</ThemedText>
-                <Switch value={row.enabled} onValueChange={(value) => toggleDay(row.dayOfWeek, value)} />
-              </View>
-              {row.enabled && (
-                <View style={styles.timeRow}>
-                  <ThemedTextInput
-                    value={row.startTime}
-                    onChangeText={(value) => updateDayTime(row.dayOfWeek, 'startTime', value)}
-                    style={[styles.input, styles.timeInput]}
-                    placeholder="09:00"
-                  />
-                  <ThemedText type="default">to</ThemedText>
-                  <ThemedTextInput
-                    value={row.endTime}
-                    onChangeText={(value) => updateDayTime(row.dayOfWeek, 'endTime', value)}
-                    style={[styles.input, styles.timeInput]}
-                    placeholder="17:00"
-                  />
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerClassName="pb-32"
+          >
+            <Text className="mt-3 font-serif-bold text-[18px] text-[#26242A]">
+              Weekly schedule
+            </Text>
+
+            <View className="mt-3 gap-2">
+              {rows.map((row) => (
+                <View
+                  key={row.dayOfWeek}
+                  className="gap-3 rounded-[20px] border border-[#ECE7E0] bg-white p-4"
+                >
+                  <View className="flex-row items-center justify-between">
+                    <Text className="text-[15px] text-[#26242A]">
+                      {DAY_LABELS[row.dayOfWeek]}
+                    </Text>
+                    <Switch
+                      value={row.enabled}
+                      onValueChange={(value) => toggleDay(row.dayOfWeek, value)}
+                      trackColor={{ false: '#DCD6C8', true: '#4B2E46' }}
+                      thumbColor="#FFFFFF"
+                    />
+                  </View>
+                  {row.enabled ? (
+                    <View className="flex-row items-center gap-3">
+                      <View className="flex-1" style={{ minWidth: 0 }}>
+                        <DateTimeField
+                          mode="time"
+                          placeholder="09:00"
+                          value={row.startTime}
+                          onChangeValue={(value) =>
+                            updateDayTime(row.dayOfWeek, 'startTime', value)
+                          }
+                        />
+                      </View>
+                      <Text className="text-[13px] text-[#817F80]">to</Text>
+                      <View className="flex-1" style={{ minWidth: 0 }}>
+                        <DateTimeField
+                          mode="time"
+                          placeholder="17:00"
+                          value={row.endTime}
+                          onChangeValue={(value) =>
+                            updateDayTime(row.dayOfWeek, 'endTime', value)
+                          }
+                        />
+                      </View>
+                    </View>
+                  ) : null}
                 </View>
-              )}
-            </ThemedView>
-          ))}
+              ))}
+            </View>
 
-          {(scheduleError ?? scheduleServerError) && (
-            <ThemedText type="small" themeColor="danger">
-              {scheduleError ?? scheduleServerError}
-            </ThemedText>
-          )}
+            {(scheduleError ?? scheduleServerError) ? (
+              <Text className="mt-3 text-[13px] text-[#E5484D]">
+                {scheduleError ?? scheduleServerError}
+              </Text>
+            ) : null}
 
-          <Pressable onPress={handleSaveSchedule} disabled={setScheduleMutation.isPending}>
-            <ThemedView type="backgroundElement" style={styles.submitButton}>
-              <ThemedText type="smallBold">
-                {setScheduleMutation.isPending ? 'Saving...' : 'Save schedule'}
-              </ThemedText>
-            </ThemedView>
-          </Pressable>
+            <View className="mt-4">
+              <Button
+                label={
+                  setScheduleMutation.isPending ? 'Saving…' : 'Save schedule'
+                }
+                onPress={handleSaveSchedule}
+                loading={setScheduleMutation.isPending}
+              />
+            </View>
 
-          <ThemedText type="subtitle" style={styles.sectionTitle}>
-            Days off
-          </ThemedText>
+            <Text className="mt-7 font-serif-bold text-[18px] text-[#26242A]">
+              Days off
+            </Text>
 
-          {daysOff?.map((dayOff) => (
-            <ThemedView key={dayOff.id} type="backgroundElement" style={styles.dayOffRow}>
-              <View style={styles.dayOffInfo}>
-                <ThemedText type="default">{dayOff.date}</ThemedText>
-                {dayOff.reason && (
-                  <ThemedText type="small" themeColor="textSecondary">
-                    {dayOff.reason}
-                  </ThemedText>
-                )}
+            {daysOff?.length ? (
+              <View className="mt-3 gap-2">
+                {daysOff.map((dayOff) => (
+                  <View
+                    key={dayOff.id}
+                    className="flex-row items-center justify-between rounded-[20px] border border-[#ECE7E0] bg-white p-4"
+                  >
+                    <View className="gap-0.5">
+                      <Text className="text-[15px] text-[#26242A]">
+                        {dayOff.date}
+                      </Text>
+                      {dayOff.reason ? (
+                        <Text className="text-[13px] text-[#817F80]">
+                          {dayOff.reason}
+                        </Text>
+                      ) : null}
+                    </View>
+                    <Pressable onPress={() => removeDayOffMutation.mutate(dayOff.id)}>
+                      <Text className="text-[13px] font-bold text-[#E5484D]">
+                        Remove
+                      </Text>
+                    </Pressable>
+                  </View>
+                ))}
               </View>
-              <Pressable onPress={() => removeDayOffMutation.mutate(dayOff.id)}>
-                <ThemedText type="small" themeColor="danger">
-                  Remove
-                </ThemedText>
-              </Pressable>
-            </ThemedView>
-          ))}
-          {daysOff?.length === 0 && (
-            <ThemedText type="small" themeColor="textSecondary">
-              No upcoming days off.
-            </ThemedText>
-          )}
+            ) : (
+              <Text className="mt-3 text-[13px] text-[#817F80]">
+                No upcoming days off.
+              </Text>
+            )}
 
-          <ThemedTextInput
-            placeholder="Date (YYYY-MM-DD)"
-            value={dayOffDate}
-            onChangeText={setDayOffDate}
-            style={styles.input}
-          />
-          <ThemedTextInput
-            placeholder="Reason (optional)"
-            value={dayOffReason}
-            onChangeText={setDayOffReason}
-            style={styles.input}
-          />
+            <View className="mt-3">
+              <DateTimeField
+                mode="date"
+                placeholder="Date"
+                value={dayOffDate}
+                onChangeValue={setDayOffDate}
+              />
+            </View>
+            <TextInput
+              placeholder="Reason (optional)"
+              placeholderTextColor="#A8A39B"
+              value={dayOffReason}
+              onChangeText={setDayOffReason}
+              className="mt-3 rounded-[16px] border border-[#ECE7E0] bg-white px-4 py-3.5 text-[15px] text-[#26242A]"
+              style={{ outlineWidth: 0 }}
+            />
 
-          {(dayOffError ?? dayOffServerError) && (
-            <ThemedText type="small" themeColor="danger">
-              {dayOffError ?? dayOffServerError}
-            </ThemedText>
-          )}
+            {(dayOffError ?? dayOffServerError) ? (
+              <Text className="mt-3 text-[13px] text-[#E5484D]">
+                {dayOffError ?? dayOffServerError}
+              </Text>
+            ) : null}
 
-          <Pressable onPress={handleAddDayOff} disabled={addDayOffMutation.isPending}>
-            <ThemedView type="backgroundElement" style={styles.submitButton}>
-              <ThemedText type="smallBold">
-                {addDayOffMutation.isPending ? 'Adding...' : 'Add day off'}
-              </ThemedText>
-            </ThemedView>
-          </Pressable>
-        </ScrollView>
+            <View className="mt-4">
+              <Button
+                label={addDayOffMutation.isPending ? 'Adding…' : 'Add day off'}
+                onPress={handleAddDayOff}
+                loading={addDayOffMutation.isPending}
+              />
+            </View>
+          </ScrollView>
+        </View>
       </SafeAreaView>
-    </ThemedView>
+    </View>
   );
 }

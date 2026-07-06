@@ -1,11 +1,10 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable } from 'react-native';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ThemedText } from '@/components/themed-text';
-import { ThemedTextInput } from '@/components/themed-text-input';
-import { ThemedView } from '@/components/themed-view';
+import { Button } from '@/components/button';
+import { ScreenHeader } from '@/components/screen-header';
 import {
   useCreateService,
   useDeleteService,
@@ -14,8 +13,6 @@ import {
 } from '@/hooks/services/provider-services';
 import { getErrorMessage } from '@/lib/utils';
 import { serviceSchema } from '@/validations/service';
-
-import { styles } from './index.styles';
 
 export function ProviderServiceFormScreen() {
   const router = useRouter();
@@ -44,7 +41,9 @@ export function ProviderServiceFormScreen() {
     setDurationMinutes(String(existingService.durationMinutes));
   }
 
-  const activeMutation = isEditing ? updateServiceMutation : createServiceMutation;
+  const activeMutation = isEditing
+    ? updateServiceMutation
+    : createServiceMutation;
 
   function handleSave() {
     setFieldError(null);
@@ -62,9 +61,14 @@ export function ProviderServiceFormScreen() {
     }
 
     if (isEditing && id) {
-      updateServiceMutation.mutate({ id, payload: result.data }, { onSuccess: () => router.back() });
+      updateServiceMutation.mutate(
+        { id, payload: result.data },
+        { onSuccess: () => router.back() },
+      );
     } else {
-      createServiceMutation.mutate(result.data, { onSuccess: () => router.back() });
+      createServiceMutation.mutate(result.data, {
+        onSuccess: () => router.back(),
+      });
     }
   }
 
@@ -81,72 +85,102 @@ export function ProviderServiceFormScreen() {
     );
   }
 
-  const serverError = activeMutation.isError ? getErrorMessage(activeMutation.error) : null;
+  const serverError = activeMutation.isError
+    ? getErrorMessage(activeMutation.error)
+    : null;
 
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <ThemedText type="link">{'< Back'}</ThemedText>
-        </Pressable>
+    <View className="flex-1 bg-[#FBF8F3]">
+      <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
+        <View className="flex-1 px-6">
+          <ScreenHeader
+            title={isEditing ? 'Edit service' : 'New service'}
+            notificationsHref="/profile/notifications"
+            onBack={() => router.back()}
+          />
 
-        <ThemedText type="title" style={styles.title}>
-          {isEditing ? 'Edit service' : 'New service'}
-        </ThemedText>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerClassName="pb-32"
+          >
+            <TextInput
+              placeholder="Service name"
+              placeholderTextColor="#A8A39B"
+              value={name}
+              onChangeText={setName}
+              className="mt-4 rounded-[16px] border border-[#ECE7E0] bg-white px-4 py-3.5 text-[15px] text-[#26242A]"
+              style={{ outlineWidth: 0 }}
+            />
+            <TextInput
+              placeholder="Description (optional)"
+              placeholderTextColor="#A8A39B"
+              value={description}
+              onChangeText={setDescription}
+              multiline
+              className="mt-3 min-h-[76px] rounded-[16px] border border-[#ECE7E0] bg-white px-5 py-4 text-[15px] text-[#26242A]"
+              style={{ textAlignVertical: 'top', outlineWidth: 0 }}
+            />
+            <TextInput
+              placeholder="Price"
+              placeholderTextColor="#A8A39B"
+              value={price}
+              onChangeText={setPrice}
+              keyboardType="decimal-pad"
+              className="mt-3 rounded-[16px] border border-[#ECE7E0] bg-white px-4 py-3.5 text-[15px] text-[#26242A]"
+              style={{ outlineWidth: 0 }}
+            />
+            <TextInput
+              placeholder="Duration (minutes)"
+              placeholderTextColor="#A8A39B"
+              value={durationMinutes}
+              onChangeText={setDurationMinutes}
+              keyboardType="number-pad"
+              className="mt-3 rounded-[16px] border border-[#ECE7E0] bg-white px-4 py-3.5 text-[15px] text-[#26242A]"
+              style={{ outlineWidth: 0 }}
+            />
 
-        <ThemedTextInput placeholder="Service name" value={name} onChangeText={setName} style={styles.input} />
-        <ThemedTextInput
-          placeholder="Description (optional)"
-          value={description}
-          onChangeText={setDescription}
-          style={[styles.input, styles.descriptionInput]}
-          multiline
-        />
-        <ThemedTextInput
-          placeholder="Price"
-          value={price}
-          onChangeText={setPrice}
-          style={styles.input}
-          keyboardType="decimal-pad"
-        />
-        <ThemedTextInput
-          placeholder="Duration (minutes)"
-          value={durationMinutes}
-          onChangeText={setDurationMinutes}
-          style={styles.input}
-          keyboardType="number-pad"
-        />
+            {(fieldError ?? serverError) ? (
+              <Text className="mt-3 text-[13px] text-[#E5484D]">
+                {fieldError ?? serverError}
+              </Text>
+            ) : null}
 
-        {(fieldError ?? serverError) && (
-          <ThemedText type="small" themeColor="danger">
-            {fieldError ?? serverError}
-          </ThemedText>
-        )}
+            <View className="mt-5">
+              <Button
+                label={activeMutation.isPending ? 'Saving…' : 'Save service'}
+                onPress={handleSave}
+                loading={activeMutation.isPending}
+              />
+            </View>
 
-        <Pressable onPress={handleSave} disabled={activeMutation.isPending}>
-          <ThemedView type="backgroundElement" style={styles.submitButton}>
-            <ThemedText type="smallBold">
-              {activeMutation.isPending ? 'Saving...' : 'Save service'}
-            </ThemedText>
-          </ThemedView>
-        </Pressable>
+            {isEditing && existingService?.isActive ? (
+              <Pressable
+                onPress={handleDelete}
+                disabled={deleteServiceMutation.isPending}
+                className="mt-4 items-center"
+              >
+                <Text className="text-[13px] font-bold text-[#E5484D]">
+                  {deleteServiceMutation.isPending
+                    ? 'Removing…'
+                    : 'Deactivate service'}
+                </Text>
+              </Pressable>
+            ) : null}
 
-        {isEditing && existingService?.isActive && (
-          <Pressable onPress={handleDelete} disabled={deleteServiceMutation.isPending}>
-            <ThemedText type="small" themeColor="danger" style={styles.deleteText}>
-              {deleteServiceMutation.isPending ? 'Removing...' : 'Deactivate service'}
-            </ThemedText>
-          </Pressable>
-        )}
-
-        {isEditing && existingService && !existingService.isActive && (
-          <Pressable onPress={handleReactivate} disabled={updateServiceMutation.isPending}>
-            <ThemedText type="small" themeColor="tint" style={styles.reactivateText}>
-              Reactivate service
-            </ThemedText>
-          </Pressable>
-        )}
+            {isEditing && existingService && !existingService.isActive ? (
+              <Pressable
+                onPress={handleReactivate}
+                disabled={updateServiceMutation.isPending}
+                className="mt-4 items-center"
+              >
+                <Text className="text-[13px] font-bold text-[#4B2E46]">
+                  Reactivate service
+                </Text>
+              </Pressable>
+            ) : null}
+          </ScrollView>
+        </View>
       </SafeAreaView>
-    </ThemedView>
+    </View>
   );
 }

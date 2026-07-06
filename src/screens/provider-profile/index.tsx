@@ -2,16 +2,14 @@ import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView } from 'react-native';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Button } from '@/components/button';
 import { ErrorState } from '@/components/error-state';
-import { NotificationBell } from '@/components/notification-bell';
 import { ReviewsList } from '@/components/reviews-list';
+import { ScreenHeader } from '@/components/screen-header';
 import { DetailSkeleton } from '@/components/skeleton';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedTextInput } from '@/components/themed-text-input';
-import { ThemedView } from '@/components/themed-view';
 import { usePayoutAccount } from '@/hooks/services/payouts';
 import {
   useProviderProfile,
@@ -24,8 +22,6 @@ import { unregisterPushToken } from '@/services/notifications';
 import { useAuthStore } from '@/store/auth';
 import { usePushTokenStore } from '@/store/push-token';
 import { updateProviderProfileSchema } from '@/validations/provider-profile';
-
-import { styles } from './index.styles';
 
 export function ProviderProfileScreen() {
   const router = useRouter();
@@ -116,178 +112,203 @@ export function ProviderProfileScreen() {
       await unregisterPushToken(pushToken).catch(() => {});
     }
     clearAuth();
+    router.replace('/login');
   }
 
   if (isError) {
     return (
-      <ThemedView style={styles.container}>
-        <SafeAreaView style={styles.safeArea}>
-          <ErrorState
-            message={getErrorMessage(profileError)}
-            onRetry={refetch}
-          />
+      <View className="flex-1 bg-[#FBF8F3]">
+        <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
+          <View className="flex-1 px-6">
+            <ErrorState
+              message={getErrorMessage(profileError)}
+              onRetry={refetch}
+            />
+          </View>
         </SafeAreaView>
-      </ThemedView>
+      </View>
     );
   }
 
   if (isLoading) {
     return (
-      <ThemedView style={styles.container}>
-        <SafeAreaView style={styles.safeArea}>
-          <DetailSkeleton />
+      <View className="flex-1 bg-[#FBF8F3]">
+        <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
+          <View className="flex-1 px-6">
+            <DetailSkeleton />
+          </View>
         </SafeAreaView>
-      </ThemedView>
+      </View>
     );
   }
 
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <ThemedView style={styles.headerRow}>
-            <ThemedText type="title">Profile</ThemedText>
-            <NotificationBell
-              onPress={() => router.push('/profile/notifications')}
+    <View className="flex-1 bg-[#FBF8F3]">
+      <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
+        <View className="flex-1 px-6">
+          <ScreenHeader notificationsHref="/profile/notifications" />
+
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerClassName="pb-32"
+          >
+            <Text className="mt-4 font-serif-bold text-[30px] leading-[36px] text-[#26242A]">
+              Profile
+            </Text>
+
+            <Pressable onPress={handlePickAvatar} className="self-center">
+              <View className="my-5 h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-[#F3F0EB]">
+                {profile?.avatarUrl ? (
+                  <Image
+                    source={{ uri: profile.avatarUrl }}
+                    style={{ width: 96, height: 96 }}
+                    contentFit="cover"
+                  />
+                ) : (
+                  <Text className="text-[13px] text-[#817F80]">
+                    Add photo
+                  </Text>
+                )}
+              </View>
+            </Pressable>
+
+            <TextInput
+              placeholder="Full name"
+              placeholderTextColor="#A8A39B"
+              value={fullName}
+              onChangeText={setFullName}
+              autoCapitalize="words"
+              className="rounded-[16px] border border-[#ECE7E0] bg-white px-4 py-3.5 text-[15px] text-[#26242A]"
+              style={{ outlineWidth: 0 }}
             />
-          </ThemedView>
+            <TextInput
+              placeholder="Phone"
+              placeholderTextColor="#A8A39B"
+              value={phone}
+              onChangeText={setPhone}
+              keyboardType="phone-pad"
+              className="mt-3 rounded-[16px] border border-[#ECE7E0] bg-white px-4 py-3.5 text-[15px] text-[#26242A]"
+              style={{ outlineWidth: 0 }}
+            />
+            <TextInput
+              placeholder="Trade (e.g. hairdresser, barber)"
+              placeholderTextColor="#A8A39B"
+              value={tradeType}
+              onChangeText={setTradeType}
+              className="mt-3 rounded-[16px] border border-[#ECE7E0] bg-white px-4 py-3.5 text-[15px] text-[#26242A]"
+              style={{ outlineWidth: 0 }}
+            />
+            <TextInput
+              placeholder="Years of experience"
+              placeholderTextColor="#A8A39B"
+              value={yearsExperience}
+              onChangeText={setYearsExperience}
+              keyboardType="number-pad"
+              className="mt-3 rounded-[16px] border border-[#ECE7E0] bg-white px-4 py-3.5 text-[15px] text-[#26242A]"
+              style={{ outlineWidth: 0 }}
+            />
+            <TextInput
+              placeholder="City"
+              placeholderTextColor="#A8A39B"
+              value={city}
+              onChangeText={setCity}
+              className="mt-3 rounded-[16px] border border-[#ECE7E0] bg-white px-4 py-3.5 text-[15px] text-[#26242A]"
+              style={{ outlineWidth: 0 }}
+            />
+            <TextInput
+              placeholder="Bio"
+              placeholderTextColor="#A8A39B"
+              value={bio}
+              onChangeText={setBio}
+              multiline
+              className="mt-3 min-h-[80px] rounded-[16px] border border-[#ECE7E0] bg-white px-5 py-4 text-[15px] text-[#26242A]"
+              style={{ textAlignVertical: 'top', outlineWidth: 0 }}
+            />
 
-          <Pressable onPress={handlePickAvatar}>
-            <ThemedView type="backgroundElement" style={styles.avatar}>
-              {profile?.avatarUrl ? (
-                <Image
-                  source={{ uri: profile.avatarUrl }}
-                  style={styles.avatarImage}
-                />
-              ) : (
-                <ThemedText type="small">Add photo</ThemedText>
-              )}
-            </ThemedView>
-          </Pressable>
+            {(fieldError ?? serverError) ? (
+              <Text className="mt-3 text-[13px] text-[#E5484D]">
+                {fieldError ?? serverError}
+              </Text>
+            ) : null}
 
-          <ThemedTextInput
-            placeholder="Full name"
-            value={fullName}
-            onChangeText={setFullName}
-            style={styles.input}
-            autoCapitalize="words"
-          />
-          <ThemedTextInput
-            placeholder="Phone"
-            value={phone}
-            onChangeText={setPhone}
-            style={styles.input}
-            keyboardType="phone-pad"
-          />
-          <ThemedTextInput
-            placeholder="Trade (e.g. hairdresser, barber)"
-            value={tradeType}
-            onChangeText={setTradeType}
-            style={styles.input}
-          />
-          <ThemedTextInput
-            placeholder="Years of experience"
-            value={yearsExperience}
-            onChangeText={setYearsExperience}
-            style={styles.input}
-            keyboardType="number-pad"
-          />
-          <ThemedTextInput
-            placeholder="City"
-            value={city}
-            onChangeText={setCity}
-            style={styles.input}
-          />
-          <ThemedTextInput
-            placeholder="Bio"
-            value={bio}
-            onChangeText={setBio}
-            style={[styles.input, styles.bioInput]}
-            multiline
-          />
+            <View className="mt-4">
+              <Button
+                label={
+                  updateProfileMutation.isPending ? 'Saving…' : 'Save changes'
+                }
+                onPress={handleSave}
+                loading={updateProfileMutation.isPending}
+              />
+            </View>
 
-          {(fieldError ?? serverError) && (
-            <ThemedText type="small" themeColor="danger">
-              {fieldError ?? serverError}
-            </ThemedText>
-          )}
-
-          <Pressable
-            onPress={handleSave}
-            disabled={updateProfileMutation.isPending}
-          >
-            <ThemedView type="backgroundElement" style={styles.submitButton}>
-              <ThemedText type="smallBold">
-                {updateProfileMutation.isPending ? 'Saving...' : 'Save changes'}
-              </ThemedText>
-            </ThemedView>
-          </Pressable>
-
-          <Pressable
-            onPress={() => router.push('/profile/payout')}
-            style={styles.row}
-          >
-            <ThemedView type="backgroundElement" style={styles.rowContent}>
-              <ThemedText type="default">Payout details</ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
+            <Pressable
+              onPress={() => router.push('/profile/payout')}
+              className="mt-4 gap-0.5 rounded-[20px] border border-[#ECE7E0] bg-white p-4"
+            >
+              <Text className="font-serif-bold text-[15px] text-[#26242A]">
+                Payout details
+              </Text>
+              <Text className="text-[13px] text-[#817F80]">
                 {payoutAccount ? payoutAccount.accountName : 'Not set up'}
-              </ThemedText>
-            </ThemedView>
-          </Pressable>
+              </Text>
+            </Pressable>
 
-          <Pressable
-            onPress={() => router.push('/services')}
-            style={styles.row}
-          >
-            <ThemedView type="backgroundElement" style={styles.rowContent}>
-              <ThemedText type="default">Services</ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
+            <Pressable
+              onPress={() => router.push('/services')}
+              className="mt-3 gap-0.5 rounded-[20px] border border-[#ECE7E0] bg-white p-4"
+            >
+              <Text className="font-serif-bold text-[15px] text-[#26242A]">
+                Services
+              </Text>
+              <Text className="text-[13px] text-[#817F80]">
                 Manage what you offer
-              </ThemedText>
-            </ThemedView>
-          </Pressable>
+              </Text>
+            </Pressable>
 
-          <Pressable
-            onPress={() => router.push('/availability')}
-            style={styles.row}
-          >
-            <ThemedView type="backgroundElement" style={styles.rowContent}>
-              <ThemedText type="default">Availability</ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
+            <Pressable
+              onPress={() => router.push('/availability')}
+              className="mt-3 gap-0.5 rounded-[20px] border border-[#ECE7E0] bg-white p-4"
+            >
+              <Text className="font-serif-bold text-[15px] text-[#26242A]">
+                Availability
+              </Text>
+              <Text className="text-[13px] text-[#817F80]">
                 Set your weekly schedule
-              </ThemedText>
-            </ThemedView>
-          </Pressable>
+              </Text>
+            </Pressable>
 
-          <Pressable
-            onPress={() => router.push('/portfolio')}
-            style={styles.row}
-          >
-            <ThemedView type="backgroundElement" style={styles.rowContent}>
-              <ThemedText type="default">Portfolio</ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
+            <Pressable
+              onPress={() => router.push('/portfolio')}
+              className="mt-3 gap-0.5 rounded-[20px] border border-[#ECE7E0] bg-white p-4"
+            >
+              <Text className="font-serif-bold text-[15px] text-[#26242A]">
+                Portfolio
+              </Text>
+              <Text className="text-[13px] text-[#817F80]">
                 Showcase your best work
-              </ThemedText>
-            </ThemedView>
-          </Pressable>
+              </Text>
+            </Pressable>
 
-          <ThemedText type="subtitle" style={styles.sectionTitle}>
-            Reviews received
-          </ThemedText>
-          <ReviewsList
-            averageRating={userReviews?.averageRating ?? null}
-            totalReviews={userReviews?.totalReviews ?? 0}
-            reviews={userReviews?.reviews ?? []}
-            isLoading={isLoadingReviews}
-          />
+            <Text className="mt-7 font-serif-bold text-[18px] text-[#26242A]">
+              Reviews received
+            </Text>
+            <View className="mt-3">
+              <ReviewsList
+                averageRating={userReviews?.averageRating ?? null}
+                totalReviews={userReviews?.totalReviews ?? 0}
+                reviews={userReviews?.reviews ?? []}
+                isLoading={isLoadingReviews}
+              />
+            </View>
 
-          <Pressable onPress={handleLogout} style={styles.logoutButton}>
-            <ThemedText type="smallBold" themeColor="danger">
-              Log out
-            </ThemedText>
-          </Pressable>
-        </ScrollView>
+            <Pressable onPress={handleLogout} className="mt-6 items-center py-2">
+              <Text className="text-[14px] font-bold text-[#E5484D]">
+                Log out
+              </Text>
+            </Pressable>
+          </ScrollView>
+        </View>
       </SafeAreaView>
-    </ThemedView>
+    </View>
   );
 }

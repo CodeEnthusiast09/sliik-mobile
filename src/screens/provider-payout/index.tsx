@@ -1,15 +1,13 @@
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Button } from '@/components/button';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorState } from '@/components/error-state';
+import { ScreenHeader } from '@/components/screen-header';
 import { DetailSkeleton } from '@/components/skeleton';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedTextInput } from '@/components/themed-text-input';
-import { ThemedView } from '@/components/themed-view';
-import { useTheme } from '@/hooks/common/use-theme';
 import {
   useBanks,
   useCreatePayoutAccount,
@@ -19,11 +17,8 @@ import type { Bank } from '@/interfaces/provider';
 import { getErrorMessage } from '@/lib/utils';
 import { createPayoutAccountSchema } from '@/validations/payout';
 
-import { styles } from './index.styles';
-
 export function ProviderPayoutScreen() {
   const router = useRouter();
-  const theme = useTheme();
 
   const {
     data: payoutAccount,
@@ -78,146 +73,146 @@ export function ProviderPayoutScreen() {
 
   if (isAccountError) {
     return (
-      <ThemedView style={styles.container}>
-        <SafeAreaView style={styles.safeArea}>
-          <ErrorState
-            message={getErrorMessage(accountError)}
-            onRetry={refetchAccount}
-          />
+      <View className="flex-1 bg-[#FBF8F3]">
+        <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
+          <View className="flex-1 px-6">
+            <ErrorState
+              message={getErrorMessage(accountError)}
+              onRetry={refetchAccount}
+            />
+          </View>
         </SafeAreaView>
-      </ThemedView>
+      </View>
     );
   }
 
   if (isLoadingAccount) {
     return (
-      <ThemedView style={styles.container}>
-        <SafeAreaView style={styles.safeArea}>
-          <DetailSkeleton />
+      <View className="flex-1 bg-[#FBF8F3]">
+        <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
+          <View className="flex-1 px-6">
+            <DetailSkeleton />
+          </View>
         </SafeAreaView>
-      </ThemedView>
+      </View>
     );
   }
 
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <ThemedText type="link">{'< Back'}</ThemedText>
-        </Pressable>
+    <View className="flex-1 bg-[#FBF8F3]">
+      <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
+        <View className="flex-1 px-6">
+          <ScreenHeader
+            title="Payout details"
+            notificationsHref="/profile/notifications"
+            onBack={() => router.back()}
+          />
 
-        <ThemedText type="title" style={styles.title}>
-          Payout details
-        </ThemedText>
+          {payoutAccount ? (
+            <View className="mt-4 gap-1 rounded-[20px] border border-[#ECE7E0] bg-white p-4">
+              <Text className="font-serif-bold text-[15px] text-[#26242A]">
+                {payoutAccount.accountName}
+              </Text>
+              <Text className="text-[13px] text-[#817F80]">
+                {payoutAccount.accountNumber}
+              </Text>
+              <Text className="text-[13px] text-[#817F80]">
+                {payoutAccount.verified ? 'Verified' : 'Pending verification'}
+              </Text>
+            </View>
+          ) : (
+            <>
+              <Text className="mt-4 text-[13px] text-[#817F80]">
+                Set up your payout account to start receiving bookings.
+              </Text>
 
-        {payoutAccount ? (
-          <ThemedView type="backgroundElement" style={styles.summaryCard}>
-            <ThemedText type="default">{payoutAccount.accountName}</ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              {payoutAccount.accountNumber}
-            </ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              {payoutAccount.verified ? 'Verified' : 'Pending verification'}
-            </ThemedText>
-          </ThemedView>
-        ) : (
-          <>
-            <ThemedText
-              type="small"
-              themeColor="textSecondary"
-              style={styles.hint}
-            >
-              Set up your payout account to start receiving bookings.
-            </ThemedText>
-
-            {selectedBank ? (
-              <Pressable
-                onPress={() => setSelectedBank(null)}
-                style={styles.selectedBank}
-              >
-                <ThemedView type="backgroundElement" style={styles.rowContent}>
-                  <ThemedText type="default">{selectedBank.name}</ThemedText>
-                  <ThemedText type="small" themeColor="textSecondary">
-                    Change
-                  </ThemedText>
-                </ThemedView>
-              </Pressable>
-            ) : (
-              <>
-                <ThemedTextInput
-                  placeholder="Search for your bank"
-                  value={search}
-                  onChangeText={setSearch}
-                  style={styles.input}
-                />
-                {isLoadingBanks ? (
-                  <ActivityIndicator />
-                ) : isBanksError ? (
-                  <ErrorState
-                    message={getErrorMessage(banksError)}
-                    onRetry={refetchBanks}
-                  />
-                ) : (
-                  <FlatList
-                    showsVerticalScrollIndicator={false}
-                    data={filteredBanks}
-                    keyExtractor={(bank) => `${bank.code}-${bank.name}`}
-                    style={styles.bankList}
-                    ListEmptyComponent={
-                      <EmptyState message="No banks found." />
-                    }
-                    renderItem={({ item }) => (
-                      <Pressable
-                        onPress={() => setSelectedBank(item)}
-                        style={[
-                          styles.bankRow,
-                          { borderBottomColor: theme.border },
-                        ]}
-                      >
-                        <ThemedText type="default">{item.name}</ThemedText>
-                      </Pressable>
-                    )}
-                  />
-                )}
-              </>
-            )}
-
-            {selectedBank && (
-              <ThemedTextInput
-                placeholder="Account number"
-                value={accountNumber}
-                onChangeText={setAccountNumber}
-                style={styles.input}
-                keyboardType="number-pad"
-              />
-            )}
-
-            {(fieldError ?? serverError) && (
-              <ThemedText type="small" themeColor="danger">
-                {fieldError ?? serverError}
-              </ThemedText>
-            )}
-
-            {selectedBank && (
-              <Pressable
-                onPress={handleSubmit}
-                disabled={createPayoutAccountMutation.isPending}
-              >
-                <ThemedView
-                  type="backgroundElement"
-                  style={styles.submitButton}
+              {selectedBank ? (
+                <Pressable
+                  onPress={() => setSelectedBank(null)}
+                  className="mt-3 flex-row items-center justify-between rounded-[20px] border border-[#ECE7E0] bg-white p-4"
                 >
-                  <ThemedText type="smallBold">
-                    {createPayoutAccountMutation.isPending
-                      ? 'Setting up...'
-                      : 'Set up payouts'}
-                  </ThemedText>
-                </ThemedView>
-              </Pressable>
-            )}
-          </>
-        )}
+                  <Text className="text-[15px] text-[#26242A]">
+                    {selectedBank.name}
+                  </Text>
+                  <Text className="text-[13px] text-[#817F80]">Change</Text>
+                </Pressable>
+              ) : (
+                <>
+                  <TextInput
+                    placeholder="Search for your bank"
+                    placeholderTextColor="#A8A39B"
+                    value={search}
+                    onChangeText={setSearch}
+                    className="mt-3 rounded-[16px] border border-[#ECE7E0] bg-white px-4 py-3.5 text-[15px] text-[#26242A]"
+                    style={{ outlineWidth: 0 }}
+                  />
+                  {isLoadingBanks ? (
+                    <ActivityIndicator className="mt-4" color="#4B2E46" />
+                  ) : isBanksError ? (
+                    <ErrorState
+                      message={getErrorMessage(banksError)}
+                      onRetry={refetchBanks}
+                    />
+                  ) : (
+                    <FlatList
+                      showsVerticalScrollIndicator={false}
+                      data={filteredBanks}
+                      keyExtractor={(bank) => `${bank.code}-${bank.name}`}
+                      style={{ maxHeight: 280 }}
+                      className="mt-2"
+                      ListEmptyComponent={
+                        <EmptyState message="No banks found." />
+                      }
+                      renderItem={({ item }) => (
+                        <Pressable
+                          onPress={() => setSelectedBank(item)}
+                          className="border-b border-[#ECE7E0] py-3"
+                        >
+                          <Text className="text-[15px] text-[#26242A]">
+                            {item.name}
+                          </Text>
+                        </Pressable>
+                      )}
+                    />
+                  )}
+                </>
+              )}
+
+              {selectedBank ? (
+                <TextInput
+                  placeholder="Account number"
+                  placeholderTextColor="#A8A39B"
+                  value={accountNumber}
+                  onChangeText={setAccountNumber}
+                  keyboardType="number-pad"
+                  className="mt-3 rounded-[16px] border border-[#ECE7E0] bg-white px-4 py-3.5 text-[15px] text-[#26242A]"
+                  style={{ outlineWidth: 0 }}
+                />
+              ) : null}
+
+              {(fieldError ?? serverError) ? (
+                <Text className="mt-3 text-[13px] text-[#E5484D]">
+                  {fieldError ?? serverError}
+                </Text>
+              ) : null}
+
+              {selectedBank ? (
+                <View className="mt-4">
+                  <Button
+                    label={
+                      createPayoutAccountMutation.isPending
+                        ? 'Setting up…'
+                        : 'Set up payouts'
+                    }
+                    onPress={handleSubmit}
+                    loading={createPayoutAccountMutation.isPending}
+                  />
+                </View>
+              ) : null}
+            </>
+          )}
+        </View>
       </SafeAreaView>
-    </ThemedView>
+    </View>
   );
 }
