@@ -457,7 +457,7 @@ export function BookingDetailScreen() {
                       className={`min-h-[70px] rounded-[14px] border px-4 py-3 text-[15px] text-[#26242A] ${
                         commentError ? 'border-[#E5484D]' : 'border-[#ECE7E0]'
                       }`}
-                      style={{ textAlignVertical: 'top' }}
+                      style={{ textAlignVertical: 'top', outlineWidth: 0 }}
                     />
                     <Button
                       label={

@@ -139,6 +139,7 @@ export function CustomerHomeScreen() {
               onSubmitEditing={() => setAppliedCity(cityInput.trim())}
               returnKeyType="search"
               className="flex-1 text-[15px] text-[#26242A]"
+              style={{ outlineWidth: 0 }}
             />
           </View>
 
