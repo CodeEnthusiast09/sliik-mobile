@@ -4,6 +4,13 @@ import type { ApiResponse } from '@/interfaces/api-response';
 import type { BookingStatus } from '@/interfaces/booking';
 import type { ThemeColor } from '@/lib/constants';
 
+// Backend numeric columns come back as strings (e.g. "21300.00") - format for
+// display as a comma-grouped whole number, matching the design references.
+export function formatCurrency(value: string | number): string {
+  const amount = typeof value === 'number' ? value : Number(value);
+  return amount.toLocaleString('en-NG', { maximumFractionDigits: 0 });
+}
+
 export function getStatusColor(
   status: BookingStatus,
   theme: Record<ThemeColor, string>,

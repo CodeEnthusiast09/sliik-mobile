@@ -2,12 +2,15 @@ import { z } from 'zod';
 
 export const createOfferSchema = z
   .object({
-    serviceType: z.string().min(1).max(100),
-    description: z.string().min(1),
-    budget: z.number().positive().optional(),
-    preferredFrom: z.iso.datetime(),
-    preferredTo: z.iso.datetime(),
-    city: z.string().min(1).max(100),
+    serviceType: z
+      .string()
+      .min(1, 'Enter the type of service you need')
+      .max(100, 'Keep it under 100 characters'),
+    description: z.string().min(1, 'Describe what you need'),
+    budget: z.number().positive('Enter a valid budget').optional(),
+    preferredFrom: z.iso.datetime('Enter a valid start date and time'),
+    preferredTo: z.iso.datetime('Enter a valid end date and time'),
+    city: z.string().min(1, 'Enter your city').max(100, 'Keep it under 100 characters'),
   })
   .refine((data) => new Date(data.preferredTo) > new Date(data.preferredFrom), {
     message: 'End time must be after start time',
@@ -17,8 +20,8 @@ export const createOfferSchema = z
 export type CreateOfferInput = z.infer<typeof createOfferSchema>;
 
 export const respondToOfferSchema = z.object({
-  offeredPrice: z.number().positive(),
-  message: z.string().min(1).optional(),
+  offeredPrice: z.number().positive('Enter your price'),
+  message: z.string().min(1, 'Message cannot be empty').optional(),
 });
 
 export type RespondToOfferInput = z.infer<typeof respondToOfferSchema>;
