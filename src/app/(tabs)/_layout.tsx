@@ -1,9 +1,10 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
-import { Platform, type ColorValue } from 'react-native';
+import { type ColorValue } from 'react-native';
 
 import { useNotificationsSocket } from '@/hooks/common/use-notifications-socket';
 import { usePushTokenRegistration } from '@/hooks/common/use-push-token-registration';
+import { TAB_BAR_STYLE } from '@/lib/constants';
 import { useAuthStore } from '@/store/auth';
 
 type IoniconName = keyof typeof Ionicons.glyphMap;
@@ -45,23 +46,7 @@ export default function TabsLayout() {
         tabBarActiveTintColor: '#4B2E46',
         tabBarInactiveTintColor: '#948F86',
         tabBarLabelStyle: { fontSize: 11, fontWeight: '700' },
-        tabBarStyle: {
-          position: 'absolute',
-          left: 12,
-          right: 12,
-          bottom: Platform.select({ ios: 28, default: 16 }),
-          height: 64,
-          borderRadius: 32,
-          backgroundColor: '#FFFFFF',
-          borderTopWidth: 0,
-          paddingTop: 4,
-          paddingBottom: 4,
-          shadowColor: '#000',
-          shadowOpacity: 0.1,
-          shadowRadius: 16,
-          shadowOffset: { width: 0, height: 6 },
-          elevation: 8,
-        },
+        tabBarStyle: TAB_BAR_STYLE,
       }}
     >
       <Tabs.Protected guard={role === 'customer'}>

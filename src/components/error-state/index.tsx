@@ -1,8 +1,5 @@
-import { Pressable, StyleSheet } from 'react-native';
-
-import { Spacing } from '@/lib/constants';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { Image } from 'expo-image';
+import { Pressable, Text, View } from 'react-native';
 
 interface ErrorStateProps {
   message: string;
@@ -11,26 +8,18 @@ interface ErrorStateProps {
 
 export function ErrorState({ message, onRetry }: ErrorStateProps) {
   return (
-    <ThemedView style={styles.container}>
-      <ThemedText type="small" themeColor="danger" style={styles.text}>
-        {message}
-      </ThemedText>
+    <View className="items-center gap-3 py-8">
+      <Image
+        source={require('../../../assets/images/error-state.png')}
+        style={{ width: 96, height: 120 }}
+        contentFit="contain"
+      />
+      <Text className="text-center text-[14px] text-[#E5484D]">{message}</Text>
       {onRetry && (
         <Pressable onPress={onRetry}>
-          <ThemedText type="linkPrimary">Retry</ThemedText>
+          <Text className="text-[14px] font-bold text-[#4B2E46]">Retry</Text>
         </Pressable>
       )}
-    </ThemedView>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    paddingVertical: Spacing.six,
-    alignItems: 'center',
-    gap: Spacing.two,
-  },
-  text: {
-    textAlign: 'center',
-  },
-});

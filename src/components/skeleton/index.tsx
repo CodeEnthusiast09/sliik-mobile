@@ -1,9 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Animated, DimensionValue, StyleSheet, ViewStyle } from 'react-native';
-
-import { Spacing } from '@/lib/constants';
-import { useTheme } from '@/hooks/common/use-theme';
-import { ThemedView } from '@/components/themed-view';
+import { Animated, DimensionValue, View, ViewStyle } from 'react-native';
 
 interface SkeletonProps {
   width?: DimensionValue;
@@ -13,7 +9,6 @@ interface SkeletonProps {
 }
 
 export function Skeleton({ width = '100%', height = 16, borderRadius = 8, style }: SkeletonProps) {
-  const theme = useTheme();
   const [opacity] = useState(() => new Animated.Value(0.4));
 
   useEffect(() => {
@@ -30,7 +25,7 @@ export function Skeleton({ width = '100%', height = 16, borderRadius = 8, style 
   return (
     <Animated.View
       style={[
-        { width, height, borderRadius, backgroundColor: theme.backgroundElement, opacity },
+        { width, height, borderRadius, backgroundColor: '#F3F0EB', opacity },
         style,
       ]}
     />
@@ -44,31 +39,21 @@ interface ListSkeletonProps {
 
 export function ListSkeleton({ rows = 6, rowHeight = 64 }: ListSkeletonProps) {
   return (
-    <ThemedView style={styles.list}>
+    <View className="gap-2">
       {Array.from({ length: rows }, (_, index) => (
         <Skeleton key={index} height={rowHeight} borderRadius={16} />
       ))}
-    </ThemedView>
+    </View>
   );
 }
 
 export function DetailSkeleton() {
   return (
-    <ThemedView style={styles.detail}>
+    <View className="mt-6 gap-4">
       <Skeleton width="55%" height={32} borderRadius={8} />
       <Skeleton height={120} borderRadius={16} />
       <Skeleton height={48} borderRadius={16} />
       <Skeleton height={48} borderRadius={16} />
-    </ThemedView>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  list: {
-    gap: Spacing.two,
-  },
-  detail: {
-    gap: Spacing.three,
-    marginTop: Spacing.three,
-  },
-});

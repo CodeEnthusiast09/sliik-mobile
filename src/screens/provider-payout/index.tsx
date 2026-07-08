@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, Text, TextInput, View } from 'react-native';
@@ -12,6 +13,7 @@ import {
   useBanks,
   useCreatePayoutAccount,
   usePayoutAccount,
+  useResolveAccountName,
 } from '@/hooks/services/payouts';
 import type { Bank } from '@/interfaces/provider';
 import { getErrorMessage } from '@/lib/utils';
@@ -40,6 +42,12 @@ export function ProviderPayoutScreen() {
   const [selectedBank, setSelectedBank] = useState<Bank | null>(null);
   const [accountNumber, setAccountNumber] = useState('');
   const [fieldError, setFieldError] = useState<string | null>(null);
+
+  const {
+    data: resolvedAccount,
+    isFetching: isResolvingAccount,
+    isError: isResolveError,
+  } = useResolveAccountName(selectedBank?.code, accountNumber);
 
   const filteredBanks = useMemo(() => {
     if (!banks) return [];
@@ -190,6 +198,35 @@ export function ProviderPayoutScreen() {
                 />
               ) : null}
 
+              {accountNumber.length === 10 && isResolvingAccount ? (
+                <View className="mt-3 flex-row items-center gap-2">
+                  <ActivityIndicator size="small" color="#4B2E46" />
+                  <Text className="text-[13px] text-[#817F80]">
+                    Checking account…
+                  </Text>
+                </View>
+              ) : null}
+
+              {resolvedAccount?.accountName ? (
+                <View className="mt-3 gap-1 rounded-[20px] border border-[#2F9E44] bg-white p-4">
+                  <View className="flex-row items-center gap-2">
+                    <Ionicons name="checkmark-circle" size={18} color="#2F9E44" />
+                    <Text className="text-[13px] font-bold text-[#2F9E44]">
+                      Account verified
+                    </Text>
+                  </View>
+                  <Text className="font-serif-bold text-[15px] text-[#26242A]">
+                    {resolvedAccount.accountName}
+                  </Text>
+                </View>
+              ) : null}
+
+              {isResolveError ? (
+                <Text className="mt-3 text-[13px] text-[#E5484D]">
+                  Could not resolve this account - check the number and bank.
+                </Text>
+              ) : null}
+
               {(fieldError ?? serverError) ? (
                 <Text className="mt-3 text-[13px] text-[#E5484D]">
                   {fieldError ?? serverError}
@@ -206,6 +243,7 @@ export function ProviderPayoutScreen() {
                     }
                     onPress={handleSubmit}
                     loading={createPayoutAccountMutation.isPending}
+                    disabled={!resolvedAccount?.accountName}
                   />
                 </View>
               ) : null}

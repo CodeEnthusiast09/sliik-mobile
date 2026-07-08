@@ -94,6 +94,27 @@ export const Spacing = {
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
 export const MaxContentWidth = 800;
 
+// The floating pill tab bar's style, factored out so a screen that needs to hide
+// it (chat-detail) can restore this exact object afterward - navigation.setOptions
+// with `undefined` would fall back to React Navigation's plain default bar instead.
+export const TAB_BAR_STYLE = {
+  position: 'absolute' as const,
+  left: 12,
+  right: 12,
+  bottom: Platform.select({ ios: 28, default: 16 }),
+  height: 64,
+  borderRadius: 32,
+  backgroundColor: '#FFFFFF',
+  borderTopWidth: 0,
+  paddingTop: 4,
+  paddingBottom: 4,
+  shadowColor: '#000',
+  shadowOpacity: 0.1,
+  shadowRadius: 16,
+  shadowOffset: { width: 0, height: 6 },
+  elevation: 8,
+};
+
 // Mirrors the backend's CHATTABLE_STATUSES (chat.service.ts) - chat only
 // opens once a provider confirms and stays open after completion.
 export const CHATTABLE_STATUSES = ['confirmed', 'completed'];

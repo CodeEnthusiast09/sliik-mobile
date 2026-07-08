@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import {
   ActivityIndicator,
@@ -161,9 +162,10 @@ function ProviderOffersFeed({
             </Text>
             <Pressable
               onPress={() => router.push('/offers/my-bids')}
-              className="rounded-full border border-[#DCD6C8] bg-white px-4 py-2.5"
+              className="flex-row items-center gap-1.5 rounded-full border bg-[#4B2E46] px-4 py-2.5"
             >
-              <Text className="text-[13px] font-bold text-[#26242A]">
+              <Ionicons name="receipt-outline" size={15} color="white" />
+              <Text className="text-[13px] font-bold text-white">
                 My bids
               </Text>
             </Pressable>

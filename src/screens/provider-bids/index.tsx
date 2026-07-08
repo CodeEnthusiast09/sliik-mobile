@@ -50,7 +50,11 @@ export function ProviderBidsScreen() {
                 refreshing={isRefetching}
                 onRefresh={refetch}
                 ListEmptyComponent={
-                  <EmptyState message="No bids yet. Browse open offers to submit one." />
+                  <EmptyState
+                    message="No bids yet. Browse open offers to submit one."
+                    actionLabel="Browse open offers"
+                    onAction={() => router.back()}
+                  />
                 }
                 renderItem={({ item }) => (
                   <Pressable

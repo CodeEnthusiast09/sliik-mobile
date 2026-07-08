@@ -2,16 +2,18 @@ import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView } from 'react-native';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Button } from '@/components/button';
 import { ErrorState } from '@/components/error-state';
 import { ReviewsList } from '@/components/reviews-list';
+import { ScreenHeader } from '@/components/screen-header';
 import { DetailSkeleton } from '@/components/skeleton';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedTextInput } from '@/components/themed-text-input';
-import { ThemedView } from '@/components/themed-view';
-import { useCustomerProfile, useUpdateCustomerProfile } from '@/hooks/services/customer';
+import {
+  useCustomerProfile,
+  useUpdateCustomerProfile,
+} from '@/hooks/services/customer';
 import { useReviewsForUser } from '@/hooks/services/reviews';
 import { useUploadImage } from '@/hooks/services/uploads';
 import { getErrorMessage } from '@/lib/utils';
@@ -20,16 +22,22 @@ import { useAuthStore } from '@/store/auth';
 import { usePushTokenStore } from '@/store/push-token';
 import { updateCustomerProfileSchema } from '@/validations/customer-profile';
 
-import { styles } from './index.styles';
-
 export function CustomerAccountScreen() {
   const router = useRouter();
   const clearAuth = useAuthStore((state) => state.clearAuth);
 
-  const { data: profile, isLoading, isError, error: profileError, refetch } = useCustomerProfile();
+  const {
+    data: profile,
+    isLoading,
+    isError,
+    error: profileError,
+    refetch,
+  } = useCustomerProfile();
   const updateProfileMutation = useUpdateCustomerProfile();
   const uploadImageMutation = useUploadImage();
-  const { data: userReviews, isLoading: isLoadingReviews } = useReviewsForUser(profile?.userId);
+  const { data: userReviews, isLoading: isLoadingReviews } = useReviewsForUser(
+    profile?.userId,
+  );
 
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
@@ -56,7 +64,9 @@ export function CustomerAccountScreen() {
     });
     if (result.canceled) return;
 
-    const uploadResponse = await uploadImageMutation.mutateAsync(result.assets[0]);
+    const uploadResponse = await uploadImageMutation.mutateAsync(
+      result.assets[0],
+    );
     if (uploadResponse.data) {
       updateProfileMutation.mutate({ avatarUrl: uploadResponse.data.url });
     }
@@ -94,87 +104,124 @@ export function CustomerAccountScreen() {
 
   if (isError) {
     return (
-      <ThemedView style={styles.container}>
-        <SafeAreaView style={styles.safeArea}>
-          <ErrorState message={getErrorMessage(profileError)} onRetry={refetch} />
+      <View className="flex-1 bg-[#FBF8F3]">
+        <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
+          <View className="flex-1 px-6">
+            <ErrorState
+              message={getErrorMessage(profileError)}
+              onRetry={refetch}
+            />
+          </View>
         </SafeAreaView>
-      </ThemedView>
+      </View>
     );
   }
 
   if (isLoading) {
     return (
-      <ThemedView style={styles.container}>
-        <SafeAreaView style={styles.safeArea}>
-          <DetailSkeleton />
+      <View className="flex-1 bg-[#FBF8F3]">
+        <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
+          <View className="flex-1 px-6">
+            <DetailSkeleton />
+          </View>
         </SafeAreaView>
-      </ThemedView>
+      </View>
     );
   }
 
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <ThemedText type="title">Account</ThemedText>
+    <View className="flex-1 bg-[#FBF8F3]">
+      <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
+        <View className="flex-1 px-6">
+          <ScreenHeader notificationsHref="/home/notifications" />
 
-          <Pressable onPress={handlePickAvatar}>
-            <ThemedView type="backgroundElement" style={styles.avatar}>
-              {profile?.avatarUrl ? (
-                <Image source={{ uri: profile.avatarUrl }} style={styles.avatarImage} />
-              ) : (
-                <ThemedText type="small">Add photo</ThemedText>
-              )}
-            </ThemedView>
-          </Pressable>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerClassName="pb-32"
+          >
+            <Text className="mt-4 font-serif-bold text-[30px] leading-[36px] text-[#26242A]">
+              Account
+            </Text>
 
-          <ThemedTextInput
-            placeholder="Full name"
-            value={fullName}
-            onChangeText={setFullName}
-            style={styles.input}
-            autoCapitalize="words"
-          />
-          <ThemedTextInput
-            placeholder="Phone"
-            value={phone}
-            onChangeText={setPhone}
-            style={styles.input}
-            keyboardType="phone-pad"
-          />
-          <ThemedTextInput placeholder="City" value={city} onChangeText={setCity} style={styles.input} />
+            <Pressable onPress={handlePickAvatar} className="self-center">
+              <View className="my-5 h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-[#F3F0EB]">
+                {profile?.avatarUrl ? (
+                  <Image
+                    source={{ uri: profile.avatarUrl }}
+                    style={{ width: 96, height: 96 }}
+                    contentFit="cover"
+                  />
+                ) : (
+                  <Text className="text-[13px] text-[#817F80]">
+                    Add photo
+                  </Text>
+                )}
+              </View>
+            </Pressable>
 
-          {(fieldError ?? serverError) && (
-            <ThemedText type="small" themeColor="danger">
-              {fieldError ?? serverError}
-            </ThemedText>
-          )}
+            <TextInput
+              placeholder="Full name"
+              placeholderTextColor="#A8A39B"
+              value={fullName}
+              onChangeText={setFullName}
+              autoCapitalize="words"
+              className="rounded-[16px] border border-[#ECE7E0] bg-white px-4 py-3.5 text-[15px] text-[#26242A]"
+              style={{ outlineWidth: 0 }}
+            />
+            <TextInput
+              placeholder="Phone"
+              placeholderTextColor="#A8A39B"
+              value={phone}
+              onChangeText={setPhone}
+              keyboardType="phone-pad"
+              className="mt-3 rounded-[16px] border border-[#ECE7E0] bg-white px-4 py-3.5 text-[15px] text-[#26242A]"
+              style={{ outlineWidth: 0 }}
+            />
+            <TextInput
+              placeholder="City"
+              placeholderTextColor="#A8A39B"
+              value={city}
+              onChangeText={setCity}
+              className="mt-3 rounded-[16px] border border-[#ECE7E0] bg-white px-4 py-3.5 text-[15px] text-[#26242A]"
+              style={{ outlineWidth: 0 }}
+            />
 
-          <Pressable onPress={handleSave} disabled={updateProfileMutation.isPending}>
-            <ThemedView type="backgroundElement" style={styles.submitButton}>
-              <ThemedText type="smallBold">
-                {updateProfileMutation.isPending ? 'Saving...' : 'Save changes'}
-              </ThemedText>
-            </ThemedView>
-          </Pressable>
+            {(fieldError ?? serverError) ? (
+              <Text className="mt-3 text-[13px] text-[#E5484D]">
+                {fieldError ?? serverError}
+              </Text>
+            ) : null}
 
-          <ThemedText type="subtitle" style={styles.sectionTitle}>
-            Reviews received
-          </ThemedText>
-          <ReviewsList
-            averageRating={userReviews?.averageRating ?? null}
-            totalReviews={userReviews?.totalReviews ?? 0}
-            reviews={userReviews?.reviews ?? []}
-            isLoading={isLoadingReviews}
-          />
+            <View className="mt-4">
+              <Button
+                label={
+                  updateProfileMutation.isPending ? 'Saving…' : 'Save changes'
+                }
+                onPress={handleSave}
+                loading={updateProfileMutation.isPending}
+              />
+            </View>
 
-          <Pressable onPress={handleLogout} style={styles.logoutButton}>
-            <ThemedText type="smallBold" themeColor="danger">
-              Log out
-            </ThemedText>
-          </Pressable>
-        </ScrollView>
+            <Text className="mt-7 font-serif-bold text-[18px] text-[#26242A]">
+              Reviews received
+            </Text>
+            <View className="mt-3">
+              <ReviewsList
+                averageRating={userReviews?.averageRating ?? null}
+                totalReviews={userReviews?.totalReviews ?? 0}
+                reviews={userReviews?.reviews ?? []}
+                isLoading={isLoadingReviews}
+              />
+            </View>
+
+            <Pressable onPress={handleLogout} className="mt-6 items-center py-2">
+              <Text className="text-[14px] font-bold text-[#E5484D]">
+                Log out
+              </Text>
+            </Pressable>
+          </ScrollView>
+        </View>
       </SafeAreaView>
-    </ThemedView>
+    </View>
   );
 }

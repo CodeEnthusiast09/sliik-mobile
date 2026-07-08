@@ -1,8 +1,12 @@
+import { Ionicons } from '@expo/vector-icons';
 import { isAxiosError } from 'axios';
 
 import type { ApiResponse } from '@/interfaces/api-response';
 import type { BookingStatus } from '@/interfaces/booking';
 import type { ThemeColor } from '@/lib/constants';
+import type { NotificationType } from '@/interfaces/notification';
+
+type IoniconName = keyof typeof Ionicons.glyphMap;
 
 // Backend numeric columns come back as strings (e.g. "21300.00") - format for
 // display as a comma-grouped whole number, matching the design references.
@@ -26,6 +30,52 @@ export function getStatusColor(
     case 'completed':
     default:
       return theme.textSecondary;
+  }
+}
+
+const PLUM = '#4B2E46';
+const SUCCESS = '#2F9E44';
+const WARNING = '#E0A800';
+const DANGER = '#E5484D';
+const MUTED = '#817F80';
+
+// Brand-consistent (no blue) per-type treatment for the notifications feed - icon
+// choices mirror ones already meaningful elsewhere in the app (pricetag = Deals tab,
+// chatbubble = Chats tab) so the same shape keeps meaning the same thing everywhere.
+export function getNotificationIcon(type: NotificationType): {
+  icon: IoniconName;
+  color: string;
+} {
+  switch (type) {
+    case 'booking_created':
+    case 'booking_reminder':
+      return { icon: 'calendar-outline', color: PLUM };
+    case 'booking_confirmed':
+    case 'booking_completed':
+      return { icon: 'calendar-outline', color: SUCCESS };
+    case 'booking_declined':
+      return { icon: 'calendar-outline', color: DANGER };
+    case 'booking_cancelled':
+      return { icon: 'calendar-outline', color: MUTED };
+    case 'offer_posted':
+    case 'offer_response_received':
+      return { icon: 'pricetag-outline', color: PLUM };
+    case 'offer_accepted':
+    case 'deal_claimed':
+      return { icon: 'pricetag-outline', color: SUCCESS };
+    case 'deal_posted':
+      return { icon: 'pricetag-outline', color: PLUM };
+    case 'payment_received':
+      return { icon: 'wallet-outline', color: SUCCESS };
+    case 'payment_sent':
+      return { icon: 'wallet-outline', color: PLUM };
+    case 'review_received':
+      return { icon: 'star', color: WARNING };
+    case 'message_received':
+      return { icon: 'chatbubble-outline', color: PLUM };
+    case 'system':
+    default:
+      return { icon: 'notifications-outline', color: MUTED };
   }
 }
 

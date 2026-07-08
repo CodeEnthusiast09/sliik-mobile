@@ -18,3 +18,11 @@ export async function createPayoutAccount(payload: CreatePayoutAccountInput) {
   const { data } = await apiClient.post<ApiResponse<PayoutAccount>>('/payouts', payload);
   return data;
 }
+
+export async function resolveAccountName(bankCode: string, accountNumber: string) {
+  const { data } = await apiClient.get<ApiResponse<{ accountName: string }>>(
+    '/payouts/resolve-account',
+    { params: { bankCode, accountNumber } },
+  );
+  return data;
+}
