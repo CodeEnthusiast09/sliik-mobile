@@ -152,3 +152,9 @@ export function getErrorMessage(error: unknown): string {
   }
   return 'Something went wrong';
 }
+
+// POST /auth/login returns 403 only when the email isn't verified yet (bad
+// credentials are 401), so a 403 there means "send them to the verify screen".
+export function isEmailNotVerifiedError(error: unknown): boolean {
+  return isAxiosError(error) && error.response?.status === 403;
+}

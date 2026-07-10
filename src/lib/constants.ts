@@ -118,3 +118,8 @@ export const TAB_BAR_STYLE = {
 // Mirrors the backend's CHATTABLE_STATUSES (chat.service.ts) - chat only
 // opens once a provider confirms and stays open after completion.
 export const CHATTABLE_STATUSES = ['confirmed', 'completed'];
+
+// Client-side mirror of the backend's EMAIL_VERIFICATION_RESEND_COOLDOWN_SECONDS.
+// The server enforces the real limit and silently drops early resends; this just
+// gates the Resend button so the user isn't tapping a rate-limited endpoint blind.
+export const RESEND_COOLDOWN_SECONDS = 60;

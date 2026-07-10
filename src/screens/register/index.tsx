@@ -89,7 +89,14 @@ export function RegisterScreen() {
     clearErrors();
 
     registerMutation.mutate(result.data, {
-      onSuccess: () => router.replace('/'),
+      onSuccess: () => {
+        // No token yet - the account is unverified. Send them to enter the
+        // 6-digit code we just emailed; that step is where auth is established.
+        router.push({
+          pathname: '/verify-email',
+          params: { email: result.data.email },
+        });
+      },
       onError: (error) => {
         setEmailError(true);
         showToast(getErrorMessage(error), 'error');

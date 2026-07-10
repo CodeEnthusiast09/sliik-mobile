@@ -16,7 +16,7 @@ import { SliikWordmark } from '@/components/sliik-wordmark';
 import { SocialAuthButtons } from '@/components/social-auth-buttons';
 import { TextField } from '@/components/text-field';
 import { useLogin } from '@/hooks/services/auth/useLogin';
-import { getErrorMessage } from '@/lib/utils';
+import { getErrorMessage, isEmailNotVerifiedError } from '@/lib/utils';
 import { showToast } from '@/store/toast';
 import { loginSchema } from '@/validations/auth';
 
@@ -51,6 +51,16 @@ export function LoginScreen() {
     loginMutation.mutate(result.data, {
       onSuccess: () => router.replace('/'),
       onError: (error) => {
+        // A 403 here means the account exists and the password is right, but
+        // the email was never verified - route them to the verify step instead
+        // of showing a dead-end error.
+        if (isEmailNotVerifiedError(error)) {
+          router.push({
+            pathname: '/verify-email',
+            params: { email: result.data.email },
+          });
+          return;
+        }
         setEmailError(true);
         setPasswordError(true);
         showToast(getErrorMessage(error), 'error');

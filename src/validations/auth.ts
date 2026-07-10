@@ -49,3 +49,18 @@ export const resetPasswordFormSchema = resetPasswordSchema
     path: ['confirmPassword'],
     message: 'Passwords do not match',
   });
+
+// API payload for POST /auth/verify-email.
+export const verifyEmailSchema = z.object({
+  email: z.email('Enter a valid email address'),
+  code: z.string().regex(/^\d{6}$/, 'Enter the 6-digit code'),
+});
+
+export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;
+
+// API payload for POST /auth/resend-verification.
+export const resendVerificationSchema = z.object({
+  email: z.email('Enter a valid email address'),
+});
+
+export type ResendVerificationInput = z.infer<typeof resendVerificationSchema>;

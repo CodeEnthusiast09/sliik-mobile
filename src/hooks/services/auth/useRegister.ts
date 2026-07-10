@@ -1,22 +1,13 @@
 import { useMutation } from '@tanstack/react-query';
 
 import { register } from '@/services/auth';
-import { useAuthStore } from '@/store/auth';
-import { useLocationStore } from '@/store/location';
 import type { RegisterInput } from '@/validations/auth';
 
+// Register no longer authenticates: the account exists but is unverified and
+// gets no token. The screen routes to the verify-email step, which is where
+// auth is actually established (see useVerifyEmail).
 export function useRegister() {
-  const setAuth = useAuthStore((state) => state.setAuth);
-
   return useMutation({
     mutationFn: (payload: RegisterInput) => register(payload),
-    onSuccess: (response) => {
-      if (response.data) {
-        setAuth(response.data.accessToken, response.data.role);
-        if (response.data.role === 'customer') {
-          useLocationStore.getState().requestLocation();
-        }
-      }
-    },
   });
 }
