@@ -2,6 +2,7 @@ import type { ApiResponse } from '@/interfaces/api-response';
 import type { AuthData, RegisterData } from '@/interfaces/auth';
 import type {
   ForgotPasswordInput,
+  GoogleAuthInput,
   LoginInput,
   RegisterInput,
   ResendVerificationInput,
@@ -38,5 +39,10 @@ export async function verifyEmail(payload: VerifyEmailInput) {
 
 export async function resendVerification(payload: ResendVerificationInput) {
   const { data } = await apiClient.post<ApiResponse>('/auth/resend-verification', payload);
+  return data;
+}
+
+export async function googleAuth(payload: GoogleAuthInput) {
+  const { data } = await apiClient.post<ApiResponse<AuthData>>('/auth/google', payload);
   return data;
 }

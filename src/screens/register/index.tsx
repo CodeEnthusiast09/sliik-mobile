@@ -207,15 +207,19 @@ export function RegisterScreen() {
                 />
               </View>
 
-              <View className="my-2 flex-row items-center gap-3">
-                <View className="h-px flex-1 bg-[#E7E1D9]" />
-                <Text className="text-[13px] text-[#8B877F]">
-                  or continue with
-                </Text>
-                <View className="h-px flex-1 bg-[#E7E1D9]" />
-              </View>
+              {role === 'customer' && (
+                <>
+                  <View className="my-2 flex-row items-center gap-3">
+                    <View className="h-px flex-1 bg-[#E7E1D9]" />
+                    <Text className="text-[13px] text-[#8B877F]">
+                      or continue with
+                    </Text>
+                    <View className="h-px flex-1 bg-[#E7E1D9]" />
+                  </View>
 
-              <SocialAuthButtons />
+                  <SocialAuthButtons role={role} />
+                </>
+              )}
             </View>
           </ScrollView>
         </KeyboardAvoidingView>

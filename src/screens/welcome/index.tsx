@@ -1,4 +1,3 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -7,7 +6,6 @@ import { Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
-import { SocialAuthButtons } from '@/components/social-auth-buttons';
 
 export function WelcomeScreen() {
   const router = useRouter();
@@ -39,13 +37,9 @@ export function WelcomeScreen() {
 
           <View className="mt-6 gap-3">
             <Button
-              label="Continue with Email"
-              leftIcon={
-                <Ionicons name="mail-outline" size={18} color="#F7EFE4" />
-              }
+              label="Get Started"
               onPress={() => router.push('/role-select')}
             />
-            <SocialAuthButtons />
           </View>
 
           <Text className="mt-5 text-center text-[12px] leading-[17px] text-white/60">

@@ -141,7 +141,7 @@ export function LoginScreen() {
               <View className="h-px flex-1 bg-[#E7E1D9]" />
             </View>
 
-            <SocialAuthButtons />
+            <SocialAuthButtons role="customer" />
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
