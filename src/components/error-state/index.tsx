@@ -10,7 +10,7 @@ export function ErrorState({ message, onRetry }: ErrorStateProps) {
   return (
     <View className="items-center gap-3 py-8">
       <Image
-        source={require('../../../assets/images/error-state.png')}
+        source={require('../../../assets/images/error-state.webp')}
         style={{ width: 96, height: 120 }}
         contentFit="contain"
       />

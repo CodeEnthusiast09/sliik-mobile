@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { isAxiosError } from 'axios';
 
 import type { ApiResponse } from '@/interfaces/api-response';

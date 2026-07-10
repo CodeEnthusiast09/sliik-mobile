@@ -1,4 +1,4 @@
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Tabs } from 'expo-router';
 import { type ColorValue } from 'react-native';
 
@@ -25,8 +25,8 @@ function tabIcon(outline: IoniconName, filled: IoniconName) {
 
 function HomeTabIcon({ focused, color, size }: TabIconProps) {
   return (
-    <MaterialCommunityIcons
-      name={focused ? 'home-variant' : 'home-variant-outline'}
+    <Ionicons
+      name={focused ? 'home' : 'home-outline'}
       color={color as string}
       size={size}
     />

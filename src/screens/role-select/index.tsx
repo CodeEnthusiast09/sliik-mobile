@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -125,7 +125,7 @@ export function RoleSelectScreen() {
               title="Customer"
               tag="Book services"
               description="Book services, discover professionals or post an offer for providers to bid on."
-              image={require('../../../assets/images/role-select-customer.png')}
+              image={require('../../../assets/images/role-select-customer.webp')}
               aspectRatio={360 / 567}
               selected={role === 'customer'}
               onPress={() => setRole('customer')}
@@ -134,7 +134,7 @@ export function RoleSelectScreen() {
               title="Provider"
               tag="Earn on Sliik"
               description="Offer your services, manage bookings and grow your business."
-              image={require('../../../assets/images/role-select-provider.png')}
+              image={require('../../../assets/images/role-select-provider.webp')}
               aspectRatio={360 / 527}
               selected={role === 'provider'}
               onPress={() => setRole('provider')}

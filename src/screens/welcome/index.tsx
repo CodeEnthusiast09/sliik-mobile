@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -17,7 +17,7 @@ export function WelcomeScreen() {
       <StatusBar style="light" />
 
       <Image
-        source={require('../../../assets/images/onboarding-hero.jpg')}
+        source={require('../../../assets/images/onboarding-hero.webp')}
         contentFit="cover"
         style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
       />

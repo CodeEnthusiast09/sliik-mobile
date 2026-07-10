@@ -13,7 +13,7 @@ export function EmptyState({ message, actionLabel, onAction }: EmptyStateProps) 
   return (
     <View className="items-center gap-4 py-8">
       <Image
-        source={require('../../../assets/images/empty-state.png')}
+        source={require('../../../assets/images/empty-state.webp')}
         style={{ width: 96, height: 120 }}
         contentFit="contain"
       />
