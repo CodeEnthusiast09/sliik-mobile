@@ -91,6 +91,8 @@ export default function TabsLayout() {
             tabBarIcon: tabIcon('chatbubble-outline', 'chatbubble'),
           }}
         />
+        {/* Reachable from the account/profile screen, not its own tab button. */}
+        <Tabs.Screen name="delete-account" options={{ href: null }} />
       </Tabs.Protected>
 
       <Tabs.Protected guard={role === 'customer'}>

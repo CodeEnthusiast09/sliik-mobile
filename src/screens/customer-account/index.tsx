@@ -219,6 +219,13 @@ export function CustomerAccountScreen() {
                 Log out
               </Text>
             </Pressable>
+
+            <Pressable
+              onPress={() => router.push('/delete-account')}
+              className="mt-1 items-center py-2"
+            >
+              <Text className="text-[13px] text-[#817F80]">Delete account</Text>
+            </Pressable>
           </ScrollView>
         </View>
       </SafeAreaView>
