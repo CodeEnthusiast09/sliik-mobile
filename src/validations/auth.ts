@@ -32,3 +32,20 @@ export const forgotPasswordSchema = z.object({
 });
 
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+
+// API payload for POST /auth/reset-password.
+export const resetPasswordSchema = z.object({
+  email: z.email('Enter a valid email address'),
+  code: z.string().regex(/^\d{6}$/, 'Enter the 6-digit code'),
+  newPassword: z.string().min(8, 'Password must be at least 8 characters'),
+});
+
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+
+// Form-only schema: adds the confirm field and the match check (not sent to the API).
+export const resetPasswordFormSchema = resetPasswordSchema
+  .extend({ confirmPassword: z.string() })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    path: ['confirmPassword'],
+    message: 'Passwords do not match',
+  });

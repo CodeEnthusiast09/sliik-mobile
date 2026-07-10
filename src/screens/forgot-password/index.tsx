@@ -40,14 +40,18 @@ export function ForgotPasswordScreen() {
     setEmailError(false);
 
     mutation.mutate(result.data, {
+      onSuccess: () => {
+        router.push({
+          pathname: '/reset-password',
+          params: { email: result.data.email },
+        });
+      },
       onError: (error) => {
         setEmailError(true);
         showToast(getErrorMessage(error), 'error');
       },
     });
   }
-
-  const sent = mutation.isSuccess;
 
   return (
     <View className="flex-1 bg-[#FBF8F3]">
@@ -73,48 +77,33 @@ export function ForgotPasswordScreen() {
               Forgot Password?
             </Text>
             <Text className="mt-2.5 text-center text-[15px] leading-[21px] text-[#817F80]">
-              {sent
-                ? 'We sent a reset link to your email. Check your inbox to continue.'
-                : "Enter your email and we'll send you a link to reset your password."}
+              Enter your email and we&apos;ll send you a 6-digit code to reset
+              your password.
             </Text>
 
-            {sent ? (
-              <View className="mt-10 items-center gap-6">
-                <View className="h-20 w-20 items-center justify-center rounded-full bg-[#F0E6EC]">
-                  <Ionicons name="mail-outline" size={36} color="#4B2E46" />
-                </View>
-                <View className="w-full">
-                  <Button
-                    label="Back to Sign In"
-                    onPress={() => router.back()}
-                  />
-                </View>
-              </View>
-            ) : (
-              <View className="mt-9 gap-4">
-                <TextField
-                  leftIcon="mail-outline"
-                  placeholder="Enter your email"
-                  value={email}
-                  error={emailError}
-                  onChangeText={(text) => {
-                    setEmail(text);
-                    if (emailError) setEmailError(false);
-                  }}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  keyboardType="email-address"
-                />
+            <View className="mt-9 gap-4">
+              <TextField
+                leftIcon="mail-outline"
+                placeholder="Enter your email"
+                value={email}
+                error={emailError}
+                onChangeText={(text) => {
+                  setEmail(text);
+                  if (emailError) setEmailError(false);
+                }}
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="email-address"
+              />
 
-                <View className="mt-1">
-                  <Button
-                    label={mutation.isPending ? 'Sending…' : 'Send Reset Link'}
-                    onPress={handleSubmit}
-                    loading={mutation.isPending}
-                  />
-                </View>
+              <View className="mt-1">
+                <Button
+                  label={mutation.isPending ? 'Sending…' : 'Send Code'}
+                  onPress={handleSubmit}
+                  loading={mutation.isPending}
+                />
               </View>
-            )}
+            </View>
 
             <View className="mt-auto flex-row justify-center pt-8">
               <Text className="text-[14px] text-[#817F80]">
