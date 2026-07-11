@@ -14,3 +14,4 @@ export * from './deals';
 export * from './reviews';
 export * from './chat';
 export * from './notifications';
+export * from './favorites';

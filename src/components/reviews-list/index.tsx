@@ -1,7 +1,9 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { ActivityIndicator, Text, View } from 'react-native';
 
 import { Avatar } from '@/components/avatar';
 import type { Review } from '@/interfaces/review';
+import { formatRelativeTime } from '@/lib/utils';
 
 interface ReviewsListProps {
   averageRating: number | null;
@@ -40,10 +42,18 @@ export function ReviewsList({ averageRating, totalReviews, reviews, isLoading }:
               </Text>
               <Text className="text-[13px] text-[#E0A800]">
                 {'★'.repeat(review.rating)}
-                {'☆'.repeat(5 - review.rating)}{' '}
+                {'☆'.repeat(5 - review.rating)} {review.rating.toFixed(1)}{' '}
                 <Text className="text-[13px] text-[#817F80]">
-                  · {new Date(review.createdAt).toLocaleDateString()}
+                  · {formatRelativeTime(review.createdAt)}
                 </Text>
+              </Text>
+            </View>
+            {/* Every review requires a completed booking (reviews.service.ts
+                rejects anything else), so this is always true, not decoration. */}
+            <View className="flex-row items-center gap-1 rounded-full bg-[#EAF6EC] px-2.5 py-1">
+              <Ionicons name="checkmark-circle" size={12} color="#2F9E44" />
+              <Text className="text-[11px] font-bold text-[#2F9E44]">
+                Verified
               </Text>
             </View>
           </View>
