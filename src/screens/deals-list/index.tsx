@@ -129,7 +129,7 @@ function CustomerDealsFeed({
                 showsVerticalScrollIndicator={false}
                 data={deals}
                 keyExtractor={(deal) => deal.id}
-                contentContainerClassName="gap-4 pb-32"
+                contentContainerClassName="grow gap-4 pb-32"
                 refreshing={isRefetching}
                 onRefresh={refetch}
                 ListEmptyComponent={
@@ -209,7 +209,7 @@ function ProviderDealsList({
                 showsVerticalScrollIndicator={false}
                 data={deals}
                 keyExtractor={(deal) => deal.id}
-                contentContainerClassName="gap-4 pb-32"
+                contentContainerClassName="grow gap-4 pb-32"
                 refreshing={isRefetching}
                 onRefresh={refetch}
                 ListEmptyComponent={

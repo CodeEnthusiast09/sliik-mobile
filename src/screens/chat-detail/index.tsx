@@ -149,7 +149,7 @@ export function ChatDetailScreen() {
                 ref={listRef}
                 data={messages}
                 keyExtractor={(message) => message.id}
-                contentContainerClassName="gap-2 pt-4 pb-4"
+                contentContainerClassName="grow gap-2 pt-4 pb-4"
                 onContentSizeChange={() =>
                   listRef.current?.scrollToEnd({ animated: true })
                 }

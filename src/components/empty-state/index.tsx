@@ -11,10 +11,10 @@ interface EmptyStateProps {
 
 export function EmptyState({ message, actionLabel, onAction }: EmptyStateProps) {
   return (
-    <View className="items-center gap-4 py-8">
+    <View className="flex-1 items-center justify-center gap-4 py-8">
       <Image
         source={require('../../../assets/images/empty-state.webp')}
-        style={{ width: 96, height: 120 }}
+        style={{ width: 214, height: 240 }}
         contentFit="contain"
       />
       <Text className="text-center text-[14px] text-[#817F80]">{message}</Text>

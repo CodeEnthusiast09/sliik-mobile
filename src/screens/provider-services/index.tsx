@@ -55,7 +55,7 @@ export function ProviderServicesScreen() {
                 showsVerticalScrollIndicator={false}
                 data={services}
                 keyExtractor={(service) => service.id}
-                contentContainerClassName="gap-3 pb-32"
+                contentContainerClassName="grow gap-3 pb-32"
                 refreshing={isRefetching}
                 onRefresh={refetch}
                 ListEmptyComponent={

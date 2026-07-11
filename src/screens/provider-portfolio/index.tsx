@@ -122,7 +122,7 @@ export function ProviderPortfolioScreen() {
                 keyExtractor={(item) => item.id}
                 numColumns={2}
                 columnWrapperClassName="gap-2"
-                contentContainerClassName="gap-2 pb-32"
+                contentContainerClassName="grow gap-2 pb-32"
                 refreshing={isRefetching}
                 onRefresh={refetch}
                 ListEmptyComponent={
