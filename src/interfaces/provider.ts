@@ -62,6 +62,7 @@ export interface DayOff {
 export interface ProvidersQuery {
   city?: string;
   tradeType?: string;
+  search?: string;
   minRating?: number;
   lat?: number;
   lng?: number;

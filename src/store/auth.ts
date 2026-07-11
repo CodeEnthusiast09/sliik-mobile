@@ -21,7 +21,7 @@ interface AuthState {
 // Sliik is mobile-only and web is a dev/testing target, not a shipped
 // surface. If web ever ships for real, this should move to an httpOnly
 // cookie issued by the backend instead.
-const secureStorage = {
+export const secureStorage = {
   getItem: (name: string) => {
     if (Platform.OS === 'web') {
       return Promise.resolve(localStorage.getItem(name));
