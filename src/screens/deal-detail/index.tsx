@@ -17,6 +17,7 @@ import { Chip } from '@/components/chip';
 import { ErrorState } from '@/components/error-state';
 import { ScreenHeader } from '@/components/screen-header';
 import { DetailSkeleton } from '@/components/skeleton';
+import { useHideTabBar } from '@/hooks/common/use-hide-tab-bar';
 import { useAvailableSlots } from '@/hooks/services/bookings';
 import { useClaimDeal, useDeal, useDeleteDeal } from '@/hooks/services/deals';
 import {
@@ -38,6 +39,8 @@ export function DealDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const notificationsHref =
     role === 'provider' ? '/profile/notifications' : '/home/notifications';
+
+  useHideTabBar();
 
   const { data: deal, isLoading, isError, error, refetch } = useDeal(id);
   const deleteMutation = useDeleteDeal();
@@ -112,7 +115,7 @@ export function DealDetailScreen() {
 
   if (isError) {
     return (
-      <View className="flex-1 bg-[#FBF8F3]">
+      <View className="flex-1 bg-white">
         <SafeAreaView className="flex-1 px-6" edges={['top', 'bottom']}>
           <ErrorState message={getErrorMessage(error)} onRetry={refetch} />
         </SafeAreaView>
@@ -122,7 +125,7 @@ export function DealDetailScreen() {
 
   if (isLoading || !deal) {
     return (
-      <View className="flex-1 bg-[#FBF8F3]">
+      <View className="flex-1 bg-white">
         <SafeAreaView className="flex-1 px-6" edges={['top', 'bottom']}>
           <DetailSkeleton />
         </SafeAreaView>
@@ -138,7 +141,7 @@ export function DealDetailScreen() {
   );
 
   return (
-    <View className="flex-1 bg-[#FBF8F3]">
+    <View className="flex-1 bg-white">
       <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
         <View className="flex-1 px-6">
           <ScreenHeader

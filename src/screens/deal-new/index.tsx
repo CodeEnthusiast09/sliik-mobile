@@ -7,6 +7,7 @@ import { Button } from '@/components/button';
 import { Chip } from '@/components/chip';
 import { DateTimeField } from '@/components/date-time-field';
 import { ScreenHeader } from '@/components/screen-header';
+import { useHideTabBar } from '@/hooks/common/use-hide-tab-bar';
 import { useCreateDeal } from '@/hooks/services/deals';
 import { useServices } from '@/hooks/services/provider-services';
 import { getErrorMessage } from '@/lib/utils';
@@ -15,6 +16,9 @@ import { createDealSchema } from '@/validations/deal';
 
 export function DealNewScreen() {
   const router = useRouter();
+
+  useHideTabBar();
+
   const { data: services } = useServices();
   const createDealMutation = useCreateDeal();
 
@@ -60,7 +64,7 @@ export function DealNewScreen() {
   }
 
   return (
-    <View className="flex-1 bg-[#FBF8F3]">
+    <View className="flex-1 bg-white">
       <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
         <View className="flex-1 px-6">
           <ScreenHeader

@@ -14,12 +14,15 @@ export type ScreenHeaderProps = {
    */
   onBack?: () => void;
   title?: string;
+  /** Drill-down screens that already hide the tab bar can also drop the bell. */
+  showNotifications?: boolean;
 };
 
 export function ScreenHeader({
   notificationsHref,
   onBack,
   title,
+  showNotifications = true,
 }: ScreenHeaderProps) {
   const router = useRouter();
 
@@ -43,7 +46,11 @@ export function ScreenHeader({
         </Text>
       ) : null}
 
-      <NotificationBell onPress={() => router.push(notificationsHref)} />
+      {showNotifications ? (
+        <NotificationBell onPress={() => router.push(notificationsHref)} />
+      ) : (
+        <View className="h-9 w-9" />
+      )}
     </View>
   );
 }

@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { TextField } from '@/components/text-field';
+import { useHideTabBar } from '@/hooks/common/use-hide-tab-bar';
 import { useDeleteAccount } from '@/hooks/services/users';
 import { getErrorMessage } from '@/lib/utils';
 import { unregisterPushToken } from '@/services/notifications';
@@ -26,6 +27,8 @@ export function DeleteAccountScreen() {
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const queryClient = useQueryClient();
   const mutation = useDeleteAccount();
+
+  useHideTabBar();
 
   const [password, setPassword] = useState('');
 
@@ -46,7 +49,7 @@ export function DeleteAccountScreen() {
   }
 
   return (
-    <View className="flex-1 bg-[#FBF8F3]">
+    <View className="flex-1 bg-white">
       <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
         <KeyboardAvoidingView
           className="flex-1"

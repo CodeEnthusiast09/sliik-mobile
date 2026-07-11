@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
 import { ScreenHeader } from '@/components/screen-header';
+import { useHideTabBar } from '@/hooks/common/use-hide-tab-bar';
 import {
   useCreateService,
   useDeleteService,
@@ -18,6 +19,8 @@ export function ProviderServiceFormScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const isEditing = Boolean(id);
+
+  useHideTabBar();
 
   const { data: services } = useServices();
   const existingService = services?.find((service) => service.id === id);
@@ -90,7 +93,7 @@ export function ProviderServiceFormScreen() {
     : null;
 
   return (
-    <View className="flex-1 bg-[#FBF8F3]">
+    <View className="flex-1 bg-white">
       <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
         <View className="flex-1 px-6">
           <ScreenHeader

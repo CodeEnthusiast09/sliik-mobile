@@ -6,11 +6,15 @@ import { EmptyState } from '@/components/empty-state';
 import { ErrorState } from '@/components/error-state';
 import { ScreenHeader } from '@/components/screen-header';
 import { ListSkeleton } from '@/components/skeleton';
+import { useHideTabBar } from '@/hooks/common/use-hide-tab-bar';
 import { useServices } from '@/hooks/services/provider-services';
-import { formatCurrency, getErrorMessage } from '@/lib/utils';
+import { formatCurrency, formatDurationLabel, getErrorMessage } from '@/lib/utils';
 
 export function ProviderServicesScreen() {
   const router = useRouter();
+
+  useHideTabBar();
+
   const {
     data: services,
     isLoading,
@@ -21,7 +25,7 @@ export function ProviderServicesScreen() {
   } = useServices();
 
   return (
-    <View className="flex-1 bg-[#FBF8F3]">
+    <View className="flex-1 bg-white">
       <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
         <View className="flex-1 px-6">
           <ScreenHeader
@@ -71,8 +75,8 @@ export function ProviderServicesScreen() {
                       {item.name}
                     </Text>
                     <Text className="text-[13px] text-[#817F80]">
-                      ₦{formatCurrency(item.price)} · {item.durationMinutes}{' '}
-                      min
+                      ₦{formatCurrency(item.price)} ·{' '}
+                      {formatDurationLabel(item.durationMinutes)}
                       {!item.isActive ? ' · Inactive' : ''}
                     </Text>
                   </Pressable>

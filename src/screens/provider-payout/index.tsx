@@ -9,6 +9,7 @@ import { EmptyState } from '@/components/empty-state';
 import { ErrorState } from '@/components/error-state';
 import { ScreenHeader } from '@/components/screen-header';
 import { DetailSkeleton } from '@/components/skeleton';
+import { useHideTabBar } from '@/hooks/common/use-hide-tab-bar';
 import {
   useBanks,
   useCreatePayoutAccount,
@@ -21,6 +22,8 @@ import { createPayoutAccountSchema } from '@/validations/payout';
 
 export function ProviderPayoutScreen() {
   const router = useRouter();
+
+  useHideTabBar();
 
   const {
     data: payoutAccount,
@@ -81,7 +84,7 @@ export function ProviderPayoutScreen() {
 
   if (isAccountError) {
     return (
-      <View className="flex-1 bg-[#FBF8F3]">
+      <View className="flex-1 bg-white">
         <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
           <View className="flex-1 px-6">
             <ErrorState
@@ -96,7 +99,7 @@ export function ProviderPayoutScreen() {
 
   if (isLoadingAccount) {
     return (
-      <View className="flex-1 bg-[#FBF8F3]">
+      <View className="flex-1 bg-white">
         <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
           <View className="flex-1 px-6">
             <DetailSkeleton />
@@ -107,7 +110,7 @@ export function ProviderPayoutScreen() {
   }
 
   return (
-    <View className="flex-1 bg-[#FBF8F3]">
+    <View className="flex-1 bg-white">
       <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
         <View className="flex-1 px-6">
           <ScreenHeader

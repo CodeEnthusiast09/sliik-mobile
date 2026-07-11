@@ -1,11 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import {
-  useFocusEffect,
-  useLocalSearchParams,
-  useNavigation,
-  useRouter,
-} from 'expo-router';
-import { useCallback, useRef, useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRef, useState } from 'react';
 import {
   FlatList,
   KeyboardAvoidingView,
@@ -22,10 +17,10 @@ import { ErrorState } from '@/components/error-state';
 import { ScreenHeader } from '@/components/screen-header';
 import { DetailSkeleton, ListSkeleton } from '@/components/skeleton';
 import { useChatSocket } from '@/hooks/common/use-chat-socket';
+import { useHideTabBar } from '@/hooks/common/use-hide-tab-bar';
 import { useBooking } from '@/hooks/services/bookings';
 import { useMessages } from '@/hooks/services/chat';
 import type { Message } from '@/interfaces/chat';
-import { TAB_BAR_STYLE } from '@/lib/constants';
 import { formatTimeLabel, getErrorMessage } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth';
 
@@ -59,22 +54,10 @@ function MessageBubble({
 
 export function ChatDetailScreen() {
   const router = useRouter();
-  const navigation = useNavigation();
   const role = useAuthStore((state) => state.role);
   const { id } = useLocalSearchParams<{ id: string }>();
 
-  // A full-screen conversation reads better without the floating tab bar competing
-  // for the bottom of the screen - hide it while this screen is focused, restore
-  // the exact original style (not `undefined`, which would fall back to React
-  // Navigation's plain default bar) once it isn't.
-  useFocusEffect(
-    useCallback(() => {
-      navigation.getParent()?.setOptions({ tabBarStyle: { display: 'none' } });
-      return () => {
-        navigation.getParent()?.setOptions({ tabBarStyle: TAB_BAR_STYLE });
-      };
-    }, [navigation]),
-  );
+  useHideTabBar();
 
   const {
     data: booking,
@@ -107,7 +90,7 @@ export function ChatDetailScreen() {
 
   if (isBookingError) {
     return (
-      <View className="flex-1 bg-[#FBF8F3]">
+      <View className="flex-1 bg-white">
         <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
           <View className="flex-1 px-6">
             <ErrorState
@@ -122,7 +105,7 @@ export function ChatDetailScreen() {
 
   if (isLoadingBooking || !booking) {
     return (
-      <View className="flex-1 bg-[#FBF8F3]">
+      <View className="flex-1 bg-white">
         <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
           <View className="flex-1 px-6">
             <DetailSkeleton />
@@ -137,7 +120,7 @@ export function ChatDetailScreen() {
     role === 'customer' ? booking.customer?.userId : booking.provider?.userId;
 
   return (
-    <View className="flex-1 bg-[#FBF8F3]">
+    <View className="flex-1 bg-white">
       <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
         <View className="flex-1 px-6">
           <ScreenHeader

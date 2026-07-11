@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/button';
 import { DateTimeField } from '@/components/date-time-field';
 import { ScreenHeader } from '@/components/screen-header';
+import { useHideTabBar } from '@/hooks/common/use-hide-tab-bar';
 import { useCustomerProfile } from '@/hooks/services/customer';
 import { useCreateOffer } from '@/hooks/services/offers';
 import { getErrorMessage } from '@/lib/utils';
@@ -14,6 +15,9 @@ import { createOfferSchema } from '@/validations/offer';
 
 export function OfferNewScreen() {
   const router = useRouter();
+
+  useHideTabBar();
+
   const { data: customer } = useCustomerProfile();
   const createOfferMutation = useCreateOffer();
 
@@ -55,7 +59,7 @@ export function OfferNewScreen() {
   }
 
   return (
-    <View className="flex-1 bg-[#FBF8F3]">
+    <View className="flex-1 bg-white">
       <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
         <View className="flex-1 px-6">
           <ScreenHeader

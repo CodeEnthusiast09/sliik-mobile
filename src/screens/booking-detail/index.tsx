@@ -11,6 +11,7 @@ import { ErrorState } from '@/components/error-state';
 import { ScreenHeader } from '@/components/screen-header';
 import { DetailSkeleton } from '@/components/skeleton';
 import { StatusPill } from '@/components/status-pill';
+import { useHideTabBar } from '@/hooks/common/use-hide-tab-bar';
 import {
   useBooking,
   useCancelBooking,
@@ -44,6 +45,8 @@ export function BookingDetailScreen() {
   const router = useRouter();
   const role = useAuthStore((state) => state.role);
   const { id } = useLocalSearchParams<{ id: string }>();
+
+  useHideTabBar();
 
   const {
     data: booking,
@@ -126,7 +129,7 @@ export function BookingDetailScreen() {
 
   if (isError) {
     return (
-      <View className="flex-1 bg-[#FBF8F3]">
+      <View className="flex-1 bg-white">
         <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
           <View className="flex-1 px-6">
             <ErrorState
@@ -141,7 +144,7 @@ export function BookingDetailScreen() {
 
   if (isLoading || !booking) {
     return (
-      <View className="flex-1 bg-[#FBF8F3]">
+      <View className="flex-1 bg-white">
         <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
           <View className="flex-1 px-6">
             <DetailSkeleton />
@@ -167,13 +170,19 @@ export function BookingDetailScreen() {
     booking.status !== 'declined';
 
   return (
-    <View className="flex-1 bg-[#FBF8F3]">
+    <View className="flex-1 bg-white">
       <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
         <View className="flex-1 px-6">
           <ScreenHeader
             title="Booking detail"
             notificationsHref={notificationsHref}
-            onBack={() => router.back()}
+            onBack={() =>
+              // Reached either by tapping a row in the bookings list (has
+              // real back history) or via a cross-tab replace() right after
+              // submitting a new booking (no back history at all) - guard
+              // against the latter throwing a GO_BACK navigation error.
+              router.canGoBack() ? router.back() : router.replace('/bookings')
+            }
           />
 
           <ScrollView

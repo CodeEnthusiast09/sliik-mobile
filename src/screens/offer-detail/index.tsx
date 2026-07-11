@@ -8,6 +8,7 @@ import { Button } from '@/components/button';
 import { ErrorState } from '@/components/error-state';
 import { ScreenHeader } from '@/components/screen-header';
 import { DetailSkeleton } from '@/components/skeleton';
+import { useHideTabBar } from '@/hooks/common/use-hide-tab-bar';
 import {
   useAcceptResponse,
   useCancelOffer,
@@ -30,6 +31,8 @@ export function OfferDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const notificationsHref =
     role === 'provider' ? '/profile/notifications' : '/home/notifications';
+
+  useHideTabBar();
 
   const { data: offer, isLoading, isError, error, refetch } = useOffer(id);
   const { data: provider } = useProviderProfile(role === 'provider');
@@ -64,7 +67,7 @@ export function OfferDetailScreen() {
 
   if (isError) {
     return (
-      <View className="flex-1 bg-[#FBF8F3]">
+      <View className="flex-1 bg-white">
         <SafeAreaView className="flex-1 px-6" edges={['top', 'bottom']}>
           <ErrorState message={getErrorMessage(error)} onRetry={refetch} />
         </SafeAreaView>
@@ -74,7 +77,7 @@ export function OfferDetailScreen() {
 
   if (isLoading || !offer) {
     return (
-      <View className="flex-1 bg-[#FBF8F3]">
+      <View className="flex-1 bg-white">
         <SafeAreaView className="flex-1 px-6" edges={['top', 'bottom']}>
           <DetailSkeleton />
         </SafeAreaView>
@@ -87,7 +90,7 @@ export function OfferDetailScreen() {
     : undefined;
 
   return (
-    <View className="flex-1 bg-[#FBF8F3]">
+    <View className="flex-1 bg-white">
       <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
         <View className="flex-1 px-6">
           <ScreenHeader

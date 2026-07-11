@@ -8,6 +8,7 @@ import { DateTimeField } from '@/components/date-time-field';
 import { ErrorState } from '@/components/error-state';
 import { ScreenHeader } from '@/components/screen-header';
 import { DetailSkeleton } from '@/components/skeleton';
+import { useHideTabBar } from '@/hooks/common/use-hide-tab-bar';
 import {
   useAddDayOff,
   useDaysOff,
@@ -46,6 +47,9 @@ function buildDefaultRows(): DayRow[] {
 
 export function ProviderAvailabilityScreen() {
   const router = useRouter();
+
+  useHideTabBar();
+
   const {
     data: schedule,
     isLoading: isLoadingSchedule,
@@ -146,7 +150,7 @@ export function ProviderAvailabilityScreen() {
 
   if (isScheduleError || isDaysOffError) {
     return (
-      <View className="flex-1 bg-[#FBF8F3]">
+      <View className="flex-1 bg-white">
         <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
           <View className="flex-1 px-6">
             <ErrorState
@@ -164,7 +168,7 @@ export function ProviderAvailabilityScreen() {
 
   if (isLoadingSchedule || isLoadingDaysOff) {
     return (
-      <View className="flex-1 bg-[#FBF8F3]">
+      <View className="flex-1 bg-white">
         <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
           <View className="flex-1 px-6">
             <DetailSkeleton />
@@ -175,7 +179,7 @@ export function ProviderAvailabilityScreen() {
   }
 
   return (
-    <View className="flex-1 bg-[#FBF8F3]">
+    <View className="flex-1 bg-white">
       <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
         <View className="flex-1 px-6">
           <ScreenHeader
