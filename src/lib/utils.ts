@@ -15,6 +15,25 @@ export function formatCurrency(value: string | number): string {
   return amount.toLocaleString('en-NG', { maximumFractionDigits: 0 });
 }
 
+export function formatDurationLabel(totalMinutes: number): string {
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (hours === 0) return `${minutes} min`;
+  if (minutes === 0) return `${hours} hr${hours === 1 ? '' : 's'}`;
+  return `${hours} hr${hours === 1 ? '' : 's'} ${minutes} min`;
+}
+
+// tradeType is free text in the DB (e.g. "lash-artist") - this is a
+// mechanical hyphen-to-title-case formatter, not curated copy, so it won't
+// always match hand-written labels like "Hair Stylist" exactly.
+export function formatTradeTypeLabel(value: string): string {
+  return value
+    .split('-')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
 export function getStatusColor(
   status: BookingStatus,
   theme: Record<ThemeColor, string>,
@@ -132,12 +151,76 @@ export function formatDateLabel(dateStr: string): string {
   return `${WEEKDAY_LABELS[date.getUTCDay()]} ${dayNumber}`;
 }
 
+const MONTH_LABELS = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
+
+// Structured version of formatDateLabel for the 3-line stacked date chip
+// (weekday / day / month) - kept separate so deal-detail's existing
+// single-line date chips aren't affected by a change scoped to this screen.
+export function getDateChipParts(dateStr: string): {
+  topLabel: string;
+  day: number;
+  month: string | null;
+} {
+  const [today, tomorrow] = getNextDates(2);
+  const date = new Date(`${dateStr}T00:00:00.000Z`);
+  const day = date.getUTCDate();
+
+  if (dateStr === today) return { topLabel: 'Today', day, month: null };
+  if (dateStr === tomorrow) return { topLabel: 'Tomorrow', day, month: null };
+
+  return {
+    topLabel: WEEKDAY_LABELS[date.getUTCDay()],
+    day,
+    month: MONTH_LABELS[date.getUTCMonth()],
+  };
+}
+
 export function formatTimeLabel(isoDateTime: string): string {
   return isoDateTime.slice(11, 16);
 }
 
+// 12-hour AM/PM variant of formatTimeLabel, used where the design calls for
+// it (booking time slots) - kept separate so chat/deal-detail's existing
+// 24-hour display isn't affected by a change scoped to just this screen.
+export function formatTime12hLabel(isoDateTime: string): string {
+  const [hourStr, minuteStr] = isoDateTime.slice(11, 16).split(':');
+  const hour24 = Number(hourStr);
+  const period = hour24 < 12 ? 'AM' : 'PM';
+  const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
+  return `${String(hour12).padStart(2, '0')}:${minuteStr} ${period}`;
+}
+
 export function formatDateTimeLabel(isoDateTime: string): string {
   return `${formatDateLabel(isoDateTime.slice(0, 10))}, ${formatTimeLabel(isoDateTime)}`;
+}
+
+export function formatRelativeTime(dateStr: string): string {
+  const diffMs = Date.now() - new Date(dateStr).getTime();
+  const minutes = Math.floor(diffMs / (60 * 1000));
+  const hours = Math.floor(diffMs / (60 * 60 * 1000));
+  const days = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+
+  if (minutes < 1) return 'Just now';
+  if (minutes < 60) return `${minutes} min${minutes === 1 ? '' : 's'} ago`;
+  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+  if (days < 30) return `${days} day${days === 1 ? '' : 's'} ago`;
+
+  return new Date(dateStr).toLocaleDateString();
+}
+
+// HH:MM:SS, letting hours run past 24 rather than rolling into a day count -
+// flash deals are short-lived enough that this format never needs to.
+export function formatCountdown(remainingMs: number): string {
+  const totalSeconds = Math.max(Math.floor(remainingMs / 1000), 0);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
 }
 
 export function getErrorMessage(error: unknown): string {
