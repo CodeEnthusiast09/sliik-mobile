@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text } from 'react-native';
 
 type ButtonVariant = 'primary' | 'social' | 'ghost';
 
@@ -47,13 +47,13 @@ export function Button({
       onPress={onPress}
       disabled={isDisabled}
       style={variant === 'ghost' ? undefined : SHADOW}
-      className={`relative flex-row items-center justify-center rounded-[28px] px-6 ${CONTAINER[variant]} ${isDisabled ? 'opacity-50' : ''}`}
+      className={`flex-row items-center justify-center gap-2 rounded-[28px] px-6 ${CONTAINER[variant]} ${isDisabled ? 'opacity-50' : ''}`}
     >
       {loading ? (
         <ActivityIndicator color={variant === 'primary' ? '#F7EFE4' : '#4B2E46'} />
       ) : (
         <>
-          {leftIcon ? <View className="absolute left-5">{leftIcon}</View> : null}
+          {leftIcon}
           <Text className={`text-[16px] ${LABEL[variant]}`}>{label}</Text>
         </>
       )}
