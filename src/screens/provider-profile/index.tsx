@@ -117,7 +117,7 @@ export function ProviderProfileScreen() {
 
   if (isError) {
     return (
-      <View className="flex-1 bg-[#FBF8F3]">
+      <View className="flex-1 bg-white">
         <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
           <View className="flex-1 px-6">
             <ErrorState
@@ -132,7 +132,7 @@ export function ProviderProfileScreen() {
 
   if (isLoading) {
     return (
-      <View className="flex-1 bg-[#FBF8F3]">
+      <View className="flex-1 bg-white">
         <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
           <View className="flex-1 px-6">
             <DetailSkeleton />
@@ -143,7 +143,7 @@ export function ProviderProfileScreen() {
   }
 
   return (
-    <View className="flex-1 bg-[#FBF8F3]">
+    <View className="flex-1 bg-white">
       <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
         <View className="flex-1 px-6">
           <ScreenHeader notificationsHref="/profile/notifications" />

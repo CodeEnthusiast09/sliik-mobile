@@ -84,7 +84,7 @@ export function VerifyEmailScreen() {
   const resendDisabled = cooldown > 0 || resendMutation.isPending;
 
   return (
-    <View className="flex-1 bg-[#FBF8F3]">
+    <View className="flex-1 bg-white">
       <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
         <KeyboardAvoidingView
           className="flex-1"

@@ -94,7 +94,7 @@ export function RoleSelectScreen() {
   }
 
   return (
-    <View className="flex-1 bg-[#FBF8F3]">
+    <View className="flex-1 bg-white">
       <StatusBar style="dark" />
 
       <SafeAreaView className="flex-1" edges={['top', 'bottom']}>

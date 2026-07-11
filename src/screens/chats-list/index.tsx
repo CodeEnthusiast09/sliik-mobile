@@ -32,7 +32,7 @@ export function ChatsListScreen() {
     role === 'provider' ? '/profile/notifications' : '/home/notifications';
 
   return (
-    <View className="flex-1 bg-[#FBF8F3]">
+    <View className="flex-1 bg-white">
       <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
         <View className="flex-1 px-6">
           <ScreenHeader notificationsHref={notificationsHref} />

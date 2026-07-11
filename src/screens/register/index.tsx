@@ -105,7 +105,7 @@ export function RegisterScreen() {
   }
 
   return (
-    <View className="flex-1 bg-[#FBF8F3]">
+    <View className="flex-1 bg-white">
       <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
         <Pressable
           onPress={() => router.back()}
