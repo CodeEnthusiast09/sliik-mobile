@@ -197,6 +197,17 @@ export function formatDateTimeLabel(isoDateTime: string): string {
   return `${formatDateLabel(isoDateTime.slice(0, 10))}, ${formatTimeLabel(isoDateTime)}`;
 }
 
+// Full weekday/day/month + 12-hour time, no Today/Tomorrow special-casing -
+// used for the bookings list, which mixes past and future bookings, so a
+// relative label would read oddly next to older, already-completed ones.
+export function formatBookingDateTimeLabel(isoDateTime: string): string {
+  const date = new Date(`${isoDateTime.slice(0, 10)}T00:00:00.000Z`);
+  const weekday = WEEKDAY_LABELS[date.getUTCDay()];
+  const day = date.getUTCDate();
+  const month = MONTH_LABELS[date.getUTCMonth()];
+  return `${weekday}, ${day} ${month} • ${formatTime12hLabel(isoDateTime)}`;
+}
+
 export function formatRelativeTime(dateStr: string): string {
   const diffMs = Date.now() - new Date(dateStr).getTime();
   const minutes = Math.floor(diffMs / (60 * 1000));

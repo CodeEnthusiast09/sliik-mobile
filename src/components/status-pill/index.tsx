@@ -1,5 +1,4 @@
-import { Text, View } from 'react-native';
-
+import { Text, View, type ViewStyle } from 'react-native';
 import { useTheme } from '@/hooks/common/use-theme';
 import type { BookingStatus } from '@/interfaces/booking';
 import { getStatusColor } from '@/lib/utils';
@@ -12,12 +11,18 @@ export function StatusPill({ status }: StatusPillProps) {
   const theme = useTheme();
   const color = getStatusColor(status, theme);
 
+  const containerStyle: ViewStyle = {
+    backgroundColor: `${color}1F`,
+    borderColor: color,
+    borderWidth: 1,
+  };
+
   return (
     <View
-      style={{ backgroundColor: `${color}1F` }}
-      className="self-start rounded-full px-3 py-1.5"
+      style={containerStyle}
+      className="self-start rounded-xl px-2 py-1.5"
     >
-      <Text style={{ color }} className="text-[13px] font-bold">
+      <Text style={{ color }} className="text-[12px] font-semibold">
         {status.charAt(0).toUpperCase() + status.slice(1)}
       </Text>
     </View>
