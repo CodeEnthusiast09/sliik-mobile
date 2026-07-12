@@ -1,4 +1,5 @@
 export type UserRole = 'customer' | 'provider';
+export type AuthMode = 'signin' | 'signup';
 
 export interface AuthData {
   accessToken: string;

@@ -1,5 +1,5 @@
-import { LoginScreen } from '@/screens/login';
+import { Redirect } from 'expo-router';
 
 export default function Login() {
-  return <LoginScreen />;
+  return <Redirect href={{ pathname: '/auth', params: { mode: 'signin' } }} />;
 }

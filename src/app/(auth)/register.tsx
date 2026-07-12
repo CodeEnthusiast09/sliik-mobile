@@ -1,5 +1,14 @@
-import { RegisterScreen } from '@/screens/register';
+import { Redirect, useLocalSearchParams } from 'expo-router';
 
 export default function Register() {
-  return <RegisterScreen />;
+  const { role } = useLocalSearchParams<{ role?: string }>();
+
+  return (
+    <Redirect
+      href={{
+        pathname: '/auth',
+        params: { mode: 'signup', ...(role ? { role } : {}) },
+      }}
+    />
+  );
 }
