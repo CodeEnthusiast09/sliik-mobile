@@ -2,7 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -17,6 +17,23 @@ import { getErrorMessage } from '@/lib/utils';
 import { showToast } from '@/store/toast';
 import { createOfferSchema } from '@/validations/offer';
 
+const PREFERRED_WINDOW_MS = 60 * 60 * 1000;
+
+function FieldCard({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <View className="mt-3 gap-2 rounded-[16px] border border-[#ECE7E0] bg-white p-4">
+      <Text className="text-[13px] font-bold text-[#26242A]">{label}</Text>
+      {children}
+    </View>
+  );
+}
+
 export function OfferNewScreen() {
   const router = useRouter();
 
@@ -29,10 +46,7 @@ export function OfferNewScreen() {
   const [serviceType, setServiceType] = useState('');
   const [description, setDescription] = useState('');
   const [budget, setBudget] = useState('');
-  const [fromDate, setFromDate] = useState('');
-  const [fromTime, setFromTime] = useState('');
-  const [toDate, setToDate] = useState('');
-  const [toTime, setToTime] = useState('');
+  const [preferredDateTime, setPreferredDateTime] = useState('');
   const [city, setCity] = useState('');
   const [referenceImageUrl, setReferenceImageUrl] = useState('');
   const [syncedCustomerId, setSyncedCustomerId] = useState<string | null>(null);
@@ -61,13 +75,20 @@ export function OfferNewScreen() {
   }
 
   function handleSubmit() {
+    let preferredFrom = '';
+    let preferredTo = '';
+    if (preferredDateTime) {
+      const from = new Date(`${preferredDateTime}:00`);
+      preferredFrom = from.toISOString();
+      preferredTo = new Date(from.getTime() + PREFERRED_WINDOW_MS).toISOString();
+    }
+
     const result = createOfferSchema.safeParse({
       serviceType,
       description,
       budget: budget ? Number(budget) : undefined,
-      preferredFrom:
-        fromDate && fromTime ? `${fromDate}T${fromTime}:00.000Z` : '',
-      preferredTo: toDate && toTime ? `${toDate}T${toTime}:00.000Z` : '',
+      preferredFrom,
+      preferredTo,
       city,
       referenceImageUrl: referenceImageUrl || undefined,
     });
@@ -98,27 +119,35 @@ export function OfferNewScreen() {
             contentContainerClassName="pb-8"
           >
             <Text className="mt-4 text-[14px] text-[#817F80]">
-              Leave budget blank for an open request - providers compete on
-              price.
+              Tell us what you need. Helpers will apply.
             </Text>
 
-            <TextInput
-              placeholder="Service (e.g. hairdresser, barber)"
-              placeholderTextColor="#A8A39B"
-              value={serviceType}
-              onChangeText={setServiceType}
-              className="mt-5 rounded-[16px] border border-[#ECE7E0] bg-white px-4 py-3.5 text-[15px] text-[#26242A]"
-              style={{ outlineWidth: 0 }}
-            />
-            <TextInput
-              placeholder="Describe what you need"
-              placeholderTextColor="#A8A39B"
-              value={description}
-              onChangeText={setDescription}
-              multiline
-              className="mt-3 min-h-[76px] rounded-[16px] border border-[#ECE7E0] bg-white px-5 py-4 text-[15px] text-[#26242A]"
-              style={{ textAlignVertical: 'top', outlineWidth: 0 }}
-            />
+            <FieldCard label="Service type">
+              <TextInput
+                placeholder="E.g. Soft glam, sleek ponytail"
+                placeholderTextColor="#A8A39B"
+                value={serviceType}
+                onChangeText={setServiceType}
+                className="text-[15px] text-[#26242A]"
+                style={{ outlineWidth: 0 }}
+              />
+            </FieldCard>
+
+            <FieldCard label="Describe what you need">
+              <TextInput
+                placeholder="E.g. Soft glam for wedding guest"
+                placeholderTextColor="#A8A39B"
+                value={description}
+                onChangeText={setDescription}
+                multiline
+                maxLength={300}
+                className="min-h-[60px] text-[15px] text-[#26242A]"
+                style={{ textAlignVertical: 'top', outlineWidth: 0 }}
+              />
+              <Text className="text-right text-[12px] text-[#A8A39B]">
+                {description.length}/300
+              </Text>
+            </FieldCard>
 
             {referenceImageUrl ? (
               <Pressable
@@ -157,61 +186,68 @@ export function OfferNewScreen() {
               </Text>
             ) : null}
 
-            <TextInput
-              placeholder="Budget (optional)"
-              placeholderTextColor="#A8A39B"
-              value={budget}
-              onChangeText={setBudget}
-              keyboardType="decimal-pad"
-              className="mt-3 rounded-[16px] border border-[#ECE7E0] bg-white px-4 py-3.5 text-[15px] text-[#26242A]"
-              style={{ outlineWidth: 0 }}
-            />
-            <TextInput
-              placeholder="City"
-              placeholderTextColor="#A8A39B"
-              value={city}
-              onChangeText={setCity}
-              className="mt-3 rounded-[16px] border border-[#ECE7E0] bg-white px-4 py-3.5 text-[15px] text-[#26242A]"
-              style={{ outlineWidth: 0 }}
-            />
-
-            <Text className="mt-7 font-serif-bold text-[18px] text-[#26242A]">
-              Preferred window
+            <FieldCard label="Budget (optional)">
+              <View className="flex-row items-center gap-2">
+                <Text className="text-[15px] font-medium text-[#26242A]">
+                  ₦
+                </Text>
+                <View className="h-4 w-px bg-[#ECE7E0]" />
+                <TextInput
+                  placeholder="E.g. 20,000"
+                  placeholderTextColor="#A8A39B"
+                  value={budget}
+                  onChangeText={setBudget}
+                  keyboardType="decimal-pad"
+                  className="flex-1 text-[15px] text-[#26242A]"
+                  style={{ outlineWidth: 0 }}
+                />
+              </View>
+            </FieldCard>
+            <Text className="mt-1.5 px-1 text-[12px] text-[#817F80]">
+              Optional: Leave blank to get open offers, or set a budget.
             </Text>
-            <View className="mt-3 flex-row gap-3">
-              <View className="flex-1" style={{ minWidth: 0 }}>
-                <DateTimeField
-                  mode="date"
-                  placeholder="From date"
-                  value={fromDate}
-                  onChangeValue={setFromDate}
+
+            <FieldCard label="Preferred date & time">
+              <View className="flex-row items-center gap-2">
+                <Ionicons name="calendar-outline" size={16} color="#817F80" />
+                <View className="flex-1">
+                  <DateTimeField
+                    mode="datetime"
+                    bare
+                    placeholder="Select date & time"
+                    value={preferredDateTime}
+                    onChangeValue={setPreferredDateTime}
+                  />
+                </View>
+              </View>
+            </FieldCard>
+
+            <FieldCard label="City">
+              <View className="flex-row items-center gap-2">
+                <Ionicons name="location-outline" size={16} color="#817F80" />
+                <TextInput
+                  placeholder="Select your city"
+                  placeholderTextColor="#A8A39B"
+                  value={city}
+                  onChangeText={setCity}
+                  className="flex-1 text-[15px] text-[#26242A]"
+                  style={{ outlineWidth: 0 }}
                 />
               </View>
-              <View className="flex-1" style={{ minWidth: 0 }}>
-                <DateTimeField
-                  mode="time"
-                  placeholder="From time"
-                  value={fromTime}
-                  onChangeValue={setFromTime}
-                />
+            </FieldCard>
+
+            <View className="mt-4 flex-row gap-3 rounded-[16px] bg-[#4B2E4614] p-4">
+              <View className="mt-0.5 h-4 w-4 items-center justify-center rounded-full bg-[#4B2E46]">
+                <Ionicons name="information" size={11} color="#F7EFE4" />
               </View>
-            </View>
-            <View className="mt-3 flex-row gap-3">
-              <View className="flex-1" style={{ minWidth: 0 }}>
-                <DateTimeField
-                  mode="date"
-                  placeholder="To date"
-                  value={toDate}
-                  onChangeValue={setToDate}
-                />
-              </View>
-              <View className="flex-1" style={{ minWidth: 0 }}>
-                <DateTimeField
-                  mode="time"
-                  placeholder="To time"
-                  value={toTime}
-                  onChangeValue={setToTime}
-                />
+              <View className="flex-1 gap-0.5">
+                <Text className="text-[13px] font-bold text-[#4B2E46]">
+                  Open request or fixed budget?
+                </Text>
+                <Text className="text-[13px] text-[#4B2E46]">
+                  Add a budget to get precise offers, or leave it blank to
+                  receive a range of offers.
+                </Text>
               </View>
             </View>
 

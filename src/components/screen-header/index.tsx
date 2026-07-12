@@ -1,5 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { type Href, useRouter } from 'expo-router';
+import type { ReactNode } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { NotificationBell } from '@/components/notification-bell';
@@ -17,6 +18,8 @@ export type ScreenHeaderProps = {
   title?: string;
   /** Drill-down screens that already hide the tab bar can also drop the bell. */
   showNotifications?: boolean;
+  /** Overrides the bell/spacer slot with a custom trailing element (e.g. an overflow menu button). */
+  rightAction?: ReactNode;
 };
 
 export function ScreenHeader({
@@ -24,6 +27,7 @@ export function ScreenHeader({
   onBack,
   title,
   showNotifications = true,
+  rightAction,
 }: ScreenHeaderProps) {
   const router = useRouter();
 
@@ -51,7 +55,9 @@ export function ScreenHeader({
         </Text>
       ) : null}
 
-      {showNotifications ? (
+      {rightAction ? (
+        rightAction
+      ) : showNotifications ? (
         <NotificationBell onPress={() => router.push(notificationsHref)} />
       ) : (
         <View className="h-9 w-9" />

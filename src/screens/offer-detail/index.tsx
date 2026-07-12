@@ -1,6 +1,17 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, Text, TextInput, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/avatar';
@@ -8,6 +19,7 @@ import { Button } from '@/components/button';
 import { ErrorState } from '@/components/error-state';
 import { ScreenHeader } from '@/components/screen-header';
 import { DetailSkeleton } from '@/components/skeleton';
+import { StatusPill } from '@/components/status-pill';
 import { useHideTabBar } from '@/hooks/common/use-hide-tab-bar';
 import {
   useAcceptResponse,
@@ -16,9 +28,11 @@ import {
   useRespondToOffer,
 } from '@/hooks/services/offers';
 import { useProviderProfile } from '@/hooks/services/provider';
+import type { OfferResponse } from '@/interfaces/offer';
 import {
+  formatBookingDateTimeLabel,
   formatCurrency,
-  formatDateTimeLabel,
+  formatTradeTypeLabel,
   getErrorMessage,
 } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth';
@@ -65,6 +79,59 @@ export function OfferDetailScreen() {
     );
   }
 
+  function handleCancelOfferPress() {
+    if (!offer) return;
+
+    const cancel = () =>
+      cancelMutation.mutate(offer.id, { onError: onMutationError });
+
+    // react-native-web's Alert.alert() is a no-op, so it needs a real
+    // browser confirm() dialog on web instead.
+    if (Platform.OS === 'web') {
+      if (window.confirm('Cancel this offer? This cannot be undone.')) {
+        cancel();
+      }
+      return;
+    }
+
+    Alert.alert('Cancel this offer?', 'This cannot be undone.', [
+      { text: 'Keep offer', style: 'cancel' },
+      { text: 'Cancel offer', style: 'destructive', onPress: cancel },
+    ]);
+  }
+
+  function handleAcceptPress(response: OfferResponse) {
+    if (!offer) return;
+
+    const confirm = () =>
+      acceptMutation.mutate(
+        { offerId: offer.id, responseId: response.id },
+        {
+          onSuccess: (result) => {
+            if (result.data) {
+              router.replace({
+                pathname: '/bookings/[id]',
+                params: { id: result.data.id },
+              });
+            }
+          },
+          onError: onMutationError,
+        },
+      );
+
+    const message = `Accept ${response.provider?.fullName ?? 'this provider'}'s bid for ₦${formatCurrency(response.offeredPrice)}?`;
+
+    if (Platform.OS === 'web') {
+      if (window.confirm(message)) confirm();
+      return;
+    }
+
+    Alert.alert('Accept this bid?', message, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Accept', onPress: confirm },
+    ]);
+  }
+
   if (isError) {
     return (
       <View className="flex-1 bg-white">
@@ -88,6 +155,7 @@ export function OfferDetailScreen() {
   const ownResponse = provider
     ? offer.responses?.find((r) => r.providerId === provider.id)
     : undefined;
+  const responseCount = offer.responses?.length ?? 0;
 
   return (
     <View className="flex-1 bg-white">
@@ -96,120 +164,177 @@ export function OfferDetailScreen() {
           <ScreenHeader
             title="Offer detail"
             notificationsHref={notificationsHref}
+            showNotifications={false}
             onBack={() => router.back()}
+            rightAction={
+              role === 'customer' && offer.status === 'open' ? (
+                <Pressable
+                  onPress={handleCancelOfferPress}
+                  hitSlop={10}
+                  className="h-9 w-9 items-center justify-center"
+                >
+                  <Ionicons
+                    name="ellipsis-horizontal"
+                    size={24}
+                    color="#4B2E46"
+                  />
+                </Pressable>
+              ) : undefined
+            }
           />
 
           <ScrollView
             showsVerticalScrollIndicator={false}
             contentContainerClassName="pb-8"
           >
-            <View className="mt-4 flex-row items-center justify-between">
-              <Text className="font-serif-bold text-[24px] leading-[30px] text-[#26242A]">
-                {offer.serviceType}
-              </Text>
-              <View className="rounded-full bg-[#F3F0EB] px-3 py-1.5">
-                <Text className="text-[12px] font-bold text-[#26242A]">
-                  {offer.status.charAt(0).toUpperCase() + offer.status.slice(1)}
+            <View className="mt-4 gap-3 rounded-[20px] border border-[#ECE7E0] bg-white p-4">
+              <View className="flex-row items-center justify-between">
+                <Text className="text-[13px] font-medium text-[#817F80]">
+                  Your request
                 </Text>
+                <StatusPill status={offer.status} />
+              </View>
+
+              <View className="flex-row items-start gap-3">
+                <View className="flex-1 gap-1.5">
+                  <Text className="font-serif-bold text-[22px] leading-[27px] text-[#26242A]">
+                    {offer.serviceType}
+                  </Text>
+                  <Text className="text-[14px] text-[#26242A]">
+                    {offer.description}
+                  </Text>
+                  {offer.budget ? (
+                    <Text className="text-[13px] text-[#817F80]">
+                      Budget ₦{formatCurrency(offer.budget)}
+                    </Text>
+                  ) : null}
+                  <View className="flex-row items-center gap-1">
+                    <Ionicons
+                      name="location-outline"
+                      size={13}
+                      color="#817F80"
+                    />
+                    <Text className="text-[13px] text-[#817F80]">
+                      {offer.city}
+                    </Text>
+                  </View>
+                  <View className="flex-row items-center gap-1">
+                    <Ionicons
+                      name="calendar-outline"
+                      size={13}
+                      color="#817F80"
+                    />
+                    <Text className="text-[13px] text-[#817F80]">
+                      {formatBookingDateTimeLabel(offer.preferredFrom)}
+                    </Text>
+                  </View>
+                </View>
+
+                {offer.referenceImageUrl ? (
+                  <Image
+                    source={{ uri: offer.referenceImageUrl }}
+                    style={{ width: 72, height: 72, borderRadius: 16 }}
+                    contentFit="cover"
+                  />
+                ) : null}
               </View>
             </View>
-
-            <View className="mt-4 gap-2 rounded-[20px] border border-[#ECE7E0] bg-white p-4">
-              <Text className="text-[14px] text-[#26242A]">
-                {offer.description}
-              </Text>
-              <Text className="text-[13px] text-[#817F80]">
-                {offer.budget
-                  ? `Budget ₦${formatCurrency(offer.budget)}`
-                  : 'Open to offers'}{' '}
-                · {offer.city}
-              </Text>
-              <Text className="text-[13px] text-[#817F80]">
-                Preferred: {formatDateTimeLabel(offer.preferredFrom)} -{' '}
-                {formatDateTimeLabel(offer.preferredTo)}
-              </Text>
-            </View>
-
-            {role === 'customer' && offer.status === 'open' ? (
-              <View className="mt-5">
-                <Button
-                  label={
-                    cancelMutation.isPending ? 'Cancelling…' : 'Cancel offer'
-                  }
-                  variant="ghost"
-                  onPress={() =>
-                    cancelMutation.mutate(offer.id, {
-                      onError: onMutationError,
-                    })
-                  }
-                  loading={cancelMutation.isPending}
-                />
-              </View>
-            ) : null}
 
             {role === 'customer' ? (
               <>
-                <Text className="mt-7 font-serif-bold text-[18px] text-[#26242A]">
-                  Responses
-                </Text>
+                <View className="mt-7 flex-row items-center justify-between">
+                  <Text className="font-serif-bold text-[18px] text-[#26242A]">
+                    Provider bids
+                  </Text>
+                  <Text className="text-[13px] text-[#817F80]">
+                    {responseCount} {responseCount === 1 ? 'bid' : 'bids'}
+                  </Text>
+                </View>
                 {offer.responses?.length ? (
                   <View className="mt-3 gap-3">
-                    {offer.responses.map((response) => (
-                      <View
-                        key={response.id}
-                        className="flex-row items-center gap-3 rounded-[20px] border border-[#ECE7E0] bg-white p-3"
-                      >
-                        <Avatar
-                          uri={response.provider?.avatarUrl}
-                          name={response.provider?.fullName ?? '?'}
-                          size={48}
-                        />
-                        <View className="flex-1 gap-0.5">
-                          <View className="flex-row items-center gap-1.5">
+                    {offer.responses.map((response) => {
+                      const subtitleParts = [
+                        response.provider?.tradeType
+                          ? formatTradeTypeLabel(response.provider.tradeType)
+                          : null,
+                        response.provider?.city,
+                      ].filter((part): part is string => !!part);
+                      const canAccept =
+                        response.status === 'pending' &&
+                        offer.status === 'open';
+
+                      return (
+                        <View
+                          key={response.id}
+                          className="flex-row items-start gap-3 rounded-[20px] border border-[#ECE7E0] bg-white p-3"
+                        >
+                          <Avatar
+                            uri={response.provider?.avatarUrl}
+                            name={response.provider?.fullName ?? '?'}
+                            size={48}
+                          />
+                          <View className="flex-1 gap-0.5">
                             <Text className="font-serif-bold text-[15px] text-[#26242A]">
                               {response.provider?.fullName ?? 'Provider'}
                             </Text>
+                            {subtitleParts.length ? (
+                              <Text className="text-[12px] text-[#817F80]">
+                                {subtitleParts.join(' • ')}
+                              </Text>
+                            ) : null}
+                            {response.message ? (
+                              <Text
+                                className="text-[13px] text-[#26242A]"
+                                numberOfLines={2}
+                              >
+                                {response.message}
+                              </Text>
+                            ) : null}
                             {Number(response.provider?.totalReviews) > 0 ? (
                               <Text className="text-[12px] text-[#817F80]">
                                 {Number(response.provider?.avgRating).toFixed(
                                   1,
                                 )}{' '}
-                                ★
+                                ★ ({response.provider?.totalReviews})
                               </Text>
                             ) : null}
                           </View>
-                          <Text className="text-[13px] text-[#817F80]">
-                            ₦{formatCurrency(response.offeredPrice)}
-                            {response.message ? ` · ${response.message}` : ''}
-                          </Text>
-                        </View>
-                        {response.status === 'pending' &&
-                        offer.status === 'open' ? (
-                          <Button
-                            label={
-                              acceptMutation.isPending ? 'Accepting…' : 'Accept'
-                            }
-                            onPress={() =>
-                              acceptMutation.mutate(
-                                { offerId: offer.id, responseId: response.id },
-                                { onError: onMutationError },
-                              )
-                            }
-                            loading={acceptMutation.isPending}
-                          />
-                        ) : (
-                          <View className="rounded-full bg-[#F3F0EB] px-3 py-1.5">
-                            <Text className="text-[12px] font-bold text-[#26242A]">
-                              {response.status}
+                          <View className="items-end gap-2">
+                            <Text className="font-serif-bold text-[15px] text-[#26242A]">
+                              ₦{formatCurrency(response.offeredPrice)}
                             </Text>
+                            {canAccept ? (
+                              <Pressable
+                                onPress={() => handleAcceptPress(response)}
+                                disabled={acceptMutation.isPending}
+                                className={`rounded-full bg-[#4B2E46] px-4 py-2 ${
+                                  acceptMutation.isPending
+                                    ? 'opacity-50'
+                                    : 'active:opacity-80'
+                                }`}
+                              >
+                                {acceptMutation.isPending ? (
+                                  <ActivityIndicator
+                                    size="small"
+                                    color="#F7EFE4"
+                                  />
+                                ) : (
+                                  <Text className="text-[13px] font-medium text-[#F7EFE4]">
+                                    Accept
+                                  </Text>
+                                )}
+                              </Pressable>
+                            ) : (
+                              <StatusPill status={response.status} />
+                            )}
                           </View>
-                        )}
-                      </View>
-                    ))}
+                        </View>
+                      );
+                    })}
                   </View>
                 ) : (
                   <Text className="mt-3 text-[14px] text-[#817F80]">
-                    No responses yet.
+                    No bids yet.
                   </Text>
                 )}
               </>

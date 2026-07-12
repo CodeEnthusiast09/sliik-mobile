@@ -6,7 +6,10 @@ export const createOfferSchema = z
       .string()
       .min(1, 'Enter the type of service you need')
       .max(100, 'Keep it under 100 characters'),
-    description: z.string().min(1, 'Describe what you need'),
+    description: z
+      .string()
+      .min(1, 'Describe what you need')
+      .max(300, 'Keep it under 300 characters'),
     budget: z.number().positive('Enter a valid budget').optional(),
     preferredFrom: z.iso.datetime('Enter a valid start date and time'),
     preferredTo: z.iso.datetime('Enter a valid end date and time'),

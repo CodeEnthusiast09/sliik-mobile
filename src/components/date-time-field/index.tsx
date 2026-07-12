@@ -2,14 +2,26 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useState } from 'react';
 import { Platform, Pressable, Text, TextInput } from 'react-native';
 
+export type DateTimeFieldMode = 'date' | 'time' | 'datetime';
+
 export type DateTimeFieldProps = {
-  mode: 'date' | 'time';
+  mode: DateTimeFieldMode;
   value: string;
   onChangeValue: (value: string) => void;
   placeholder: string;
+  /** Strips the field's own border/background/padding so a parent card can supply it. */
+  bare?: boolean;
 };
 
-function parseValue(mode: 'date' | 'time', value: string): Date {
+function pad(n: number): string {
+  return String(n).padStart(2, '0');
+}
+
+function parseValue(mode: DateTimeFieldMode, value: string): Date {
+  if (mode === 'datetime' && value) {
+    const parsed = new Date(`${value}:00`);
+    if (!Number.isNaN(parsed.getTime())) return parsed;
+  }
   if (mode === 'date' && value) {
     const parsed = new Date(`${value}T00:00:00`);
     if (!Number.isNaN(parsed.getTime())) return parsed;
@@ -25,13 +37,26 @@ function parseValue(mode: 'date' | 'time', value: string): Date {
   return new Date();
 }
 
-function formatValue(mode: 'date' | 'time', date: Date): string {
+function formatValue(mode: DateTimeFieldMode, date: Date): string {
+  if (mode === 'datetime') {
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  }
   if (mode === 'date') return date.toISOString().slice(0, 10);
-  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+  return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-function displayLabel(mode: 'date' | 'time', value: string): string {
+function displayLabel(mode: DateTimeFieldMode, value: string): string {
   const date = parseValue(mode, value);
+  if (mode === 'datetime') {
+    return `${date.toLocaleDateString(undefined, {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+    })} • ${date.toLocaleTimeString(undefined, {
+      hour: 'numeric',
+      minute: '2-digit',
+    })}`;
+  }
   if (mode === 'date') {
     return date.toLocaleDateString(undefined, {
       month: 'short',
@@ -53,8 +78,15 @@ export function DateTimeField({
   value,
   onChangeValue,
   placeholder,
+  bare = false,
 }: DateTimeFieldProps) {
   const [showPicker, setShowPicker] = useState(false);
+  // Android's native picker has no combined date+time dialog (unlike iOS's
+  // own 'datetime' mode) - 'datetime' mode on Android chains a date dialog
+  // into a time dialog instead, tracked by this step.
+  const [androidStep, setAndroidStep] = useState<'date' | 'time' | null>(
+    null,
+  );
 
   if (Platform.OS === 'web') {
     return (
@@ -63,17 +95,29 @@ export function DateTimeField({
         placeholderTextColor="#A8A39B"
         value={value}
         onChangeText={onChangeValue}
-        className="rounded-[16px] border border-[#ECE7E0] bg-white px-4 py-3.5 text-[15px] text-[#26242A]"
+        className={
+          bare
+            ? 'text-[15px] text-[#26242A]'
+            : 'rounded-[16px] border border-[#ECE7E0] bg-white px-4 py-3.5 text-[15px] text-[#26242A]'
+        }
         style={{ outlineWidth: 0 }}
       />
     );
   }
 
+  const isAndroidDateTime = mode === 'datetime' && Platform.OS === 'android';
+
   return (
     <>
       <Pressable
-        onPress={() => setShowPicker(true)}
-        className="justify-center rounded-[16px] border border-[#ECE7E0] bg-white px-4 py-3.5"
+        onPress={() =>
+          isAndroidDateTime ? setAndroidStep('date') : setShowPicker(true)
+        }
+        className={
+          bare
+            ? 'justify-center'
+            : 'justify-center rounded-[16px] border border-[#ECE7E0] bg-white px-4 py-3.5'
+        }
       >
         <Text
           className={`text-[15px] ${value ? 'text-[#26242A]' : 'text-[#A8A39B]'}`}
@@ -81,7 +125,8 @@ export function DateTimeField({
           {value ? displayLabel(mode, value) : placeholder}
         </Text>
       </Pressable>
-      {showPicker ? (
+
+      {showPicker && !isAndroidDateTime ? (
         <DateTimePicker
           value={parseValue(mode, value)}
           mode={mode}
@@ -90,6 +135,41 @@ export function DateTimeField({
             onChangeValue(formatValue(mode, date));
           }}
           onDismiss={() => setShowPicker(false)}
+        />
+      ) : null}
+
+      {isAndroidDateTime && androidStep === 'date' ? (
+        <DateTimePicker
+          value={parseValue('datetime', value)}
+          mode="date"
+          onValueChange={(_event, pickedDate) => {
+            const prev = parseValue('datetime', value);
+            const combined = new Date(pickedDate);
+            combined.setHours(prev.getHours(), prev.getMinutes(), 0, 0);
+            onChangeValue(formatValue('datetime', combined));
+            setAndroidStep('time');
+          }}
+          onDismiss={() => setAndroidStep(null)}
+        />
+      ) : null}
+
+      {isAndroidDateTime && androidStep === 'time' ? (
+        <DateTimePicker
+          value={parseValue('datetime', value)}
+          mode="time"
+          onValueChange={(_event, pickedTime) => {
+            const prev = parseValue('datetime', value);
+            const combined = new Date(prev);
+            combined.setHours(
+              pickedTime.getHours(),
+              pickedTime.getMinutes(),
+              0,
+              0,
+            );
+            onChangeValue(formatValue('datetime', combined));
+            setAndroidStep(null);
+          }}
+          onDismiss={() => setAndroidStep(null)}
         />
       ) : null}
     </>
