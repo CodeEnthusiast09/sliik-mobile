@@ -302,7 +302,7 @@ export function CustomerHomeScreen() {
                               color="#948F86"
                             />
                             <Text className="text-[13px] text-[#817F80]">
-                              {item.city ?? 'Location not set'}, Nigeria
+                              {item.city ?? 'Location not set'}
                             </Text>
                           </View>
                           {distanceLabel ? (

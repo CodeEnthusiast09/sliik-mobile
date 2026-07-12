@@ -35,11 +35,7 @@ export function ChatsListScreen() {
     <View className="flex-1 bg-white">
       <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
         <View className="flex-1 px-6">
-          <ScreenHeader notificationsHref={notificationsHref} />
-
-          <Text className="mt-4 font-serif-bold text-[30px] leading-[36px] text-[#26242A]">
-            Chats
-          </Text>
+          <ScreenHeader title="Chats" notificationsHref={notificationsHref} />
 
           {isLoading ? (
             <View className="mt-4">

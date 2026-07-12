@@ -17,7 +17,7 @@ export function Avatar({
 }: AvatarProps) {
   const [failed, setFailed] = useState(false);
   const showImage = !!uri && !failed;
-  const borderRadius = shape === 'circle' ? size / 2 : size * 0.28;
+  const borderRadius = shape === 'circle' ? size / 2 : size * 0.13;
 
   return (
     <View

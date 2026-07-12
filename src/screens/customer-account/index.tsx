@@ -133,16 +133,12 @@ export function CustomerAccountScreen() {
     <View className="flex-1 bg-white">
       <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
         <View className="flex-1 px-6">
-          <ScreenHeader notificationsHref="/home/notifications" />
+          <ScreenHeader title="Account" notificationsHref="/home/notifications" />
 
           <ScrollView
             showsVerticalScrollIndicator={false}
             contentContainerClassName="pb-32"
           >
-            <Text className="mt-4 font-serif-bold text-[30px] leading-[36px] text-[#26242A]">
-              Account
-            </Text>
-
             <Pressable onPress={handlePickAvatar} className="self-center">
               <View className="my-5 h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-[#F3F0EB]">
                 {profile?.avatarUrl ? (

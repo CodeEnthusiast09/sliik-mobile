@@ -8,9 +8,10 @@ import { SliikWordmark } from '@/components/sliik-wordmark';
 export type ScreenHeaderProps = {
   notificationsHref: Href;
   /**
-   * If provided, shows a back button in the leading slot (and `title` next to
-   * it) instead of the brand wordmark. Tab-root screens omit this and get the
-   * wordmark with no title.
+   * If provided, shows a back button in the leading slot with `title` next to
+   * it (drill-down screens). Without `onBack`, `title` takes over the leading
+   * slot itself in place of the wordmark (tab-root screens); with neither, the
+   * brand wordmark is shown (Home only).
    */
   onBack?: () => void;
   title?: string;
@@ -36,11 +37,15 @@ export function ScreenHeader({
         >
           <Ionicons name="arrow-back" size={28} color="#4B2E46" />
         </Pressable>
+      ) : title ? (
+        <Text className="font-serif-bold text-[24px] leading-[28px] text-[#26242A]">
+          {title}
+        </Text>
       ) : (
         <SliikWordmark height={28} />
       )}
 
-      {title ? (
+      {onBack && title ? (
         <Text className="font-serif-bold text-[17px] text-[#26242A]">
           {title}
         </Text>

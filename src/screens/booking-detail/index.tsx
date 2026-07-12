@@ -219,24 +219,27 @@ export function BookingDetailScreen() {
                     params: { id: booking.provider!.id },
                   })
                 }
-                className="mt-5 flex-row items-center gap-3 rounded-[20px] border border-[#ECE7E0] bg-white p-5"
+                className="mt-5 flex-row items-center gap-3 rounded-[20px] border border-[#ECE7E0] bg-white p-2.5"
               >
                 <Avatar
                   uri={booking.provider.avatarUrl}
                   name={booking.provider.fullName}
-                  size={76}
+                  size={96}
                   shape="square"
                 />
-                <View className="flex-1 gap-0.5">
+
+                <View className="flex-1 gap-2.5">
                   <Text className="font-serif-bold text-[16px] text-[#26242A]">
                     {booking.provider.fullName}
                   </Text>
+
                   {booking.provider.totalReviews > 0 ? (
                     <Text className="text-[13px] text-[#26242A]">
                       ★ {Number(booking.provider.avgRating).toFixed(1)} (
                       {booking.provider.totalReviews})
                     </Text>
                   ) : null}
+
                   {booking.provider.city ? (
                     <View className="flex-row items-center gap-1">
                       <Ionicons

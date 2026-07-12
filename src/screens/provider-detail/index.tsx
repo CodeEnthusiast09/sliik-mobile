@@ -119,9 +119,9 @@ export function ProviderDetailScreen() {
 
   const soonestDeal = provider?.deals?.length
     ? [...provider.deals].sort(
-        (a, b) =>
-          new Date(a.expiresAt).getTime() - new Date(b.expiresAt).getTime(),
-      )[0]
+      (a, b) =>
+        new Date(a.expiresAt).getTime() - new Date(b.expiresAt).getTime(),
+    )[0]
     : null;
 
   if (isError) {
@@ -154,7 +154,7 @@ export function ProviderDetailScreen() {
     userCoords && provider.latitude != null && provider.longitude != null
       ? `${calculateDistanceKm(userCoords.lat, userCoords.lng, provider.latitude, provider.longitude).toFixed(1)} km`
       : null;
-  const cityLabel = provider.city ? `${provider.city}, Nigeria` : null;
+  const cityLabel = provider.city ? `${provider.city}` : null;
   const locationLabel =
     [cityLabel, distanceLabel].filter(Boolean).join(' · ') || null;
 

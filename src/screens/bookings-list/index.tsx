@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Chip } from '@/components/chip';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorState } from '@/components/error-state';
+import { ScreenHeader } from '@/components/screen-header';
 import { ListSkeleton } from '@/components/skeleton';
 import { StatusPill } from '@/components/status-pill';
 import { useMyBookings } from '@/hooks/services/bookings';
@@ -51,6 +52,8 @@ export function BookingsListScreen() {
 
   const [filter, setFilter] = useState<FilterValue>('all');
 
+  const notificationsHref =
+    role === 'provider' ? '/profile/notifications' : '/home/notifications';
 
   const filteredBookings = bookings?.filter((booking) =>
     matchesFilter(booking, filter),
@@ -60,10 +63,7 @@ export function BookingsListScreen() {
     <View className="flex-1 bg-white">
       <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
         <View className="flex-1 px-6">
-
-          <Text className="mt-2 font-serif-bold text-[24px] leading-[36px] text-[#26242A]">
-            My bookings
-          </Text>
+          <ScreenHeader title="My bookings" notificationsHref={notificationsHref} />
 
           <ScrollView
             horizontal

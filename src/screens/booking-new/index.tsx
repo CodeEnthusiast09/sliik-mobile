@@ -199,7 +199,7 @@ export function BookingNewScreen() {
                   </Text>
                   {provider.city ? (
                     <Text className="text-[13px] text-[#817F80]">
-                      {provider.city}, Nigeria
+                      {provider.city}
                     </Text>
                   ) : null}
                 </View>
