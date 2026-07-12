@@ -112,12 +112,8 @@ function CustomerDealsFeed({
     <View className="flex-1 bg-white">
       <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
         <View className="flex-1 px-6">
-          <ScreenHeader notificationsHref={notificationsHref} />
+          <ScreenHeader title="Flash deals" notificationsHref={notificationsHref} />
           <DealsOffersTabs active="deals" />
-
-          <Text className="mt-4 font-serif-bold text-[30px] leading-[36px] text-[#26242A]">
-            Flash deals
-          </Text>
 
           <View className="mt-4 flex-1">
             {isLoading ? (
@@ -182,13 +178,10 @@ function ProviderDealsList({
     <View className="flex-1 bg-white">
       <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
         <View className="flex-1 px-6">
-          <ScreenHeader notificationsHref={notificationsHref} />
+          <ScreenHeader title="Posted deals" notificationsHref={notificationsHref} />
           <DealsOffersTabs active="deals" />
 
-          <View className="mt-4 flex-row items-center justify-between">
-            <Text className="font-serif-bold text-[30px] leading-[36px] text-[#26242A]">
-              Posted deals
-            </Text>
+          <View className="mt-4 flex-row items-center justify-end">
             <Pressable
               onPress={() => router.push('/deals/new')}
               className="rounded-full bg-[#4B2E46] px-4 py-2.5"

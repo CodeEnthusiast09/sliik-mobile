@@ -3,6 +3,7 @@ import { isAxiosError } from 'axios';
 
 import type { ApiResponse } from '@/interfaces/api-response';
 import type { BookingStatus } from '@/interfaces/booking';
+import type { OfferStatus } from '@/interfaces/offer';
 import type { ThemeColor } from '@/lib/constants';
 import type { NotificationType } from '@/interfaces/notification';
 
@@ -35,18 +36,21 @@ export function formatTradeTypeLabel(value: string): string {
 }
 
 export function getStatusColor(
-  status: BookingStatus,
+  status: BookingStatus | OfferStatus,
   theme: Record<ThemeColor, string>,
 ): string {
   switch (status) {
     case 'pending':
+    case 'open':
       return theme.warning;
     case 'confirmed':
+    case 'accepted':
       return theme.success;
     case 'cancelled':
     case 'declined':
       return theme.danger;
     case 'completed':
+    case 'expired':
     default:
       return theme.textSecondary;
   }
@@ -195,6 +199,12 @@ export function formatTime12hLabel(isoDateTime: string): string {
 
 export function formatDateTimeLabel(isoDateTime: string): string {
   return `${formatDateLabel(isoDateTime.slice(0, 10))}, ${formatTimeLabel(isoDateTime)}`;
+}
+
+// Plain "24 May" - no Today/Tomorrow/weekday - for a fixed "Posted on" label.
+export function formatShortDateLabel(isoDateTime: string): string {
+  const date = new Date(`${isoDateTime.slice(0, 10)}T00:00:00.000Z`);
+  return `${date.getUTCDate()} ${MONTH_LABELS[date.getUTCMonth()]}`;
 }
 
 // Full weekday/day/month + 12-hour time, no Today/Tomorrow special-casing -

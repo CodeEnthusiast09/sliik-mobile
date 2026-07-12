@@ -11,6 +11,7 @@ export const createOfferSchema = z
     preferredFrom: z.iso.datetime('Enter a valid start date and time'),
     preferredTo: z.iso.datetime('Enter a valid end date and time'),
     city: z.string().min(1, 'Enter your city').max(100, 'Keep it under 100 characters'),
+    referenceImageUrl: z.url('Enter a valid image URL').optional(),
   })
   .refine((data) => new Date(data.preferredTo) > new Date(data.preferredFrom), {
     message: 'End time must be after start time',

@@ -1,10 +1,11 @@
 import { Text, View, type ViewStyle } from 'react-native';
 import { useTheme } from '@/hooks/common/use-theme';
 import type { BookingStatus } from '@/interfaces/booking';
+import type { OfferStatus } from '@/interfaces/offer';
 import { getStatusColor } from '@/lib/utils';
 
 export type StatusPillProps = {
-  status: BookingStatus;
+  status: BookingStatus | OfferStatus;
 };
 
 export function StatusPill({ status }: StatusPillProps) {

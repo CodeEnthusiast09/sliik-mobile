@@ -13,6 +13,7 @@ export interface Offer {
   preferredFrom: string;
   preferredTo: string;
   city: string;
+  referenceImageUrl: string | null;
   status: OfferStatus;
   createdAt: string;
   updatedAt: string;
