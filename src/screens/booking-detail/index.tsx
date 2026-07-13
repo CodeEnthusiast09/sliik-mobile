@@ -52,7 +52,7 @@ const PAYMENT_COLOR = {
 export function BookingDetailScreen() {
   const router = useRouter();
   const role = useAuthStore((state) => state.role);
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
 
   useHideTabBar();
 
@@ -185,13 +185,25 @@ export function BookingDetailScreen() {
             title="Booking detail"
             notificationsHref={notificationsHref}
             showNotifications={false}
-            onBack={() =>
+            onBack={() => {
+              // Pushed here from chat-detail (a different tab's stack) -
+              // router.back()/canGoBack() can't reliably unwind across tab
+              // stacks, so return explicitly to the exact chat thread
+              // instead of guessing.
+              if (from === 'chat') {
+                router.replace({ pathname: '/chats/[id]', params: { id } });
+                return;
+              }
               // Reached either by tapping a row in the bookings list (has
               // real back history) or via a cross-tab replace() right after
               // submitting a new booking (no back history at all) - guard
               // against the latter throwing a GO_BACK navigation error.
-              router.canGoBack() ? router.back() : router.replace('/bookings')
-            }
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace('/bookings');
+              }
+            }}
           />
 
           <ScrollView

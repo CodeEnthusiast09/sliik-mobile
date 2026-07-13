@@ -1,7 +1,8 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -44,6 +45,9 @@ export function CustomerAccountScreen() {
   const [city, setCity] = useState('');
   const [fieldError, setFieldError] = useState<string | null>(null);
   const [syncedProfileId, setSyncedProfileId] = useState<string | null>(null);
+  const fullNameInputRef = useRef<TextInput>(null);
+  const phoneInputRef = useRef<TextInput>(null);
+  const cityInputRef = useRef<TextInput>(null);
 
   if (profile && profile.id !== syncedProfileId) {
     setSyncedProfileId(profile.id);
@@ -71,6 +75,12 @@ export function CustomerAccountScreen() {
       updateProfileMutation.mutate({ avatarUrl: uploadResponse.data.url });
     }
   }
+
+  const isDirty =
+    !!profile &&
+    (fullName !== (profile.fullName ?? '') ||
+      phone !== (profile.phone ?? '') ||
+      city !== (profile.city ?? ''));
 
   function handleSave() {
     setFieldError(null);
@@ -139,8 +149,11 @@ export function CustomerAccountScreen() {
             showsVerticalScrollIndicator={false}
             contentContainerClassName="pb-32"
           >
-            <Pressable onPress={handlePickAvatar} className="self-center">
-              <View className="my-5 h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-[#F3F0EB]">
+            <Pressable
+              onPress={handlePickAvatar}
+              className="mt-5 h-24 w-24 self-center"
+            >
+              <View className="h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-[#F3F0EB]">
                 {profile?.avatarUrl ? (
                   <Image
                     source={{ uri: profile.avatarUrl }}
@@ -153,34 +166,97 @@ export function CustomerAccountScreen() {
                   </Text>
                 )}
               </View>
+              <View className="absolute bottom-0 right-0 h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-[#4B2E46]">
+                <Ionicons name="camera" size={14} color="#F7EFE4" />
+              </View>
             </Pressable>
 
-            <TextInput
-              placeholder="Full name"
-              placeholderTextColor="#A8A39B"
-              value={fullName}
-              onChangeText={setFullName}
-              autoCapitalize="words"
-              className="rounded-[16px] border border-[#ECE7E0] bg-white px-4 py-3.5 text-[15px] text-[#26242A]"
-              style={{ outlineWidth: 0 }}
-            />
-            <TextInput
-              placeholder="Phone"
-              placeholderTextColor="#A8A39B"
-              value={phone}
-              onChangeText={setPhone}
-              keyboardType="phone-pad"
-              className="mt-3 rounded-[16px] border border-[#ECE7E0] bg-white px-4 py-3.5 text-[15px] text-[#26242A]"
-              style={{ outlineWidth: 0 }}
-            />
-            <TextInput
-              placeholder="City"
-              placeholderTextColor="#A8A39B"
-              value={city}
-              onChangeText={setCity}
-              className="mt-3 rounded-[16px] border border-[#ECE7E0] bg-white px-4 py-3.5 text-[15px] text-[#26242A]"
-              style={{ outlineWidth: 0 }}
-            />
+            <Text className="mt-3 text-center font-serif-bold text-[20px] text-[#26242A]">
+              {profile?.fullName}
+            </Text>
+            <Text className="text-center text-[13px] text-[#817F80]">
+              Customer
+            </Text>
+
+            <View className="mt-6 rounded-[20px] border border-[#ECE7E0] bg-white">
+              <View className="flex-row items-center gap-3 px-4 py-3.5">
+                <View className="flex-1">
+                  <Text className="text-[12px] text-[#948F86]">
+                    Full name
+                  </Text>
+                  <TextInput
+                    ref={fullNameInputRef}
+                    placeholder="Full name"
+                    placeholderTextColor="#A8A39B"
+                    value={fullName}
+                    onChangeText={setFullName}
+                    autoCapitalize="words"
+                    className="mt-0.5 text-[15px] text-[#26242A]"
+                    style={{ outlineWidth: 0, padding: 0 }}
+                  />
+                </View>
+                <Pressable
+                  onPress={() => fullNameInputRef.current?.focus()}
+                  hitSlop={10}
+                >
+                  <Ionicons name="create-outline" size={16} color="#948F86" />
+                </Pressable>
+              </View>
+              <View className="h-px bg-[#ECE7E0]" />
+              <View className="flex-row items-center gap-3 px-4 py-3.5">
+                <View className="flex-1">
+                  <Text className="text-[12px] text-[#948F86]">
+                    Phone number
+                  </Text>
+                  <TextInput
+                    ref={phoneInputRef}
+                    placeholder="Phone number"
+                    placeholderTextColor="#A8A39B"
+                    value={phone}
+                    onChangeText={setPhone}
+                    keyboardType="phone-pad"
+                    className="mt-0.5 text-[15px] text-[#26242A]"
+                    style={{ outlineWidth: 0, padding: 0 }}
+                  />
+                </View>
+                <Pressable
+                  onPress={() => phoneInputRef.current?.focus()}
+                  hitSlop={10}
+                >
+                  <Ionicons name="create-outline" size={16} color="#948F86" />
+                </Pressable>
+              </View>
+              <View className="h-px bg-[#ECE7E0]" />
+              <View className="px-4 py-3.5">
+                <Text className="text-[12px] text-[#948F86]">
+                  Email address
+                </Text>
+                <Text className="mt-0.5 text-[15px] text-[#26242A]">
+                  {profile?.email}
+                </Text>
+              </View>
+              <View className="h-px bg-[#ECE7E0]" />
+              <View className="flex-row items-center gap-3 px-4 py-3.5">
+                <View className="flex-1">
+                  <Text className="text-[12px] text-[#948F86]">City</Text>
+                  <TextInput
+                    ref={cityInputRef}
+                    placeholder="City"
+                    placeholderTextColor="#A8A39B"
+                    value={city}
+                    onChangeText={setCity}
+                    className="mt-0.5 text-[15px] text-[#26242A]"
+                    style={{ outlineWidth: 0, padding: 0 }}
+                  />
+                </View>
+                <Pressable
+                  onPress={() => cityInputRef.current?.focus()}
+                  hitSlop={10}
+                >
+                  <Ionicons name="create-outline" size={16} color="#948F86" />
+                </Pressable>
+              </View>
+            </View>
 
             {(fieldError ?? serverError) ? (
               <Text className="mt-3 text-[13px] text-[#E5484D]">
@@ -195,6 +271,7 @@ export function CustomerAccountScreen() {
                 }
                 onPress={handleSave}
                 loading={updateProfileMutation.isPending}
+                disabled={!isDirty}
               />
             </View>
 
@@ -210,15 +287,19 @@ export function CustomerAccountScreen() {
               />
             </View>
 
-            <Pressable onPress={handleLogout} className="mt-6 items-center py-2">
-              <Text className="text-[14px] font-bold text-[#E5484D]">
+            <Pressable
+              onPress={handleLogout}
+              className="mt-6 flex-row items-center gap-3 rounded-[20px] border border-[#ECE7E0] bg-white px-4 py-3.5"
+            >
+              <Ionicons name="log-out-outline" size={20} color="#E5484D" />
+              <Text className="text-[15px] font-semibold text-[#E5484D]">
                 Log out
               </Text>
             </Pressable>
 
             <Pressable
               onPress={() => router.push('/delete-account')}
-              className="mt-1 items-center py-2"
+              className="mt-3 items-center py-2"
             >
               <Text className="text-[13px] text-[#817F80]">Delete account</Text>
             </Pressable>

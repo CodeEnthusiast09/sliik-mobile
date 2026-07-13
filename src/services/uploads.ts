@@ -31,3 +31,28 @@ export async function uploadImage(asset: ImagePickerAsset) {
   );
   return data;
 }
+
+export async function uploadAudio(uri: string) {
+  const formData = new FormData();
+
+  // expo-audio's recorder.uri is a local file:// uri on native, but a
+  // blob: uri on web (backed by the browser's MediaRecorder) - fetching it
+  // is the standard way to turn either into an uploadable Blob/File.
+  if (Platform.OS === 'web') {
+    const response = await fetch(uri);
+    const blob = await response.blob();
+    formData.append('file', blob, 'recording.webm');
+  } else {
+    formData.append(
+      'file',
+      { uri, name: 'recording.m4a', type: 'audio/mp4' } as unknown as Blob,
+    );
+  }
+
+  const { data } = await apiClient.post<ApiResponse<{ url: string }>>(
+    '/uploads/audio',
+    formData,
+    { headers: { 'Content-Type': 'multipart/form-data' } },
+  );
+  return data;
+}

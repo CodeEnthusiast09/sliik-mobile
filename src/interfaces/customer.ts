@@ -5,6 +5,7 @@ export interface CustomerProfile {
   avatarUrl: string | null;
   phone: string | null;
   city: string | null;
+  email: string;
   createdAt: string;
   updatedAt: string;
 }

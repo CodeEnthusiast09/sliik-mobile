@@ -119,8 +119,8 @@ export function calculateDistanceKm(
   const a =
     Math.sin(dLat / 2) ** 2 +
     Math.cos(toRadians(lat1)) *
-      Math.cos(toRadians(lat2)) *
-      Math.sin(dLng / 2) ** 2;
+    Math.cos(toRadians(lat2)) *
+    Math.sin(dLng / 2) ** 2;
 
   return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
@@ -218,6 +218,47 @@ export function formatBookingDateTimeLabel(isoDateTime: string): string {
   return `${weekday}, ${day} ${month} • ${formatTime12hLabel(isoDateTime)}`;
 }
 
+// Whole calendar days between isoDateTime and now (UTC-clock-face
+// convention, same as the rest of the app - see getNextDates).
+function daysAgo(isoDateTime: string): number {
+  const messageDateStr = isoDateTime.slice(0, 10);
+  const now = new Date();
+  const todayUtc = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const messageUtc = Date.UTC(
+    Number(messageDateStr.slice(0, 4)),
+    Number(messageDateStr.slice(5, 7)) - 1,
+    Number(messageDateStr.slice(8, 10)),
+  );
+  return Math.round((todayUtc - messageUtc) / (24 * 60 * 60 * 1000));
+}
+
+// Chat list timestamp: time if sent today, "Yesterday", weekday name within
+// the past week, else a short date - standard chat-app convention.
+export function formatChatTimestampLabel(isoDateTime: string): string {
+  const dayDiff = daysAgo(isoDateTime);
+
+  if (dayDiff <= 0) return formatTime12hLabel(isoDateTime);
+  if (dayDiff === 1) return 'Yesterday';
+  if (dayDiff < 7) {
+    return WEEKDAY_LABELS[new Date(`${isoDateTime.slice(0, 10)}T00:00:00.000Z`).getUTCDay()];
+  }
+  return formatShortDateLabel(isoDateTime);
+}
+
+// Day divider label inside a chat thread - same tiers as
+// formatChatTimestampLabel, but "Today"/"Yesterday" instead of a time since
+// it labels a whole day of messages, not a single moment.
+export function formatChatDayDivider(isoDateTime: string): string {
+  const dayDiff = daysAgo(isoDateTime);
+
+  if (dayDiff <= 0) return 'Today';
+  if (dayDiff === 1) return 'Yesterday';
+  if (dayDiff < 7) {
+    return WEEKDAY_LABELS[new Date(`${isoDateTime.slice(0, 10)}T00:00:00.000Z`).getUTCDay()];
+  }
+  return formatShortDateLabel(isoDateTime);
+}
+
 export function formatRelativeTime(dateStr: string): string {
   const diffMs = Date.now() - new Date(dateStr).getTime();
   const minutes = Math.floor(diffMs / (60 * 1000));
@@ -262,3 +303,14 @@ export function getErrorMessage(error: unknown): string {
 export function isEmailNotVerifiedError(error: unknown): boolean {
   return isAxiosError(error) && error.response?.status === 403;
 }
+
+export function isSameLocalDay(isoA: string, isoB: string): boolean {
+  const a = new Date(isoA);
+  const b = new Date(isoB);
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
