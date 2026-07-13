@@ -1,12 +1,16 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
+import * as Linking from 'expo-linking';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   Platform,
+  Pressable,
   ScrollView,
+  Share,
   Text,
   View,
 } from 'react-native';
@@ -14,21 +18,26 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
 import { Chip } from '@/components/chip';
+import { DateChip } from '@/components/date-chip';
 import { ErrorState } from '@/components/error-state';
 import { ScreenHeader } from '@/components/screen-header';
 import { DetailSkeleton } from '@/components/skeleton';
+import { useCountdown } from '@/hooks/common/use-countdown';
 import { useHideTabBar } from '@/hooks/common/use-hide-tab-bar';
 import { useAvailableSlots } from '@/hooks/services/bookings';
 import { useClaimDeal, useDeal, useDeleteDeal } from '@/hooks/services/deals';
 import {
+  calculateDistanceKm,
+  formatCountdown,
   formatCurrency,
-  formatDateLabel,
   formatDateTimeLabel,
-  formatTimeLabel,
+  formatTime12hLabel,
+  getDateChipParts,
   getErrorMessage,
   getNextDates,
 } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth';
+import { useLocationStore } from '@/store/location';
 import { showToast } from '@/store/toast';
 
 const DATE_OPTIONS = getNextDates(14);
@@ -39,10 +48,18 @@ export function DealDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const notificationsHref =
     role === 'provider' ? '/profile/notifications' : '/home/notifications';
+  const userCoords = useLocationStore((state) => state.coords);
+
+  // Same defensive request as customer-home/provider-detail - an
+  // already-logged-in session never re-fires the login-time request.
+  useEffect(() => {
+    useLocationStore.getState().requestLocation();
+  }, []);
 
   useHideTabBar();
 
   const { data: deal, isLoading, isError, error, refetch } = useDeal(id);
+  const remainingMs = useCountdown(deal?.expiresAt ?? '');
   const deleteMutation = useDeleteDeal();
   const claimMutation = useClaimDeal();
 
@@ -58,6 +75,14 @@ export function DealDetailScreen() {
   function handleSelectDate(date: string) {
     setSelectedDate(date);
     setSelectedSlot(null);
+  }
+
+  function handleShare() {
+    if (!deal) return;
+    const link = Linking.createURL(`/deals/${deal.id}`);
+    Share.share({
+      message: `${deal.title} - ₦${formatCurrency(deal.dealPrice)} (was ₦${formatCurrency(deal.originalPrice)}) on Sliik! ${link}`,
+    });
   }
 
   function handleDelete() {
@@ -139,6 +164,17 @@ export function DealDetailScreen() {
   const discountPercent = Math.round(
     (1 - Number(deal.dealPrice) / Number(deal.originalPrice)) * 100,
   );
+  const distanceLabel =
+    userCoords &&
+    deal.provider?.latitude != null &&
+    deal.provider?.longitude != null
+      ? `${calculateDistanceKm(
+          userCoords.lat,
+          userCoords.lng,
+          deal.provider.latitude,
+          deal.provider.longitude,
+        ).toFixed(1)} km away`
+      : null;
 
   return (
     <View className="flex-1 bg-white">
@@ -148,6 +184,15 @@ export function DealDetailScreen() {
             title="Deal detail"
             notificationsHref={notificationsHref}
             onBack={() => router.back()}
+            rightAction={
+              <Pressable
+                onPress={handleShare}
+                hitSlop={10}
+                className="h-9 w-9 items-center justify-center"
+              >
+                <Ionicons name="share-outline" size={22} color="#4B2E46" />
+              </Pressable>
+            }
           />
 
           <ScrollView
@@ -190,9 +235,10 @@ export function DealDetailScreen() {
                   </Text>
                 </View>
                 {isLive ? (
-                  <View className="absolute right-3 top-3 rounded-full bg-black/55 px-2.5 py-1">
+                  <View className="absolute right-3 top-3 flex-row items-center gap-1 rounded-full bg-black/55 px-2.5 py-1">
+                    <Ionicons name="time-outline" size={12} color="white" />
                     <Text className="text-[11px] font-bold text-white">
-                      {deal.slotsRemaining} left
+                      Ends in {formatCountdown(remainingMs)}
                     </Text>
                   </View>
                 ) : null}
@@ -229,6 +275,30 @@ export function DealDetailScreen() {
                   </View>
                 </View>
 
+                {role === 'customer' ? (
+                  <View className="flex-row items-center gap-2">
+                    {Number(deal.provider?.totalReviews) > 0 ? (
+                      <Text className="text-[13px] font-bold text-[#26242A]">
+                        ★ {Number(deal.provider?.avgRating).toFixed(1)} (
+                        {deal.provider?.totalReviews})
+                      </Text>
+                    ) : null}
+                    {deal.provider?.city ? (
+                      <View className="flex-row items-center gap-1">
+                        <Ionicons
+                          name="location-outline"
+                          size={13}
+                          color="#817F80"
+                        />
+                        <Text className="text-[13px] text-[#817F80]">
+                          {deal.provider.city}
+                          {distanceLabel ? ` · ${distanceLabel}` : ''}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </View>
+                ) : null}
+
                 <Text className="text-[13px] text-[#817F80]">
                   {deal.slotsRemaining} of {deal.slotsTotal} slots left ·
                   Expires {formatDateTimeLabel(deal.expiresAt)}
@@ -257,17 +327,22 @@ export function DealDetailScreen() {
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
-                  className="mt-3 h-11 flex-none"
+                  className="mt-3 flex-none"
                   contentContainerClassName="items-center gap-2 pr-6"
                 >
-                  {DATE_OPTIONS.map((date) => (
-                    <Chip
-                      key={date}
-                      label={formatDateLabel(date)}
-                      selected={selectedDate === date}
-                      onPress={() => handleSelectDate(date)}
-                    />
-                  ))}
+                  {DATE_OPTIONS.map((date) => {
+                    const { topLabel, day, month } = getDateChipParts(date);
+                    return (
+                      <DateChip
+                        key={date}
+                        topLabel={topLabel}
+                        day={day}
+                        month={month}
+                        selected={selectedDate === date}
+                        onPress={() => handleSelectDate(date)}
+                      />
+                    );
+                  })}
                 </ScrollView>
 
                 <Text className="mt-7 font-serif-bold text-[18px] text-[#26242A]">
@@ -280,9 +355,10 @@ export function DealDetailScreen() {
                     {slotsData.slots.map((slot) => (
                       <Chip
                         key={slot}
-                        label={formatTimeLabel(slot)}
+                        label={formatTime12hLabel(slot)}
                         selected={selectedSlot === slot}
                         onPress={() => setSelectedSlot(slot)}
+                        spacious
                       />
                     ))}
                   </View>

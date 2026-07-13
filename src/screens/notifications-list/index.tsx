@@ -107,10 +107,17 @@ export function NotificationsListScreen() {
                       style={
                         item.readAt ? undefined : { backgroundColor: '#4B2E461F' }
                       }
-                      className={`flex-row items-start gap-3 rounded-[20px] p-4 ${
+                      className={`relative flex-row items-start gap-3 rounded-[20px] p-4 ${
                         item.readAt ? 'border border-[#ECE7E0] bg-white' : ''
                       }`}
                     >
+                      {item.readAt ? null : (
+                        <View
+                          style={{ top: '50%', marginTop: -4 }}
+                          className="absolute right-4 h-2 w-2 rounded-full bg-[#4B2E46]"
+                        />
+                      )}
+
                       <View
                         style={{ backgroundColor: `${color}1F` }}
                         className="h-10 w-10 items-center justify-center rounded-full"

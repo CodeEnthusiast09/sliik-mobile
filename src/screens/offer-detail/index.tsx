@@ -1,5 +1,4 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -187,56 +186,47 @@ export function OfferDetailScreen() {
             showsVerticalScrollIndicator={false}
             contentContainerClassName="pb-8"
           >
-            <View className="mt-4 gap-3 rounded-[20px] border border-[#ECE7E0] bg-white p-4">
-              <View className="flex-row items-center justify-between">
+            <View className="mt-4 gap-3 rounded-[20px] border border-[#ECE7E0] bg-white p-3">
+              <View className="flex-row items-center justify-between border-b border-[#ECE7E0] pb-3">
                 <Text className="text-[13px] font-medium text-[#817F80]">
                   Your request
                 </Text>
-                <StatusPill status={offer.status} />
+                <StatusPill status={offer.status} className='px-3' />
               </View>
 
-              <View className="flex-row items-start gap-3">
-                <View className="flex-1 gap-1.5">
-                  <Text className="font-serif-bold text-[22px] leading-[27px] text-[#26242A]">
-                    {offer.serviceType}
-                  </Text>
-                  <Text className="text-[14px] text-[#26242A]">
-                    {offer.description}
-                  </Text>
-                  {offer.budget ? (
-                    <Text className="text-[13px] text-[#817F80]">
-                      Budget ₦{formatCurrency(offer.budget)}
-                    </Text>
-                  ) : null}
-                  <View className="flex-row items-center gap-1">
-                    <Ionicons
-                      name="location-outline"
-                      size={13}
-                      color="#817F80"
-                    />
-                    <Text className="text-[13px] text-[#817F80]">
-                      {offer.city}
-                    </Text>
-                  </View>
-                  <View className="flex-row items-center gap-1">
-                    <Ionicons
-                      name="calendar-outline"
-                      size={13}
-                      color="#817F80"
-                    />
-                    <Text className="text-[13px] text-[#817F80]">
-                      {formatBookingDateTimeLabel(offer.preferredFrom)}
-                    </Text>
-                  </View>
-                </View>
 
-                {offer.referenceImageUrl ? (
-                  <Image
-                    source={{ uri: offer.referenceImageUrl }}
-                    style={{ width: 72, height: 72, borderRadius: 16 }}
-                    contentFit="cover"
-                  />
+              <View className="gap-1.5">
+                <Text className="font-serif-bold text-[22px] leading-[27px] text-[#26242A]">
+                  {offer.serviceType}
+                </Text>
+                <Text className="text-[14px] text-[#26242A]">
+                  {offer.description}
+                </Text>
+                {offer.budget ? (
+                  <Text className="text-[13px] text-[#817F80]">
+                    Budget ₦{formatCurrency(offer.budget)}
+                  </Text>
                 ) : null}
+                <View className="flex-row items-center gap-1">
+                  <Ionicons
+                    name="location-outline"
+                    size={13}
+                    color="#817F80"
+                  />
+                  <Text className="text-[13px] text-[#817F80]">
+                    {offer.city}
+                  </Text>
+                </View>
+                <View className="flex-row items-center gap-1">
+                  <Ionicons
+                    name="calendar-outline"
+                    size={13}
+                    color="#817F80"
+                  />
+                  <Text className="text-[13px] text-[#817F80]">
+                    {formatBookingDateTimeLabel(offer.preferredFrom)}
+                  </Text>
+                </View>
               </View>
             </View>
 
@@ -271,8 +261,10 @@ export function OfferDetailScreen() {
                           <Avatar
                             uri={response.provider?.avatarUrl}
                             name={response.provider?.fullName ?? '?'}
-                            size={48}
+                            size={76}
+                            shape="square"
                           />
+
                           <View className="flex-1 gap-0.5">
                             <Text className="font-serif-bold text-[15px] text-[#26242A]">
                               {response.provider?.fullName ?? 'Provider'}
@@ -307,11 +299,10 @@ export function OfferDetailScreen() {
                               <Pressable
                                 onPress={() => handleAcceptPress(response)}
                                 disabled={acceptMutation.isPending}
-                                className={`rounded-full bg-[#4B2E46] px-4 py-2 ${
-                                  acceptMutation.isPending
-                                    ? 'opacity-50'
-                                    : 'active:opacity-80'
-                                }`}
+                                className={`rounded-full bg-[#4B2E46] px-4 py-2 ${acceptMutation.isPending
+                                  ? 'opacity-50'
+                                  : 'active:opacity-80'
+                                  }`}
                               >
                                 {acceptMutation.isPending ? (
                                   <ActivityIndicator

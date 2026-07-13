@@ -112,6 +112,7 @@ export function OfferNewScreen() {
             title="Post an offer"
             notificationsHref="/home/notifications"
             onBack={() => router.back()}
+            showNotifications={false}
           />
 
           <ScrollView
@@ -119,7 +120,7 @@ export function OfferNewScreen() {
             contentContainerClassName="pb-8"
           >
             <Text className="mt-4 text-[14px] text-[#817F80]">
-              Tell us what you need. Helpers will apply.
+              Tell us what you need. Providers will apply.
             </Text>
 
             <FieldCard label="Service type">
@@ -203,9 +204,6 @@ export function OfferNewScreen() {
                 />
               </View>
             </FieldCard>
-            <Text className="mt-1.5 px-1 text-[12px] text-[#817F80]">
-              Optional: Leave blank to get open offers, or set a budget.
-            </Text>
 
             <FieldCard label="Preferred date & time">
               <View className="flex-row items-center gap-2">

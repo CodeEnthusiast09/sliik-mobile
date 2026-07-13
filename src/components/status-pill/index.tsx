@@ -6,9 +6,10 @@ import { getStatusColor } from '@/lib/utils';
 
 export type StatusPillProps = {
   status: BookingStatus | OfferStatus;
+  className?: string;
 };
 
-export function StatusPill({ status }: StatusPillProps) {
+export function StatusPill({ status, className }: StatusPillProps) {
   const theme = useTheme();
   const color = getStatusColor(status, theme);
 
@@ -18,13 +19,15 @@ export function StatusPill({ status }: StatusPillProps) {
     borderWidth: 1,
   };
 
+  const label = status.charAt(0).toUpperCase() + status.slice(1);
+
   return (
     <View
       style={containerStyle}
-      className="self-start rounded-xl px-2 py-1.5"
+      className={`self-start rounded-xl px-2 py-1.5 ${className ?? ''}`}
     >
       <Text style={{ color }} className="text-[12px] font-semibold">
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+        {label}
       </Text>
     </View>
   );

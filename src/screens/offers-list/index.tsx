@@ -18,7 +18,6 @@ import { ErrorState } from '@/components/error-state';
 import { ScreenHeader } from '@/components/screen-header';
 import { ListSkeleton } from '@/components/skeleton';
 import { StatusPill } from '@/components/status-pill';
-import { useHideTabBar } from '@/hooks/common/use-hide-tab-bar';
 import { useMyOffers, useOpenOffers } from '@/hooks/services/offers';
 import { useProviderProfile } from '@/hooks/services/provider';
 import type { Offer } from '@/interfaces/offer';
@@ -45,8 +44,6 @@ function budgetLabel(offer: Offer) {
 }
 
 export function OffersListScreen() {
-  useHideTabBar();
-
   const role = useAuthStore((state) => state.role);
   const notificationsHref =
     role === 'provider' ? '/profile/notifications' : '/home/notifications';
@@ -199,7 +196,7 @@ function CustomerOffersList({
             )}
           </View>
 
-          <View className="mb-4 mt-3">
+          <View className="mb-24 mt-3">
             <Button
               label="Post offer"
               onPress={() => router.push('/offers/new')}
