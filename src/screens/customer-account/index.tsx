@@ -106,7 +106,7 @@ export function CustomerAccountScreen() {
   async function handleLogout() {
     const pushToken = usePushTokenStore.getState().token;
     if (pushToken) {
-      await unregisterPushToken(pushToken).catch(() => {});
+      await unregisterPushToken(pushToken).catch(() => { });
     }
     clearAuth();
     router.replace('/login');
@@ -275,8 +275,20 @@ export function CustomerAccountScreen() {
               />
             </View>
 
+            <Pressable
+              onPress={() => router.push('/account/favorites')}
+              className="mt-4 gap-0.5 rounded-[20px] border border-[#ECE7E0] bg-white p-4"
+            >
+              <Text className="font-serif-bold text-[15px] text-[#26242A]">
+                Favorites
+              </Text>
+              <Text className="text-[13px] text-[#817F80]">
+                Providers you&apos;ve saved
+              </Text>
+            </Pressable>
+
             <Text className="mt-7 font-serif-bold text-[18px] text-[#26242A]">
-              Reviews received
+              Reviews
             </Text>
             <View className="mt-3">
               <ReviewsList
@@ -289,7 +301,7 @@ export function CustomerAccountScreen() {
 
             <Pressable
               onPress={handleLogout}
-              className="mt-6 flex-row items-center gap-3 rounded-[20px] border border-[#ECE7E0] bg-white px-4 py-3.5"
+              className="mt-6 flex-row items-center justify-center gap-3 rounded-[20px] border border-[#ECE7E0] bg-white px-4 py-3.5"
             >
               <Ionicons name="log-out-outline" size={20} color="#E5484D" />
               <Text className="text-[15px] font-semibold text-[#E5484D]">

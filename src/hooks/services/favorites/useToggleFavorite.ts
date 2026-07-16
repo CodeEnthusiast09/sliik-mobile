@@ -12,6 +12,7 @@ export function useToggleFavorite(providerId: string) {
       queryClient.invalidateQueries({
         queryKey: ['favorites', 'status', providerId],
       });
+      queryClient.invalidateQueries({ queryKey: ['favorites', 'mine'] });
     },
   });
 }
