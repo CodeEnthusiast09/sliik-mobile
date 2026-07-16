@@ -17,8 +17,10 @@ import { useCountdown } from '@/hooks/common/use-countdown';
 import { useActiveDeals, useMyDeals } from '@/hooks/services/deals';
 import type { Deal } from '@/interfaces/deal';
 import {
+  calculateDiscountPercent,
   formatCountdown,
   formatCurrency,
+  formatShortDateLabel,
   formatTradeTypeLabel,
   getErrorMessage,
 } from '@/lib/utils';
@@ -36,10 +38,10 @@ const PRICE_BUCKETS: PriceBucket[] = [
 ];
 
 function discountPercent(deal: Deal) {
-  const original = Number(deal.originalPrice);
-  const dealPrice = Number(deal.dealPrice);
-  if (!original) return 0;
-  return Math.round((1 - dealPrice / original) * 100);
+  return calculateDiscountPercent(
+    Number(deal.originalPrice),
+    Number(deal.dealPrice),
+  );
 }
 
 function DealCardBase({
@@ -348,6 +350,139 @@ function CustomerDealsFeed({
   );
 }
 
+type DealPhase = 'active' | 'scheduled' | 'ended';
+
+const DEAL_PHASE_FILTERS: { value: DealPhase; label: string }[] = [
+  { value: 'active', label: 'Active' },
+  { value: 'scheduled', label: 'Scheduled' },
+  { value: 'ended', label: 'Ended' },
+];
+
+const DEAL_PHASE_EMPTY_MESSAGE: Record<DealPhase, string> = {
+  active: 'No active deals right now. Post one to attract customers.',
+  scheduled: 'No scheduled deals. Give a deal a future start date to see it here.',
+  ended: 'No ended deals yet.',
+};
+
+const DEAL_PHASE_LABEL: Record<DealPhase, string> = {
+  active: 'Active',
+  scheduled: 'Scheduled',
+  ended: 'Ended',
+};
+
+const DEAL_PHASE_COLOR: Record<DealPhase, string> = {
+  active: '#2F9E44',
+  scheduled: '#4B2E46',
+  ended: '#817F80',
+};
+
+function getDealPhase(deal: Deal): DealPhase {
+  const now = new Date();
+  const startsAt = deal.startsAt ? new Date(deal.startsAt) : null;
+  if (startsAt && startsAt > now) return 'scheduled';
+  if (deal.slotsRemaining > 0 && new Date(deal.expiresAt) > now) return 'active';
+  return 'ended';
+}
+
+function ProviderDealCard({
+  deal,
+  onPress,
+}: {
+  deal: Deal;
+  onPress: () => void;
+}) {
+  const phase = getDealPhase(deal);
+  const percent = discountPercent(deal);
+  const slotsUsed = deal.slotsTotal - deal.slotsRemaining;
+  const progress = deal.slotsTotal > 0 ? slotsUsed / deal.slotsTotal : 0;
+  const phaseColor = DEAL_PHASE_COLOR[phase];
+
+  return (
+    <Pressable
+      onPress={onPress}
+      className="flex-row gap-3 rounded-[20px] border border-[#ECE7E0] bg-white p-3"
+    >
+      <View className="h-20 w-20 items-center justify-center overflow-hidden rounded-[14px] bg-[#F3F0EB]">
+        {deal.service?.imageUrl ? (
+          <Image
+            source={{ uri: deal.service.imageUrl }}
+            style={{ width: 80, height: 80 }}
+            contentFit="cover"
+          />
+        ) : (
+          <Ionicons name="pricetag-outline" size={22} color="#A8A39B" />
+        )}
+      </View>
+
+      <View className="flex-1 gap-1">
+        <View className="flex-row items-start justify-between gap-2">
+          <Text
+            className="flex-1 font-serif-bold text-[16px] text-[#26242A]"
+            numberOfLines={1}
+          >
+            {deal.title}
+          </Text>
+          <View
+            style={{
+              backgroundColor: `${phaseColor}1F`,
+              borderColor: phaseColor,
+              borderWidth: 1,
+            }}
+            className="rounded-lg px-2 py-1"
+          >
+            <Text
+              style={{ color: phaseColor }}
+              className="text-[11px] font-bold"
+            >
+              {DEAL_PHASE_LABEL[phase]}
+            </Text>
+          </View>
+        </View>
+
+        <Text className="text-[12px] text-[#817F80]" numberOfLines={1}>
+          {deal.service?.name ?? 'Service'}
+        </Text>
+
+        <View className="flex-row items-center gap-2">
+          <Text className="font-serif-bold text-[15px] text-[#26242A]">
+            ₦{formatCurrency(deal.dealPrice)}
+          </Text>
+          <Text className="text-[12px] text-[#A8A39B] line-through">
+            ₦{formatCurrency(deal.originalPrice)}
+          </Text>
+          <View className="rounded-md bg-[#4B2E461A] px-1.5 py-0.5">
+            <Text className="text-[10px] font-bold text-[#4B2E46]">
+              {percent}% OFF
+            </Text>
+          </View>
+        </View>
+
+        {phase === 'active' ? (
+          <View className="mt-1 gap-1">
+            <View className="h-1.5 overflow-hidden rounded-full bg-[#F3F0EB]">
+              <View
+                className="h-full rounded-full bg-[#4B2E46]"
+                style={{ width: `${Math.min(progress * 100, 100)}%` }}
+              />
+            </View>
+            <Text className="text-[11px] text-[#817F80]">
+              {slotsUsed} of {deal.slotsTotal} slots booked
+            </Text>
+          </View>
+        ) : phase === 'scheduled' && deal.startsAt ? (
+          <Text className="mt-1 text-[11px] text-[#817F80]">
+            Starts {formatShortDateLabel(deal.startsAt)}
+          </Text>
+        ) : (
+          <Text className="mt-1 text-[11px] text-[#817F80]">
+            Ended {formatShortDateLabel(deal.expiresAt)}
+          </Text>
+        )}
+      </View>
+    </Pressable>
+  );
+}
+
 function ProviderDealsList({
   notificationsHref,
 }: {
@@ -362,23 +497,42 @@ function ProviderDealsList({
     isRefetching,
     refetch,
   } = useMyDeals();
+  const [phaseFilter, setPhaseFilter] = useState<DealPhase>('active');
+
+  const filteredDeals = useMemo(
+    () => (deals ?? []).filter((deal) => getDealPhase(deal) === phaseFilter),
+    [deals, phaseFilter],
+  );
 
   return (
     <View className="flex-1 bg-white">
       <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
         <View className="flex-1 px-6">
-          <ScreenHeader title="Posted deals" notificationsHref={notificationsHref} />
-          <DealsOffersTabs active="deals" />
+          <ScreenHeader
+            title="Sliik Deals"
+            notificationsHref={notificationsHref}
+            rightAction={
+              <Pressable onPress={() => router.push('/deals/new')} hitSlop={10}>
+                <Text className="text-[13px] font-bold text-[#4B2E46]">
+                  + New deal
+                </Text>
+              </Pressable>
+            }
+          />
+          <Text className="mt-1 text-[13px] text-[#817F80]">
+            Create and manage special offers to grow your bookings.
+          </Text>
+          <DealsOffersTabs active="deals" offersLabel="Open Offers" />
 
-          <View className="mt-4 flex-row items-center justify-end">
-            <Pressable
-              onPress={() => router.push('/deals/new')}
-              className="rounded-full bg-[#4B2E46] px-4 py-2.5"
-            >
-              <Text className="text-[13px] font-bold text-white">
-                + New deal
-              </Text>
-            </Pressable>
+          <View className="mt-4 flex-row gap-2">
+            {DEAL_PHASE_FILTERS.map((filter) => (
+              <Chip
+                key={filter.value}
+                label={filter.label}
+                selected={phaseFilter === filter.value}
+                onPress={() => setPhaseFilter(filter.value)}
+              />
+            ))}
           </View>
 
           <View className="mt-4 flex-1">
@@ -389,40 +543,25 @@ function ProviderDealsList({
             ) : (
               <FlatList
                 showsVerticalScrollIndicator={false}
-                data={deals}
+                data={filteredDeals}
                 keyExtractor={(deal) => deal.id}
-                contentContainerClassName="grow gap-4 pb-32"
+                contentContainerClassName="grow gap-3 pb-32"
                 refreshing={isRefetching}
                 onRefresh={refetch}
                 ListEmptyComponent={
-                  <EmptyState message="No deals yet. Post one to attract customers with a flash discount." />
+                  <EmptyState message={DEAL_PHASE_EMPTY_MESSAGE[phaseFilter]} />
                 }
-                renderItem={({ item }) => {
-                  const isLive =
-                    item.slotsRemaining > 0 &&
-                    new Date(item.expiresAt) > new Date();
-                  return (
-                    <DealCardBase
-                      deal={item}
-                      subtitle={`${item.service?.name ?? 'Service'} · ${item.slotsRemaining} of ${item.slotsTotal} slots left`}
-                      onPress={() =>
-                        router.push({
-                          pathname: '/deals/[id]',
-                          params: { id: item.id },
-                        })
-                      }
-                      topRight={
-                        <View
-                          className={`rounded-full px-2.5 py-1 ${isLive ? 'bg-[#E0A800]' : 'bg-black/55'}`}
-                        >
-                          <Text className="text-[11px] font-bold text-white">
-                            {isLive ? 'Live' : 'Ended'}
-                          </Text>
-                        </View>
-                      }
-                    />
-                  );
-                }}
+                renderItem={({ item }) => (
+                  <ProviderDealCard
+                    deal={item}
+                    onPress={() =>
+                      router.push({
+                        pathname: '/deals/[id]',
+                        params: { id: item.id },
+                      })
+                    }
+                  />
+                )}
               />
             )}
           </View>

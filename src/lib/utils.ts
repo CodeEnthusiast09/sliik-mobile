@@ -16,6 +16,10 @@ export function formatCurrency(value: string | number): string {
   return amount.toLocaleString('en-NG', { maximumFractionDigits: 0 });
 }
 
+export function maskAccountNumber(accountNumber: string): string {
+  return `•••• ${accountNumber.slice(-4)}`;
+}
+
 export function formatDurationLabel(totalMinutes: number): string {
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
@@ -283,6 +287,14 @@ export function formatCountdown(remainingMs: number): string {
 
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+}
+
+export function calculateDiscountPercent(
+  originalPrice: number,
+  dealPrice: number,
+): number {
+  if (!originalPrice) return 0;
+  return Math.round((1 - dealPrice / originalPrice) * 100);
 }
 
 export function getErrorMessage(error: unknown): string {

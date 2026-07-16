@@ -10,6 +10,7 @@ export interface Deal {
   dealPrice: string;
   slotsTotal: number;
   slotsRemaining: number;
+  startsAt: string | null;
   expiresAt: string;
   createdAt: string;
   updatedAt: string;

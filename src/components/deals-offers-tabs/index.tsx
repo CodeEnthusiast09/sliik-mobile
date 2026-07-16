@@ -1,5 +1,5 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Pressable, Text, View, type LayoutChangeEvent } from 'react-native';
 import Animated, {
   runOnJS,
@@ -10,6 +10,7 @@ import Animated, {
 
 export type DealsOffersTabsProps = {
   active: 'deals' | 'offers';
+  offersLabel?: string;
 };
 
 const TAB_SHADOW = {
@@ -23,29 +24,57 @@ const TAB_SHADOW = {
 const PADDING = 4;
 const ANIM_MS = 220;
 
-export function DealsOffersTabs({ active }: DealsOffersTabsProps) {
+export function DealsOffersTabs({
+  active,
+  offersLabel = 'My Offers',
+}: DealsOffersTabsProps) {
   const router = useRouter();
   const [localActive, setLocalActive] = useState(active);
   const [thumbWidth, setThumbWidth] = useState(0);
+  const [pendingTarget, setPendingTarget] = useState<
+    'deals' | 'offers' | null
+  >(null);
   const translateX = useSharedValue(0);
 
   // Deals and Offers screens stay mounted when navigating between them, so a
   // stale instance can be revealed with localActive pointing at the tab we
   // animated *toward* before leaving. Re-sync with the route's truth on every
-  // focus and snap the thumb without animating.
+  // focus; clearing pendingTarget drops any animation left mid-flight from a
+  // navigation-away so the effect below just snaps instead of re-animating.
   useFocusEffect(
     useCallback(() => {
       setLocalActive(active);
-      if (thumbWidth > 0) {
-        translateX.value = active === 'deals' ? 0 : thumbWidth;
-      }
-    }, [active, thumbWidth, translateX]),
+      setPendingTarget(null);
+    }, [active]),
   );
+
+  // Reanimated shared values may only be mutated from inside a plain
+  // useEffect here (see auth-tabs/index.tsx for the same pattern) - mutating
+  // from useFocusEffect/useCallback or a plain event handler trips the React
+  // Compiler's react-hooks/immutability rule.
+  useEffect(() => {
+    if (thumbWidth === 0) return;
+
+    if (pendingTarget === null) {
+      translateX.value = localActive === 'deals' ? 0 : thumbWidth;
+      return;
+    }
+
+    const target = pendingTarget;
+    translateX.value = withTiming(
+      target === 'deals' ? 0 : thumbWidth,
+      { duration: ANIM_MS },
+      (finished) => {
+        if (!finished) return;
+        runOnJS(setPendingTarget)(null);
+        runOnJS(router.replace)(target === 'deals' ? '/deals' : '/offers');
+      },
+    );
+  }, [localActive, pendingTarget, thumbWidth, translateX, router]);
 
   function handleLayout(event: LayoutChangeEvent) {
     const width = (event.nativeEvent.layout.width - PADDING * 2) / 2;
     setThumbWidth(width);
-    translateX.value = localActive === 'deals' ? 0 : width;
   }
 
   // Deals and Offers are separate routes - navigate only once the slide has
@@ -60,15 +89,7 @@ export function DealsOffersTabs({ active }: DealsOffersTabsProps) {
     }
 
     setLocalActive(target);
-    translateX.value = withTiming(
-      target === 'deals' ? 0 : thumbWidth,
-      { duration: ANIM_MS },
-      (finished) => {
-        if (finished) {
-          runOnJS(router.replace)(target === 'deals' ? '/deals' : '/offers');
-        }
-      },
-    );
+    setPendingTarget(target);
   }
 
   const thumbStyle = useAnimatedStyle(() => ({
@@ -116,7 +137,7 @@ export function DealsOffersTabs({ active }: DealsOffersTabsProps) {
         <Text
           className={`text-[13px] font-bold ${localActive === 'offers' ? 'text-[#26242A]' : 'text-[#948F86]'}`}
         >
-          My Offers
+          {offersLabel}
         </Text>
       </Pressable>
     </View>
