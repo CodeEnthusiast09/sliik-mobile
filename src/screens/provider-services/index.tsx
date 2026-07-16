@@ -1,3 +1,5 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { FlatList, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -29,21 +31,15 @@ export function ProviderServicesScreen() {
       <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
         <View className="flex-1 px-6">
           <ScreenHeader
+            title="Services"
             notificationsHref="/profile/notifications"
             onBack={() => router.back()}
+            rightAction={
+              <Pressable onPress={() => router.push('/services/new')} hitSlop={10}>
+                <Text className="text-[13px] font-bold text-[#4B2E46]">Add</Text>
+              </Pressable>
+            }
           />
-
-          <View className="mt-2 flex-row items-center justify-between">
-            <Text className="font-serif-bold text-[28px] leading-[34px] text-[#26242A]">
-              Services
-            </Text>
-            <Pressable
-              onPress={() => router.push('/services/new')}
-              className="rounded-full bg-[#4B2E46] px-4 py-2.5"
-            >
-              <Text className="text-[13px] font-bold text-white">+ Add</Text>
-            </Pressable>
-          </View>
 
           <View className="mt-4 flex-1">
             {isLoading ? (
@@ -69,16 +65,41 @@ export function ProviderServicesScreen() {
                         params: { id: item.id },
                       })
                     }
-                    className="gap-1 rounded-[20px] border border-[#ECE7E0] bg-white p-4"
+                    className="flex-row items-center gap-3 rounded-[20px] border border-[#ECE7E0] bg-white p-3"
                   >
-                    <Text className="font-serif-bold text-[16px] text-[#26242A]">
-                      {item.name}
-                    </Text>
-                    <Text className="text-[13px] text-[#817F80]">
-                      ₦{formatCurrency(item.price)} ·{' '}
-                      {formatDurationLabel(item.durationMinutes)}
-                      {!item.isActive ? ' · Inactive' : ''}
-                    </Text>
+                    <View className="h-14 w-14 items-center justify-center overflow-hidden rounded-[12px] bg-[#F3F0EB]">
+                      {item.imageUrl ? (
+                        <Image
+                          source={{ uri: item.imageUrl }}
+                          style={{ width: 56, height: 56 }}
+                          contentFit="cover"
+                        />
+                      ) : (
+                        <Ionicons name="image-outline" size={20} color="#A8A39B" />
+                      )}
+                    </View>
+
+                    <View className="flex-1 gap-0.5">
+                      <Text className="font-serif-bold text-[16px] text-[#26242A]">
+                        {item.name}
+                      </Text>
+                      <Text className="text-[13px] text-[#817F80]">
+                        ₦{formatCurrency(item.price)} ·{' '}
+                        {formatDurationLabel(item.durationMinutes)}
+                      </Text>
+                    </View>
+
+                    <View
+                      className={`rounded-lg px-2 py-1 ${item.isActive ? 'bg-[#2F9E441F]' : 'bg-[#8888881F]'}`}
+                    >
+                      <Text
+                        className={`text-[12px] font-semibold ${item.isActive ? 'text-[#2F9E44]' : 'text-[#817F80]'}`}
+                      >
+                        {item.isActive ? 'Active' : 'Inactive'}
+                      </Text>
+                    </View>
+
+                    <Ionicons name="chevron-forward" size={18} color="#A8A39B" />
                   </Pressable>
                 )}
               />

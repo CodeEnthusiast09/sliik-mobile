@@ -30,6 +30,9 @@ export interface Service {
   description: string | null;
   price: string;
   durationMinutes: number;
+  category: string | null;
+  imageUrl: string | null;
+  addOns: string[] | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -39,7 +42,10 @@ export interface PortfolioItem {
   id: string;
   providerId: string;
   imageUrl: string;
+  title: string | null;
+  category: string | null;
   caption: string | null;
+  sortOrder: number;
   createdAt: string;
 }
 
@@ -81,6 +87,7 @@ export interface PayoutAccount {
   providerId: string;
   paystackSubaccountCode: string;
   bankCode: string;
+  bankName: string | null;
   accountNumber: string;
   accountName: string;
   verified: boolean;

@@ -123,3 +123,31 @@ export const CHATTABLE_STATUSES = ['confirmed', 'completed'];
 // The server enforces the real limit and silently drops early resends; this just
 // gates the Resend button so the user isn't tapping a rate-limited endpoint blind.
 export const RESEND_COOLDOWN_SECONDS = 60;
+
+// Mirrors the backend's categoryEnum (src/db/schema/services.ts) - shared
+// between service categorization and portfolio photo tagging.
+export const CATEGORIES = [
+  { value: 'hair', label: 'Hair' },
+  { value: 'braids', label: 'Braids' },
+  { value: 'wig_install', label: 'Wig Install' },
+  { value: 'makeup', label: 'Makeup' },
+  { value: 'lashes', label: 'Lashes' },
+  { value: 'nails', label: 'Nails' },
+  { value: 'barbering', label: 'Barbering' },
+  { value: 'mens_grooming', label: "Men's Grooming" },
+];
+
+// Mirrors the backend's ADD_ON_VALUES (create-service.dto.ts).
+export const ADD_ONS = [
+  { value: 'beard_shape', label: 'Beard shape' },
+  { value: 'hot_towel', label: 'Hot towel' },
+  { value: 'eyebrow_trim', label: 'Eyebrow trim' },
+  { value: 'deep_conditioning', label: 'Deep conditioning' },
+  { value: 'scalp_massage', label: 'Scalp massage' },
+];
+
+// Preset options for the service duration dropdown.
+export const DURATION_OPTIONS = [15, 30, 45, 60, 90, 120].map((minutes) => ({
+  value: String(minutes),
+  label: `${minutes} min`,
+}));

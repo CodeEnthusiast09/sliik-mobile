@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, Text, TextInput, View } from 'react-native';
@@ -65,6 +66,7 @@ export function ProviderPayoutScreen() {
 
     const result = createPayoutAccountSchema.safeParse({
       bankCode: selectedBank?.code ?? '',
+      bankName: selectedBank?.name ?? '',
       accountNumber,
     });
 
@@ -117,26 +119,77 @@ export function ProviderPayoutScreen() {
             title="Payout details"
             notificationsHref="/profile/notifications"
             onBack={() => router.back()}
+            showNotifications={false}
           />
 
           {payoutAccount ? (
-            <View className="mt-4 gap-1 rounded-[20px] border border-[#ECE7E0] bg-white p-4">
-              <Text className="font-serif-bold text-[15px] text-[#26242A]">
-                {payoutAccount.accountName}
-              </Text>
-              <Text className="text-[13px] text-[#817F80]">
-                {payoutAccount.accountNumber}
-              </Text>
-              <Text className="text-[13px] text-[#817F80]">
-                {payoutAccount.verified ? 'Verified' : 'Pending verification'}
-              </Text>
+            <View className="mt-4 gap-3">
+              <View className="gap-1 rounded-[20px] border border-[#2F9E44] bg-white p-4">
+                <View className="flex-row items-center gap-2">
+                  <Ionicons name="checkmark-circle" size={18} color="#2F9E44" />
+                  <Text className="text-[13px] font-bold text-[#2F9E44]">
+                    Account verified
+                  </Text>
+                </View>
+                <Text className="text-[13px] text-[#817F80]">
+                  Your account details are valid and ready to receive payouts.
+                </Text>
+              </View>
+
+              <View className="rounded-[20px] border border-[#ECE7E0] bg-white">
+                <View className="flex-row items-center justify-between px-4 py-3.5">
+                  <Text className="text-[13px] text-[#817F80]">Bank</Text>
+                  <Text className="text-[15px] font-semibold text-[#26242A]">
+                    {payoutAccount.bankName ?? '—'}
+                  </Text>
+                </View>
+                <View className="h-px bg-[#ECE7E0]" />
+                <View className="flex-row items-center justify-between px-4 py-3.5">
+                  <Text className="text-[13px] text-[#817F80]">
+                    Account number
+                  </Text>
+                  <Text className="text-[15px] font-semibold text-[#26242A]">
+                    {payoutAccount.accountNumber}
+                  </Text>
+                </View>
+                <View className="h-px bg-[#ECE7E0]" />
+                <View className="flex-row items-center justify-between px-4 py-3.5">
+                  <Text className="text-[13px] text-[#817F80]">
+                    Account name
+                  </Text>
+                  <Text className="text-[15px] font-semibold text-[#26242A]">
+                    {payoutAccount.accountName}
+                  </Text>
+                </View>
+              </View>
             </View>
           ) : (
             <>
               <Text className="mt-4 text-[13px] text-[#817F80]">
-                Set up your payout account to start receiving bookings.
+                Set up your bank details to receive payouts securely via
+                Paystack.
               </Text>
 
+              <View className="mt-3 flex-row items-center justify-between rounded-[16px] border border-[#ECE7E0] bg-white px-4 py-3.5">
+                <View className="flex-row items-center gap-2">
+                  <Image
+                    source={require('../../../assets/images/paystack-icon.png')}
+                    style={{ width: 20, height: 20 }}
+                    contentFit="contain"
+                  />
+                  <Text className="text-[15px] font-bold text-[#26242A]">
+                    Paystack
+                  </Text>
+                </View>
+                <View className="flex-row items-center gap-1">
+                  <Ionicons name="checkmark-circle" size={14} color="#2F9E44" />
+                  <Text className="text-[12px] font-bold text-[#2F9E44]">
+                    Secure
+                  </Text>
+                </View>
+              </View>
+
+              <Text className="mt-4 text-xs text-[#948F86]">Select bank</Text>
               {selectedBank ? (
                 <Pressable
                   onPress={() => setSelectedBank(null)}
@@ -190,15 +243,20 @@ export function ProviderPayoutScreen() {
               )}
 
               {selectedBank ? (
-                <TextInput
-                  placeholder="Account number"
-                  placeholderTextColor="#A8A39B"
-                  value={accountNumber}
-                  onChangeText={setAccountNumber}
-                  keyboardType="number-pad"
-                  className="mt-3 rounded-[16px] border border-[#ECE7E0] bg-white px-4 py-3.5 text-[15px] text-[#26242A]"
-                  style={{ outlineWidth: 0 }}
-                />
+                <>
+                  <Text className="mt-4 text-xs text-[#948F86]">
+                    Account number
+                  </Text>
+                  <TextInput
+                    placeholder="Account number"
+                    placeholderTextColor="#A8A39B"
+                    value={accountNumber}
+                    onChangeText={setAccountNumber}
+                    keyboardType="number-pad"
+                    className="mt-1 rounded-[16px] border border-[#ECE7E0] bg-white px-4 py-3.5 text-[15px] text-[#26242A]"
+                    style={{ outlineWidth: 0 }}
+                  />
+                </>
               ) : null}
 
               {accountNumber.length === 10 && isResolvingAccount ? (
@@ -211,17 +269,33 @@ export function ProviderPayoutScreen() {
               ) : null}
 
               {resolvedAccount?.accountName ? (
-                <View className="mt-3 gap-1 rounded-[20px] border border-[#2F9E44] bg-white p-4">
-                  <View className="flex-row items-center gap-2">
-                    <Ionicons name="checkmark-circle" size={18} color="#2F9E44" />
-                    <Text className="text-[13px] font-bold text-[#2F9E44]">
-                      Account verified
+                <>
+                  <Text className="mt-4 text-xs text-[#948F86]">
+                    Account name
+                  </Text>
+                  <View className="mt-1 rounded-[16px] border border-[#ECE7E0] bg-white px-4 py-3.5">
+                    <Text className="text-[15px] text-[#26242A]">
+                      {resolvedAccount.accountName}
                     </Text>
                   </View>
-                  <Text className="font-serif-bold text-[15px] text-[#26242A]">
-                    {resolvedAccount.accountName}
-                  </Text>
-                </View>
+
+                  <View className="mt-3 gap-1 rounded-[20px] border border-[#2F9E44] bg-white p-4">
+                    <View className="flex-row items-center gap-2">
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={18}
+                        color="#2F9E44"
+                      />
+                      <Text className="text-[13px] font-bold text-[#2F9E44]">
+                        Account verified
+                      </Text>
+                    </View>
+                    <Text className="text-[13px] text-[#817F80]">
+                      Your account details are valid and ready to receive
+                      payouts.
+                    </Text>
+                  </View>
+                </>
               ) : null}
 
               {isResolveError ? (
@@ -241,13 +315,19 @@ export function ProviderPayoutScreen() {
                   <Button
                     label={
                       createPayoutAccountMutation.isPending
-                        ? 'Setting up…'
-                        : 'Set up payouts'
+                        ? 'Saving…'
+                        : 'Save and continue'
                     }
                     onPress={handleSubmit}
                     loading={createPayoutAccountMutation.isPending}
                     disabled={!resolvedAccount?.accountName}
                   />
+                  <View className="mt-2 flex-row items-center justify-center gap-1">
+                    <Ionicons name="lock-closed" size={12} color="#817F80" />
+                    <Text className="text-[12px] text-[#817F80]">
+                      Your data is protected with bank-level security.
+                    </Text>
+                  </View>
                 </View>
               ) : null}
             </>

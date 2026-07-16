@@ -8,12 +8,24 @@ export async function getMyPortfolio() {
   return data;
 }
 
-export async function addPortfolioItem(payload: { imageUrl: string; caption?: string }) {
+export async function addPortfolioItem(payload: {
+  imageUrl: string;
+  title: string;
+  category: string;
+  caption?: string;
+}) {
   const { data } = await apiClient.post<ApiResponse<PortfolioItem>>('/portfolio', payload);
   return data;
 }
 
 export async function deletePortfolioItem(id: string) {
   const { data } = await apiClient.delete<ApiResponse<undefined>>(`/portfolio/${id}`);
+  return data;
+}
+
+export async function reorderPortfolio(orderedIds: string[]) {
+  const { data } = await apiClient.patch<ApiResponse<undefined>>('/portfolio/reorder', {
+    orderedIds,
+  });
   return data;
 }
