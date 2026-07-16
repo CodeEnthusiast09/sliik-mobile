@@ -49,7 +49,7 @@ export function ProviderDetailServicesScreen() {
                 <Pressable
                   onPress={() =>
                     router.push({
-                      pathname: '/home/book',
+                      pathname: '/provider/book',
                       params: { providerId: provider.id, serviceId: service.id },
                     })
                   }

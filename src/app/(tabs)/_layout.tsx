@@ -1,9 +1,10 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Tabs } from 'expo-router';
-import { type ColorValue } from 'react-native';
+import { type ColorValue, View } from 'react-native';
 
 import { useNotificationsSocket } from '@/hooks/common/use-notifications-socket';
 import { usePushTokenRegistration } from '@/hooks/common/use-push-token-registration';
+import { useChatUnreadCount } from '@/hooks/services/chat';
 import { TAB_BAR_STYLE } from '@/lib/constants';
 import { useAuthStore } from '@/store/auth';
 
@@ -30,6 +31,26 @@ function HomeTabIcon({ focused, color, size }: TabIconProps) {
       color={color as string}
       size={size}
     />
+  );
+}
+
+function ChatsTabIcon({ focused, color, size }: TabIconProps) {
+  const { data: unreadCount } = useChatUnreadCount();
+
+  return (
+    <View style={{ width: size, height: size }}>
+      <Ionicons
+        name={focused ? 'chatbubble' : 'chatbubble-outline'}
+        color={color as string}
+        size={size}
+      />
+      {unreadCount ? (
+        <View
+          style={{ position: 'absolute', top: -2, right: -2 }}
+          className="h-2.5 w-2.5 rounded-full border border-white bg-[#4B2E46]"
+        />
+      ) : null}
+    </View>
   );
 }
 
@@ -88,11 +109,9 @@ export default function TabsLayout() {
           name="chats"
           options={{
             title: 'Chats',
-            tabBarIcon: tabIcon('chatbubble-outline', 'chatbubble'),
+            tabBarIcon: ChatsTabIcon,
           }}
         />
-        {/* Reachable from the account/profile screen, not its own tab button. */}
-        <Tabs.Screen name="delete-account" options={{ href: null }} />
       </Tabs.Protected>
 
       <Tabs.Protected guard={role === 'customer'}>

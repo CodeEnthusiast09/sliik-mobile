@@ -255,7 +255,7 @@ export function ProviderDetailScreen() {
                 <Pressable
                   onPress={() =>
                     router.push({
-                      pathname: '/home/[id]/services',
+                      pathname: '/provider/[id]/services',
                       params: { id: provider.id },
                     })
                   }
@@ -273,7 +273,7 @@ export function ProviderDetailScreen() {
                     key={service.id}
                     onPress={() =>
                       router.push({
-                        pathname: '/home/book',
+                        pathname: '/provider/book',
                         params: {
                           providerId: provider.id,
                           serviceId: service.id,
@@ -322,7 +322,7 @@ export function ProviderDetailScreen() {
                       key={item.id}
                       onPress={() =>
                         router.push({
-                          pathname: '/home/[id]/portfolio',
+                          pathname: '/provider/[id]/portfolio',
                           params: { id: provider.id },
                         })
                       }
@@ -365,7 +365,7 @@ export function ProviderDetailScreen() {
                 <Pressable
                   onPress={() =>
                     router.push({
-                      pathname: '/home/[id]/reviews',
+                      pathname: '/provider/[id]/reviews',
                       params: { id: provider.id },
                     })
                   }
@@ -391,7 +391,7 @@ export function ProviderDetailScreen() {
               label="Book"
               onPress={() =>
                 router.push({
-                  pathname: '/home/[id]/services',
+                  pathname: '/provider/[id]/services',
                   params: { id: provider.id },
                 })
               }

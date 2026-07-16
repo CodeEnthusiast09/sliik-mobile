@@ -15,6 +15,7 @@ export function useNotificationsSocket() {
 
     socket.on('newNotification', () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['chat', 'unread-count'] });
     });
 
     return () => {

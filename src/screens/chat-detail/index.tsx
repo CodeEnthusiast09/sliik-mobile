@@ -297,7 +297,7 @@ export function ChatDetailScreen() {
   function handleViewProfile() {
     setMenuVisible(false);
     if (!otherParty) return;
-    router.push({ pathname: '/home/[id]', params: { id: otherParty.id } });
+    router.push({ pathname: '/provider/[id]', params: { id: otherParty.id } });
   }
 
   function handleSelectMessage(messageId: string) {

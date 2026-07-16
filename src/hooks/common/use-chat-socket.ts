@@ -62,6 +62,7 @@ export function useChatSocket(
       // from a separate query that this socket never touched otherwise, so
       // it went stale until a manual pull-to-refresh.
       queryClient.invalidateQueries({ queryKey: ['chat', 'conversations'] });
+      queryClient.invalidateQueries({ queryKey: ['chat', 'unread-count'] });
     });
 
     socket.on('messagesRead', () => {
@@ -69,6 +70,7 @@ export function useChatSocket(
       // Clears the unread dot on the chats list once this conversation's
       // messages are marked read, same staleness reason as above.
       queryClient.invalidateQueries({ queryKey: ['chat', 'conversations'] });
+      queryClient.invalidateQueries({ queryKey: ['chat', 'unread-count'] });
     });
 
     socket.on('presence', (event: PresenceEvent) => {
@@ -84,6 +86,7 @@ export function useChatSocket(
       // The chats list may be showing this message as its last-message
       // preview, which needs to reflect the deletion too.
       queryClient.invalidateQueries({ queryKey: ['chat', 'conversations'] });
+      queryClient.invalidateQueries({ queryKey: ['chat', 'unread-count'] });
     });
 
     return () => {

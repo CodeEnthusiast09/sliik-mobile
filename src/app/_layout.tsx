@@ -56,6 +56,8 @@ export default function RootLayout() {
           </Stack.Protected>
           <Stack.Protected guard={isLoggedIn}>
             <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="provider" />
+            <Stack.Screen name="delete-account" />
           </Stack.Protected>
         </Stack>
         <ToastHost />

@@ -12,3 +12,8 @@ export async function getMessages(bookingId: string) {
   const { data } = await apiClient.get<ApiResponse<Message[]>>(`/chat/booking/${bookingId}/messages`);
   return data;
 }
+
+export async function getUnreadCount() {
+  const { data } = await apiClient.get<ApiResponse<{ count: number }>>('/chat/unread-count');
+  return data;
+}

@@ -227,7 +227,7 @@ export function BookingDetailScreen() {
               <Pressable
                 onPress={() =>
                   router.push({
-                    pathname: '/home/[id]',
+                    pathname: '/provider/[id]',
                     params: { id: booking.provider!.id },
                   })
                 }
