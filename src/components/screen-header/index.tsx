@@ -20,20 +20,27 @@ export type ScreenHeaderProps = {
   showNotifications?: boolean;
   /** Overrides the bell/spacer slot with a custom trailing element (e.g. an overflow menu button). */
   rightAction?: ReactNode;
+  /** Overrides the entire leading slot (back-arrow/title/wordmark) with a custom element (e.g. a location selector). */
+  leadingContent?: ReactNode;
+  className?: string
 };
 
 export function ScreenHeader({
   notificationsHref,
   onBack,
   title,
+  className,
   showNotifications = true,
   rightAction,
+  leadingContent,
 }: ScreenHeaderProps) {
   const router = useRouter();
 
   return (
     <View className="flex-row items-center justify-between py-2">
-      {onBack ? (
+      {leadingContent ? (
+        leadingContent
+      ) : onBack ? (
         <Pressable
           onPress={onBack}
           hitSlop={10}
@@ -42,7 +49,10 @@ export function ScreenHeader({
           <Ionicons name="arrow-back" size={28} color="#4B2E46" />
         </Pressable>
       ) : title ? (
-        <Text className="font-serif-bold text-[24px] leading-[28px] text-[#26242A]">
+        <Text
+          className={`font-serif-bold text-[24px] leading-[28px] text-[#26242A] ${className ?? ''
+            }`}
+        >
           {title}
         </Text>
       ) : (
@@ -50,10 +60,12 @@ export function ScreenHeader({
       )}
 
       {onBack && title ? (
-        <Text className="font-serif-bold text-[17px] text-[#26242A]">
+        <Text
+          className={`font-serif-bold text-[17px] text-[#26242A] ${className ?? ''
+            }`}
+        >
           {title}
-        </Text>
-      ) : null}
+        </Text>) : null}
 
       {rightAction ? (
         rightAction

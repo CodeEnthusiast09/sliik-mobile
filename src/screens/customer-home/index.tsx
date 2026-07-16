@@ -1,11 +1,14 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
   Modal,
   Pressable,
+  ScrollView,
   Text,
   TextInput,
   View,
@@ -13,13 +16,19 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/avatar';
+import { Button } from '@/components/button';
 import { Chip } from '@/components/chip';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorState } from '@/components/error-state';
 import { ScreenHeader } from '@/components/screen-header';
 import { ListSkeleton } from '@/components/skeleton';
 import { useDebounce } from '@/hooks/common/use-debounce';
+import {
+  useCustomerProfile,
+  useUpdateCustomerProfile,
+} from '@/hooks/services/customer';
 import { useProviders } from '@/hooks/services/discovery';
+import { useFavoriteStatus, useToggleFavorite } from '@/hooks/services/favorites';
 import type { ProviderProfile } from '@/interfaces/provider';
 import {
   calculateDistanceKm,
@@ -48,9 +57,231 @@ const PINNED_TRADE_TYPE_VALUES = new Set(
   PINNED_TRADE_TYPES.map((option) => option.value),
 );
 
+function LocationHeader() {
+  const { data: customerProfile } = useCustomerProfile();
+  const updateProfileMutation = useUpdateCustomerProfile();
+  const [modalVisible, setModalVisible] = useState(false);
+  const [cityInput, setCityInput] = useState('');
+
+  function openModal() {
+    setCityInput(customerProfile?.city ?? '');
+    setModalVisible(true);
+  }
+
+  function handleSave() {
+    const city = cityInput.trim();
+    if (!city) return;
+    updateProfileMutation.mutate(
+      { city },
+      { onSuccess: () => setModalVisible(false) },
+    );
+  }
+
+  return (
+    <>
+      <Pressable
+        onPress={openModal}
+        className="flex-row items-center gap-1"
+        hitSlop={10}
+      >
+        <Ionicons name="location" size={16} color="#4B2E46" />
+        <Text
+          className="max-w-[180px] text-[15px] font-bold text-[#26242A]"
+          numberOfLines={1}
+        >
+          {customerProfile?.city ? `${customerProfile.city}, Nigeria` : 'Set your location'}
+        </Text>
+        <Ionicons name="chevron-down" size={14} color="#948F86" />
+      </Pressable>
+
+      <Modal
+        visible={modalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <Pressable
+          className="flex-1 justify-end bg-black/40"
+          onPress={() => setModalVisible(false)}
+        >
+          <Pressable
+            className="rounded-t-3xl bg-white px-6 pb-10 pt-5"
+            onPress={(event) => event.stopPropagation()}
+          >
+            <Text className="mb-4 text-center text-base font-bold text-[#26242A]">
+              Your location
+            </Text>
+            <Text className="text-xs text-[#948F86]">City</Text>
+            <TextInput
+              placeholder="e.g. Lekki, Lagos"
+              placeholderTextColor="#A8A39B"
+              value={cityInput}
+              onChangeText={setCityInput}
+              className="mt-1 rounded-[16px] border border-[#ECE7E0] bg-white px-4 py-3.5 text-[15px] text-[#26242A]"
+              style={{ outlineWidth: 0 }}
+            />
+            <View className="mt-5">
+              <Button
+                label={updateProfileMutation.isPending ? 'Saving…' : 'Save'}
+                onPress={handleSave}
+                loading={updateProfileMutation.isPending}
+                disabled={!cityInput.trim()}
+              />
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+    </>
+  );
+}
+
+function HeroBanner({ onPressBookNow }: { onPressBookNow: () => void }) {
+  return (
+    <View className="h-[168px] overflow-hidden rounded-[24px] bg-[#2A2226]">
+      <Image
+        source={require('../../../assets/images/home-hero.png')}
+        style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: '52%' }}
+        contentFit="cover"
+      />
+      <LinearGradient
+        colors={['#2A2226', '#2A2226', 'transparent']}
+        locations={[0, 0.55, 1]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+      />
+      <View className="flex-1 justify-center gap-2 p-5" style={{ maxWidth: '65%' }}>
+        <Text className="font-serif-bold text-[17px] leading-[21px] text-white">
+          Book beauty & grooming, your way
+        </Text>
+        <Text className="text-[12px] text-[#E7E1DC]">
+          Nigeria&apos;s finest beauty & grooming booking marketplace.
+        </Text>
+        <Pressable
+          onPress={onPressBookNow}
+          className="mt-1 self-start rounded-full bg-[#F7EFE4] px-4 py-2"
+        >
+          <Text className="text-[13px] font-bold text-[#4B2E46]">Book now</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+function RecommendedProviderCard({
+  provider,
+  onPress,
+  distanceLabel,
+}: {
+  provider: ProviderProfile;
+  onPress: () => void;
+  distanceLabel: string | null;
+}) {
+  const { data: favoriteStatus } = useFavoriteStatus(provider.id);
+  const toggleFavoriteMutation = useToggleFavorite(provider.id);
+  const isFavorited = favoriteStatus?.isFavorited ?? false;
+  const rating = Number(provider.avgRating);
+
+  return (
+    <Pressable onPress={onPress} className="w-[140px] gap-2">
+      <View style={{ position: 'relative' }}>
+        <Avatar
+          uri={provider.avatarUrl}
+          name={provider.fullName}
+          size={140}
+          shape="square"
+        />
+        <Pressable
+          onPress={(event) => {
+            event.stopPropagation();
+            toggleFavoriteMutation.mutate(isFavorited);
+          }}
+          disabled={toggleFavoriteMutation.isPending}
+          hitSlop={8}
+          className="absolute right-1.5 top-1.5 h-7 w-7 items-center justify-center rounded-full bg-white/90"
+        >
+          <Ionicons
+            name={isFavorited ? 'heart' : 'heart-outline'}
+            size={15}
+            color={isFavorited ? '#E5484D' : '#26242A'}
+          />
+        </Pressable>
+      </View>
+
+      <View className="gap-0.5">
+        <Text
+          className="font-serif-bold text-[14px] text-[#26242A]"
+          numberOfLines={1}
+        >
+          {provider.fullName}
+        </Text>
+        <Text className="text-[12px] text-[#817F80]" numberOfLines={1}>
+          {formatTradeTypeLabel(provider.tradeType)}
+        </Text>
+        <View className="flex-row items-center justify-between">
+          {provider.totalReviews > 0 ? (
+            <Text className="text-[11px] font-bold text-[#26242A]">
+              ★ {rating.toFixed(1)}
+            </Text>
+          ) : (
+            <View />
+          )}
+          {distanceLabel ? (
+            <Text className="text-[11px] text-[#817F80]">{distanceLabel}</Text>
+          ) : null}
+        </View>
+      </View>
+    </Pressable>
+  );
+}
+
+function HomeListHeader({
+  recommended,
+  hasActiveFilter,
+  getDistanceLabel,
+  onPressProvider,
+  onPressBookNow,
+}: {
+  recommended: ProviderProfile[];
+  hasActiveFilter: boolean;
+  getDistanceLabel: (provider: ProviderProfile) => string | null;
+  onPressProvider: (provider: ProviderProfile) => void;
+  onPressBookNow: () => void;
+}) {
+  if (hasActiveFilter || recommended.length === 0) return null;
+
+  return (
+    <View className="gap-5 pb-5">
+      <HeroBanner onPressBookNow={onPressBookNow} />
+
+      <View>
+        <Text className="font-serif-bold text-[18px] text-[#26242A]">
+          Recommended for you
+        </Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          className="mt-3"
+          contentContainerClassName="gap-3 pr-6"
+        >
+          {recommended.map((provider) => (
+            <RecommendedProviderCard
+              key={provider.id}
+              provider={provider}
+              distanceLabel={getDistanceLabel(provider)}
+              onPress={() => onPressProvider(provider)}
+            />
+          ))}
+        </ScrollView>
+      </View>
+    </View>
+  );
+}
+
 export function CustomerHomeScreen() {
   const router = useRouter();
   const userCoords = useLocationStore((state) => state.coords);
+  const { data: customerProfile } = useCustomerProfile();
 
   // requestLocation() normally fires right after login/register, but an
   // already-logged-in session (persisted token, no fresh auth event) would
@@ -60,6 +291,8 @@ export function CustomerHomeScreen() {
     useLocationStore.getState().requestLocation();
   }, []);
 
+  const searchInputRef = useRef<TextInput>(null);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [searchInput, setSearchInput] = useState('');
   const debouncedSearch = useDebounce(searchInput.trim(), 350);
   const [selectedTradeType, setSelectedTradeType] = useState<string | null>(
@@ -67,16 +300,24 @@ export function CustomerHomeScreen() {
   );
   const [minRating, setMinRating] = useState<number | undefined>(undefined);
   const [moreModalVisible, setMoreModalVisible] = useState(false);
+  const [ratingModalVisible, setRatingModalVisible] = useState(false);
 
+  // A chosen city takes over as the sole location filter once set (matches
+  // how the rest of the app - deals, offers - already scopes by city) -
+  // sending both city and GPS coords together would AND them on the backend
+  // and could zero out results if your GPS fix doesn't happen to fall inside
+  // that city's radius. GPS stays the fallback until a city is ever set.
+  const hasCity = !!customerProfile?.city;
   const filters = useMemo(
     () => ({
       search: debouncedSearch || undefined,
       tradeType: selectedTradeType ?? undefined,
       minRating,
-      lat: userCoords?.lat,
-      lng: userCoords?.lng,
+      city: customerProfile?.city ?? undefined,
+      lat: hasCity ? undefined : userCoords?.lat,
+      lng: hasCity ? undefined : userCoords?.lng,
     }),
-    [debouncedSearch, selectedTradeType, minRating, userCoords],
+    [debouncedSearch, selectedTradeType, minRating, customerProfile?.city, hasCity, userCoords],
   );
 
   const {
@@ -146,7 +387,22 @@ export function CustomerHomeScreen() {
     }
   }, [providers, userCoords]);
 
+  // A real ranking, not just "whatever's first" - reviewed providers sorted
+  // by rating, falling back to the full set if nobody has reviews yet so the
+  // section doesn't just disappear on a sparse/new city.
+  const recommendedProviders = useMemo(() => {
+    const reviewed = providers.filter((provider) => provider.totalReviews > 0);
+    const source = reviewed.length > 0 ? reviewed : providers;
+    return [...source]
+      .sort((a, b) => Number(b.avgRating) - Number(a.avgRating))
+      .slice(0, 8);
+  }, [providers]);
+
   function getDistanceLabel(provider: ProviderProfile) {
+    // Browsing a chosen city rather than GPS radius - "X km from you" would
+    // measure distance from your physical location, which is irrelevant
+    // (and often confusingly large) once you've deliberately picked a city.
+    if (hasCity) return null;
     if (!userCoords || provider.latitude == null || provider.longitude == null)
       return null;
     const distance = calculateDistanceKm(
@@ -162,24 +418,52 @@ export function CustomerHomeScreen() {
     <View className="flex-1 bg-white">
       <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
         <View className="flex-1 px-6">
-          <ScreenHeader notificationsHref="/home/notifications" />
+          <ScreenHeader
+            notificationsHref="/home/notifications"
+            leadingContent={<LocationHeader />}
+          />
 
-          <View className="mt-1 flex-row items-center gap-3 rounded-2xl border border-[#ECE7E0] bg-white px-2.5 py-4">
-            <Ionicons name="search-outline" size={18} color="#948F86" />
-            <TextInput
-              placeholder="Find a hairdressser, barber, nail tech..."
-              placeholderTextColor="#948F86"
-              value={searchInput}
-              onChangeText={setSearchInput}
-              returnKeyType="search"
-              className="flex-1 text-[16px] text-[#26242A]"
-              style={{ outlineWidth: 0 }}
-            />
-            {searchInput ? (
-              <Pressable onPress={() => setSearchInput('')} hitSlop={10}>
-                <Ionicons name="close-circle" size={18} color="#948F86" />
-              </Pressable>
-            ) : null}
+          <View className="mt-1 flex-row items-center gap-2">
+            <View
+              className={`flex-1 flex-row items-center gap-3 rounded-2xl border bg-white px-2.5 py-4 ${isSearchFocused ? 'border-[#4B2E46]' : 'border-[#ECE7E0]'}`}
+            >
+              <Ionicons
+                name="search-outline"
+                size={18}
+                color={isSearchFocused ? '#4B2E46' : '#948F86'}
+              />
+              <TextInput
+                ref={searchInputRef}
+                placeholder="Find a hairdresser, barber, service..."
+                placeholderTextColor="#948F86"
+                value={searchInput}
+                onChangeText={setSearchInput}
+                onFocus={() => setIsSearchFocused(true)}
+                onBlur={() => setIsSearchFocused(false)}
+                returnKeyType="search"
+                className="flex-1 text-[16px] text-[#26242A]"
+                style={{ outlineWidth: 0 }}
+              />
+              {searchInput ? (
+                <Pressable onPress={() => setSearchInput('')} hitSlop={10}>
+                  <Ionicons name="close-circle" size={18} color="#948F86" />
+                </Pressable>
+              ) : null}
+            </View>
+
+            <Pressable
+              onPress={() => setRatingModalVisible(true)}
+              className="h-[52px] w-[52px] items-center justify-center rounded-2xl border border-[#ECE7E0] bg-white"
+            >
+              <Ionicons
+                name="funnel-outline"
+                size={20}
+                color={minRating !== undefined ? '#4B2E46' : '#26242A'}
+              />
+              {minRating !== undefined ? (
+                <View className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[#4B2E46]" />
+              ) : null}
+            </Pressable>
           </View>
 
           <Text className='mt-5 font-bold text-base'>I need</Text>
@@ -219,19 +503,6 @@ export function CustomerHomeScreen() {
             ) : null}
           </View>
 
-          <Text className='mt-5 font-bold text-base'>Top rated</Text>
-
-          <View className="mt-3 h-11 flex-none flex-row items-center justify-between">
-            {RATING_OPTIONS.map((option) => (
-              <Chip
-                key={option.label}
-                label={option.label}
-                selected={minRating === option.value}
-                onPress={() => setMinRating(option.value)}
-              />
-            ))}
-          </View>
-
           <View className="mt-4 flex-1">
             {isLoading ? (
               <ListSkeleton />
@@ -249,6 +520,22 @@ export function CustomerHomeScreen() {
                   if (hasNextPage && !isFetchingNextPage) fetchNextPage();
                 }}
                 onEndReachedThreshold={0.5}
+                ListHeaderComponent={
+                  <HomeListHeader
+                    recommended={recommendedProviders}
+                    hasActiveFilter={
+                      !!debouncedSearch || !!selectedTradeType || minRating !== undefined
+                    }
+                    getDistanceLabel={getDistanceLabel}
+                    onPressProvider={(provider) =>
+                      router.push({
+                        pathname: '/provider/[id]',
+                        params: { id: provider.id },
+                      })
+                    }
+                    onPressBookNow={() => searchInputRef.current?.focus()}
+                  />
+                }
                 ListEmptyComponent={
                   <EmptyState message="No providers found. Try a different filter." />
                 }
@@ -264,7 +551,7 @@ export function CustomerHomeScreen() {
                     <Pressable
                       onPress={() =>
                         router.push({
-                          pathname: '/home/[id]',
+                          pathname: '/provider/[id]',
                           params: { id: item.id },
                         })
                       }
@@ -360,6 +647,43 @@ export function CustomerHomeScreen() {
                 </Pressable>
               );
             })}
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      <Modal
+        visible={ratingModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setRatingModalVisible(false)}
+      >
+        <Pressable
+          className="flex-1 justify-end bg-black/40"
+          onPress={() => setRatingModalVisible(false)}
+        >
+          <Pressable
+            className="rounded-t-3xl bg-white px-6 pb-10 pt-5"
+            onPress={(event) => event.stopPropagation()}
+          >
+            <Text className="mb-4 text-center text-base font-bold text-[#26242A]">
+              Filter by rating
+            </Text>
+            <View className="flex-row flex-wrap gap-2">
+              {RATING_OPTIONS.map((option) => (
+                <Chip
+                  key={option.label}
+                  label={option.label}
+                  selected={minRating === option.value}
+                  onPress={() => setMinRating(option.value)}
+                />
+              ))}
+            </View>
+            <View className="mt-6">
+              <Button
+                label="Show results"
+                onPress={() => setRatingModalVisible(false)}
+              />
+            </View>
           </Pressable>
         </Pressable>
       </Modal>
