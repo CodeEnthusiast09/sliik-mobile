@@ -42,12 +42,12 @@ import { useUploadAudio, useUploadImage } from '@/hooks/services/uploads';
 import type { Message } from '@/interfaces/chat';
 import {
   formatBookingDateTimeLabel,
-  formatChatDayDivider,
   getErrorMessage,
   isSameLocalDay,
 } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth';
 import { showToast } from '@/store/toast';
+import { DayDivider } from './_components/day-divider';
 import { MessageBubble } from './_components/message-bubble';
 import { RecordingVisualizer } from './_components/recording-visualizer';
 
@@ -74,16 +74,6 @@ const REPORT_REASONS = [
   'Scam or fraud',
   'Other',
 ];
-
-function DayDivider({ isoDateTime }: { isoDateTime: string }) {
-  return (
-    <View className="items-center py-2">
-      <Text className="text-[12px] font-medium text-[#948F86]">
-        {formatChatDayDivider(isoDateTime)}
-      </Text>
-    </View>
-  );
-}
 
 export function ChatDetailScreen() {
   const router = useRouter();

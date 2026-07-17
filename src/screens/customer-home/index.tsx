@@ -1,6 +1,4 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -8,7 +6,6 @@ import {
   FlatList,
   Modal,
   Pressable,
-  ScrollView,
   Text,
   TextInput,
   View,
@@ -23,12 +20,8 @@ import { ErrorState } from '@/components/error-state';
 import { ScreenHeader } from '@/components/screen-header';
 import { ListSkeleton } from '@/components/skeleton';
 import { useDebounce } from '@/hooks/common/use-debounce';
-import {
-  useCustomerProfile,
-  useUpdateCustomerProfile,
-} from '@/hooks/services/customer';
+import { useCustomerProfile } from '@/hooks/services/customer';
 import { useProviders } from '@/hooks/services/discovery';
-import { useFavoriteStatus, useToggleFavorite } from '@/hooks/services/favorites';
 import type { ProviderProfile } from '@/interfaces/provider';
 import {
   calculateDistanceKm,
@@ -36,6 +29,9 @@ import {
   getErrorMessage,
 } from '@/lib/utils';
 import { useLocationStore } from '@/store/location';
+
+import { HomeListHeader } from './_components/home-list-header';
+import { LocationHeader } from './_components/location-header';
 
 const RATING_OPTIONS: { label: string; value: number | undefined }[] = [
   { label: 'All', value: undefined },
@@ -56,227 +52,6 @@ const PINNED_TRADE_TYPES: { value: string; label: string }[] = [
 const PINNED_TRADE_TYPE_VALUES = new Set(
   PINNED_TRADE_TYPES.map((option) => option.value),
 );
-
-function LocationHeader() {
-  const { data: customerProfile } = useCustomerProfile();
-  const updateProfileMutation = useUpdateCustomerProfile();
-  const [modalVisible, setModalVisible] = useState(false);
-  const [cityInput, setCityInput] = useState('');
-
-  function openModal() {
-    setCityInput(customerProfile?.city ?? '');
-    setModalVisible(true);
-  }
-
-  function handleSave() {
-    const city = cityInput.trim();
-    if (!city) return;
-    updateProfileMutation.mutate(
-      { city },
-      { onSuccess: () => setModalVisible(false) },
-    );
-  }
-
-  return (
-    <>
-      <Pressable
-        onPress={openModal}
-        className="flex-row items-center gap-1"
-        hitSlop={10}
-      >
-        <Ionicons name="location" size={16} color="#4B2E46" />
-        <Text
-          className="max-w-[180px] text-[15px] font-bold text-[#26242A]"
-          numberOfLines={1}
-        >
-          {customerProfile?.city ? `${customerProfile.city}, Nigeria` : 'Set your location'}
-        </Text>
-        <Ionicons name="chevron-down" size={14} color="#948F86" />
-      </Pressable>
-
-      <Modal
-        visible={modalVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <Pressable
-          className="flex-1 justify-end bg-black/40"
-          onPress={() => setModalVisible(false)}
-        >
-          <Pressable
-            className="rounded-t-3xl bg-white px-6 pb-10 pt-5"
-            onPress={(event) => event.stopPropagation()}
-          >
-            <Text className="mb-4 text-center text-base font-bold text-[#26242A]">
-              Your location
-            </Text>
-            <Text className="text-xs text-[#948F86]">City</Text>
-            <TextInput
-              placeholder="e.g. Lekki, Lagos"
-              placeholderTextColor="#A8A39B"
-              value={cityInput}
-              onChangeText={setCityInput}
-              className="mt-1 rounded-[16px] border border-[#ECE7E0] bg-white px-4 py-3.5 text-[15px] text-[#26242A]"
-              style={{ outlineWidth: 0 }}
-            />
-            <View className="mt-5">
-              <Button
-                label={updateProfileMutation.isPending ? 'Saving…' : 'Save'}
-                onPress={handleSave}
-                loading={updateProfileMutation.isPending}
-                disabled={!cityInput.trim()}
-              />
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
-    </>
-  );
-}
-
-function HeroBanner({ onPressBookNow }: { onPressBookNow: () => void }) {
-  return (
-    <View className="h-[168px] overflow-hidden rounded-[24px] bg-[#2A2226]">
-      <Image
-        source={require('../../../assets/images/home-hero.png')}
-        style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: '52%' }}
-        contentFit="cover"
-      />
-      <LinearGradient
-        colors={['#2A2226', '#2A2226', 'transparent']}
-        locations={[0, 0.55, 1]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-      />
-      <View className="flex-1 justify-center gap-2 p-5" style={{ maxWidth: '65%' }}>
-        <Text className="font-serif-bold text-[17px] leading-[21px] text-white">
-          Book beauty & grooming, your way
-        </Text>
-        <Text className="text-[12px] text-[#E7E1DC]">
-          Nigeria&apos;s finest beauty & grooming booking marketplace.
-        </Text>
-        <Pressable
-          onPress={onPressBookNow}
-          className="mt-1 self-start rounded-full bg-[#F7EFE4] px-4 py-2"
-        >
-          <Text className="text-[13px] font-bold text-[#4B2E46]">Book now</Text>
-        </Pressable>
-      </View>
-    </View>
-  );
-}
-
-function RecommendedProviderCard({
-  provider,
-  onPress,
-  distanceLabel,
-}: {
-  provider: ProviderProfile;
-  onPress: () => void;
-  distanceLabel: string | null;
-}) {
-  const { data: favoriteStatus } = useFavoriteStatus(provider.id);
-  const toggleFavoriteMutation = useToggleFavorite(provider.id);
-  const isFavorited = favoriteStatus?.isFavorited ?? false;
-  const rating = Number(provider.avgRating);
-
-  return (
-    <Pressable onPress={onPress} className="w-[140px] gap-2">
-      <View style={{ position: 'relative' }}>
-        <Avatar
-          uri={provider.avatarUrl}
-          name={provider.fullName}
-          size={140}
-          shape="square"
-        />
-        <Pressable
-          onPress={(event) => {
-            event.stopPropagation();
-            toggleFavoriteMutation.mutate(isFavorited);
-          }}
-          disabled={toggleFavoriteMutation.isPending}
-          hitSlop={8}
-          className="absolute right-1.5 top-1.5 h-7 w-7 items-center justify-center rounded-full bg-white/90"
-        >
-          <Ionicons
-            name={isFavorited ? 'heart' : 'heart-outline'}
-            size={15}
-            color={isFavorited ? '#E5484D' : '#26242A'}
-          />
-        </Pressable>
-      </View>
-
-      <View className="gap-0.5">
-        <Text
-          className="font-serif-bold text-[14px] text-[#26242A]"
-          numberOfLines={1}
-        >
-          {provider.fullName}
-        </Text>
-        <Text className="text-[12px] text-[#817F80]" numberOfLines={1}>
-          {formatTradeTypeLabel(provider.tradeType)}
-        </Text>
-        <View className="flex-row items-center justify-between">
-          {provider.totalReviews > 0 ? (
-            <Text className="text-[11px] font-bold text-[#26242A]">
-              ★ {rating.toFixed(1)}
-            </Text>
-          ) : (
-            <View />
-          )}
-          {distanceLabel ? (
-            <Text className="text-[11px] text-[#817F80]">{distanceLabel}</Text>
-          ) : null}
-        </View>
-      </View>
-    </Pressable>
-  );
-}
-
-function HomeListHeader({
-  recommended,
-  hasActiveFilter,
-  getDistanceLabel,
-  onPressProvider,
-  onPressBookNow,
-}: {
-  recommended: ProviderProfile[];
-  hasActiveFilter: boolean;
-  getDistanceLabel: (provider: ProviderProfile) => string | null;
-  onPressProvider: (provider: ProviderProfile) => void;
-  onPressBookNow: () => void;
-}) {
-  if (hasActiveFilter || recommended.length === 0) return null;
-
-  return (
-    <View className="gap-5 pb-5">
-      <HeroBanner onPressBookNow={onPressBookNow} />
-
-      <View>
-        <Text className="font-serif-bold text-[18px] text-[#26242A]">
-          Recommended for you
-        </Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          className="mt-3"
-          contentContainerClassName="gap-3 pr-6"
-        >
-          {recommended.map((provider) => (
-            <RecommendedProviderCard
-              key={provider.id}
-              provider={provider}
-              distanceLabel={getDistanceLabel(provider)}
-              onPress={() => onPressProvider(provider)}
-            />
-          ))}
-        </ScrollView>
-      </View>
-    </View>
-  );
-}
 
 export function CustomerHomeScreen() {
   const router = useRouter();
