@@ -1,5 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { isAxiosError } from 'axios';
+import type { FieldErrors } from 'react-hook-form';
 
 import type { ApiResponse } from '@/interfaces/api-response';
 import type { BookingStatus } from '@/interfaces/booking';
@@ -308,6 +309,23 @@ export function getErrorMessage(error: unknown): string {
     }
   }
   return 'Something went wrong';
+}
+
+// react-hook-form groups validation errors by field. The forms here surface
+// just the first message in a toast (matching the old manual safeParse UX),
+// so this walks the error map and returns the first available message.
+export function firstFormError(errors: FieldErrors): string | undefined {
+  for (const error of Object.values(errors)) {
+    if (
+      error &&
+      typeof error === 'object' &&
+      'message' in error &&
+      typeof error.message === 'string'
+    ) {
+      return error.message;
+    }
+  }
+  return undefined;
 }
 
 // POST /auth/login returns 403 only when the email isn't verified yet (bad

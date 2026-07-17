@@ -1,6 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -10,26 +12,33 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import type { z } from 'zod';
 
 import { Button } from '@/components/button';
 import { TextField } from '@/components/text-field';
 import { useResendVerification } from '@/hooks/services/auth/useResendVerification';
 import { useVerifyEmail } from '@/hooks/services/auth/useVerifyEmail';
 import { RESEND_COOLDOWN_SECONDS } from '@/lib/constants';
-import { getErrorMessage } from '@/lib/utils';
+import { firstFormError, getErrorMessage } from '@/lib/utils';
 import { showToast } from '@/store/toast';
 import { verifyEmailSchema } from '@/validations/auth';
+
+type VerifyEmailValues = z.infer<typeof verifyEmailSchema>;
 
 export function VerifyEmailScreen() {
   const { email } = useLocalSearchParams<{ email: string }>();
 
-  const [code, setCode] = useState('');
-  const [codeError, setCodeError] = useState(false);
   const [cooldown, setCooldown] = useState(0);
 
   const router = useRouter();
   const verifyMutation = useVerifyEmail();
   const resendMutation = useResendVerification();
+
+  const { control, handleSubmit, setError } = useForm<VerifyEmailValues>({
+    resolver: zodResolver(verifyEmailSchema),
+    // email is fixed (carried in via param); only the code is editable.
+    defaultValues: { email: email ?? '', code: '' },
+  });
 
   // Tick the resend cooldown down to zero. Starts only after a resend tap (not
   // on mount), so someone arriving here from an expired code can resend at once.
@@ -41,26 +50,14 @@ export function VerifyEmailScreen() {
     return () => clearInterval(timer);
   }, [cooldown]);
 
-  function handleVerify() {
-    const result = verifyEmailSchema.safeParse({ email: email ?? '', code });
-
-    if (!result.success) {
-      setCodeError(true);
-      showToast(
-        result.error.issues[0]?.message ?? 'Enter the 6-digit code',
-        'error',
-      );
-      return;
-    }
-
-    setCodeError(false);
-    verifyMutation.mutate(result.data, {
+  function onValid(data: VerifyEmailValues) {
+    verifyMutation.mutate(data, {
       onSuccess: () => {
         showToast('Email verified. Welcome to Sliik.', 'success');
         router.replace('/');
       },
       onError: (error) => {
-        setCodeError(true);
+        setError('code', { message: getErrorMessage(error) });
         showToast(getErrorMessage(error), 'error');
       },
     });
@@ -112,24 +109,35 @@ export function VerifyEmailScreen() {
             </Text>
 
             <View className="mt-9 gap-4">
-              <TextField
-                leftIcon="keypad-outline"
-                placeholder="6-digit code"
-                value={code}
-                error={codeError}
-                onChangeText={(text) => {
-                  setCode(text.replace(/\D/g, ''));
-                  if (codeError) setCodeError(false);
-                }}
-                keyboardType="number-pad"
-                maxLength={6}
-                autoComplete="one-time-code"
+              <Controller
+                control={control}
+                name="code"
+                render={({ field, fieldState }) => (
+                  <TextField
+                    leftIcon="keypad-outline"
+                    placeholder="6-digit code"
+                    value={field.value}
+                    error={!!fieldState.error}
+                    onChangeText={(text) =>
+                      field.onChange(text.replace(/\D/g, ''))
+                    }
+                    onBlur={field.onBlur}
+                    keyboardType="number-pad"
+                    maxLength={6}
+                    autoComplete="one-time-code"
+                  />
+                )}
               />
 
               <View className="mt-1">
                 <Button
                   label={verifyMutation.isPending ? 'Verifying…' : 'Verify Email'}
-                  onPress={handleVerify}
+                  onPress={handleSubmit(onValid, (errors) =>
+                    showToast(
+                      firstFormError(errors) ?? 'Enter the 6-digit code',
+                      'error',
+                    ),
+                  )}
                   loading={verifyMutation.isPending}
                 />
               </View>

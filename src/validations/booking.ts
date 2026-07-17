@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const createBookingSchema = z.object({
   providerId: z.uuid(),
   serviceId: z.uuid(),
-  scheduledAt: z.iso.datetime(),
+  scheduledAt: z.iso.datetime('Pick a time slot'),
   notes: z.string().min(1).max(200).optional(),
 });
 

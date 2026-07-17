@@ -1,7 +1,9 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import {
   ActivityIndicator,
   Pressable,
@@ -11,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import type { z } from 'zod';
 
 import { Button } from '@/components/button';
 import { Chip } from '@/components/chip';
@@ -23,6 +26,7 @@ import { useHideTabBar } from '@/hooks/common/use-hide-tab-bar';
 import { useAvailableSlots, useCreateBooking } from '@/hooks/services/bookings';
 import { usePublicProviderProfile } from '@/hooks/services/discovery';
 import {
+  firstFormError,
   formatCurrency,
   formatDurationLabel,
   formatTime12hLabel,
@@ -34,6 +38,8 @@ import { showToast } from '@/store/toast';
 import { createBookingSchema } from '@/validations/booking';
 
 const DATE_OPTIONS = getNextDates(14);
+
+type BookingFormValues = z.infer<typeof createBookingSchema>;
 
 export function BookingNewScreen() {
   const router = useRouter();
@@ -53,13 +59,19 @@ export function BookingNewScreen() {
   } = usePublicProviderProfile(providerId);
   const service = provider?.services?.find((item) => item.id === serviceId);
 
+  const { control, handleSubmit, setValue } = useForm<BookingFormValues>({
+    resolver: zodResolver(createBookingSchema),
+    defaultValues: { providerId, serviceId, scheduledAt: '', notes: '' },
+  });
+
   const [selectedDate, setSelectedDate] = useState(DATE_OPTIONS[0]);
-  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
-  const [notes, setNotes] = useState('');
   const [notesFocused, setNotesFocused] = useState(false);
   const dateScrollRef = useRef<ScrollView>(null);
   const dateScrollOffset = useRef(0);
   const [canScrollDateBack, setCanScrollDateBack] = useState(false);
+
+  const selectedSlot = useWatch({ control, name: 'scheduledAt' });
+  const notes = useWatch({ control, name: 'notes' }) ?? '';
 
   const { data: slotsData, isLoading: isLoadingSlots } = useAvailableSlots(
     providerId,
@@ -70,38 +82,24 @@ export function BookingNewScreen() {
 
   function handleSelectDate(date: string) {
     setSelectedDate(date);
-    setSelectedSlot(null);
+    setValue('scheduledAt', '');
   }
 
-  function handleSubmit() {
-    if (!selectedSlot) {
-      showToast('Pick a time slot', 'error');
-      return;
-    }
-
-    const result = createBookingSchema.safeParse({
-      providerId,
-      serviceId,
-      scheduledAt: selectedSlot,
-      notes: notes || undefined,
-    });
-
-    if (!result.success) {
-      showToast(result.error.issues[0]?.message ?? 'Invalid input', 'error');
-      return;
-    }
-
-    createBookingMutation.mutate(result.data, {
-      onSuccess: (response) => {
-        if (response.data) {
-          router.replace({
-            pathname: '/bookings/[id]',
-            params: { id: response.data.id },
-          });
-        }
+  function onValid(data: BookingFormValues) {
+    createBookingMutation.mutate(
+      { ...data, notes: data.notes || undefined },
+      {
+        onSuccess: (response) => {
+          if (response.data) {
+            router.replace({
+              pathname: '/bookings/[id]',
+              params: { id: response.data.id },
+            });
+          }
+        },
+        onError: (error) => showToast(getErrorMessage(error), 'error'),
       },
-      onError: (error) => showToast(getErrorMessage(error), 'error'),
-    });
+    );
   }
 
   if (isProviderError) {
@@ -277,7 +275,7 @@ export function BookingNewScreen() {
                     key={slot}
                     label={formatTime12hLabel(slot)}
                     selected={selectedSlot === slot}
-                    onPress={() => setSelectedSlot(slot)}
+                    onPress={() => setValue('scheduledAt', slot)}
                     spacious={true}
                   />
                 ))}
@@ -291,18 +289,27 @@ export function BookingNewScreen() {
             <Text className="mt-7 font-serif-bold text-[18px] text-[#26242A]">
               Add notes (optional)
             </Text>
-            <TextInput
-              placeholder="Any special requests or notes?"
-              placeholderTextColor="#A8A39B"
-              value={notes}
-              onChangeText={setNotes}
-              onFocus={() => setNotesFocused(true)}
-              onBlur={() => setNotesFocused(false)}
-              multiline
-              maxLength={200}
-              className={`mt-3 min-h-[76px] rounded-[16px] border bg-white px-5 py-4 text-[15px] text-[#26242A] ${notesFocused ? 'border-[#4B2E46]' : 'border-[#ECE7E0]'
-                }`}
-              style={{ textAlignVertical: 'top', outlineWidth: 0 }}
+            <Controller
+              control={control}
+              name="notes"
+              render={({ field }) => (
+                <TextInput
+                  placeholder="Any special requests or notes?"
+                  placeholderTextColor="#A8A39B"
+                  value={field.value ?? ''}
+                  onChangeText={field.onChange}
+                  onFocus={() => setNotesFocused(true)}
+                  onBlur={() => {
+                    setNotesFocused(false);
+                    field.onBlur();
+                  }}
+                  multiline
+                  maxLength={200}
+                  className={`mt-3 min-h-[76px] rounded-[16px] border bg-white px-5 py-4 text-[15px] text-[#26242A] ${notesFocused ? 'border-[#4B2E46]' : 'border-[#ECE7E0]'
+                    }`}
+                  style={{ textAlignVertical: 'top', outlineWidth: 0 }}
+                />
+              )}
             />
             <Text className="mt-1 text-right text-[12px] text-[#A8A39B]">
               {notes.length}/200
@@ -324,7 +331,9 @@ export function BookingNewScreen() {
                     ? 'Booking…'
                     : 'Request booking'
                 }
-                onPress={handleSubmit}
+                onPress={handleSubmit(onValid, (errors) =>
+                  showToast(firstFormError(errors) ?? 'Invalid input', 'error'),
+                )}
                 loading={createBookingMutation.isPending}
                 leftIcon={
                   <Ionicons name="calendar-outline" size={18} color="#F7EFE4" />

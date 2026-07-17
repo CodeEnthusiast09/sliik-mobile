@@ -1,10 +1,13 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import type { z } from 'zod';
 
 import { Button } from '@/components/button';
 import { ErrorState } from '@/components/error-state';
@@ -17,11 +20,13 @@ import {
 } from '@/hooks/services/customer';
 import { useReviewsForUser } from '@/hooks/services/reviews';
 import { useUploadImage } from '@/hooks/services/uploads';
-import { getErrorMessage } from '@/lib/utils';
+import { firstFormError, getErrorMessage } from '@/lib/utils';
 import { unregisterPushToken } from '@/services/notifications';
 import { useAuthStore } from '@/store/auth';
 import { usePushTokenStore } from '@/store/push-token';
 import { updateCustomerProfileSchema } from '@/validations/customer-profile';
+
+type CustomerProfileFormValues = z.infer<typeof updateCustomerProfileSchema>;
 
 export function CustomerAccountScreen() {
   const router = useRouter();
@@ -40,21 +45,26 @@ export function CustomerAccountScreen() {
     profile?.userId,
   );
 
-  const [fullName, setFullName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [city, setCity] = useState('');
-  const [fieldError, setFieldError] = useState<string | null>(null);
-  const [syncedProfileId, setSyncedProfileId] = useState<string | null>(null);
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isDirty },
+  } = useForm<CustomerProfileFormValues>({
+    resolver: zodResolver(updateCustomerProfileSchema),
+    defaultValues: { fullName: '', phone: '', city: '' },
+    // Prefill once the profile loads; RHF re-baselines isDirty against these.
+    values: profile
+      ? {
+          fullName: profile.fullName ?? '',
+          phone: profile.phone ?? '',
+          city: profile.city ?? '',
+        }
+      : undefined,
+  });
+
   const fullNameInputRef = useRef<TextInput>(null);
   const phoneInputRef = useRef<TextInput>(null);
   const cityInputRef = useRef<TextInput>(null);
-
-  if (profile && profile.id !== syncedProfileId) {
-    setSyncedProfileId(profile.id);
-    setFullName(profile.fullName ?? '');
-    setPhone(profile.phone ?? '');
-    setCity(profile.city ?? '');
-  }
 
   async function handlePickAvatar() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -76,32 +86,18 @@ export function CustomerAccountScreen() {
     }
   }
 
-  const isDirty =
-    !!profile &&
-    (fullName !== (profile.fullName ?? '') ||
-      phone !== (profile.phone ?? '') ||
-      city !== (profile.city ?? ''));
-
-  function handleSave() {
-    setFieldError(null);
-
-    const result = updateCustomerProfileSchema.safeParse({
-      fullName,
-      phone: phone || undefined,
-      city: city || undefined,
+  function onValid(data: CustomerProfileFormValues) {
+    updateProfileMutation.mutate({
+      fullName: data.fullName,
+      phone: data.phone || undefined,
+      city: data.city || undefined,
     });
-
-    if (!result.success) {
-      setFieldError(result.error.issues[0]?.message ?? 'Invalid input');
-      return;
-    }
-
-    updateProfileMutation.mutate(result.data);
   }
 
   const serverError = updateProfileMutation.isError
     ? getErrorMessage(updateProfileMutation.error)
     : null;
+  const formError = firstFormError(errors);
 
   async function handleLogout() {
     const pushToken = usePushTokenStore.getState().token;
@@ -184,15 +180,22 @@ export function CustomerAccountScreen() {
                   <Text className="text-[12px] text-[#948F86]">
                     Full name
                   </Text>
-                  <TextInput
-                    ref={fullNameInputRef}
-                    placeholder="Full name"
-                    placeholderTextColor="#A8A39B"
-                    value={fullName}
-                    onChangeText={setFullName}
-                    autoCapitalize="words"
-                    className="mt-0.5 text-[15px] text-[#26242A]"
-                    style={{ outlineWidth: 0, padding: 0 }}
+                  <Controller
+                    control={control}
+                    name="fullName"
+                    render={({ field }) => (
+                      <TextInput
+                        ref={fullNameInputRef}
+                        placeholder="Full name"
+                        placeholderTextColor="#A8A39B"
+                        value={field.value ?? ''}
+                        onChangeText={field.onChange}
+                        onBlur={field.onBlur}
+                        autoCapitalize="words"
+                        className="mt-0.5 text-[15px] text-[#26242A]"
+                        style={{ outlineWidth: 0, padding: 0 }}
+                      />
+                    )}
                   />
                 </View>
                 <Pressable
@@ -208,15 +211,22 @@ export function CustomerAccountScreen() {
                   <Text className="text-[12px] text-[#948F86]">
                     Phone number
                   </Text>
-                  <TextInput
-                    ref={phoneInputRef}
-                    placeholder="Phone number"
-                    placeholderTextColor="#A8A39B"
-                    value={phone}
-                    onChangeText={setPhone}
-                    keyboardType="phone-pad"
-                    className="mt-0.5 text-[15px] text-[#26242A]"
-                    style={{ outlineWidth: 0, padding: 0 }}
+                  <Controller
+                    control={control}
+                    name="phone"
+                    render={({ field }) => (
+                      <TextInput
+                        ref={phoneInputRef}
+                        placeholder="Phone number"
+                        placeholderTextColor="#A8A39B"
+                        value={field.value ?? ''}
+                        onChangeText={field.onChange}
+                        onBlur={field.onBlur}
+                        keyboardType="phone-pad"
+                        className="mt-0.5 text-[15px] text-[#26242A]"
+                        style={{ outlineWidth: 0, padding: 0 }}
+                      />
+                    )}
                   />
                 </View>
                 <Pressable
@@ -239,14 +249,21 @@ export function CustomerAccountScreen() {
               <View className="flex-row items-center gap-3 px-4 py-3.5">
                 <View className="flex-1">
                   <Text className="text-[12px] text-[#948F86]">City</Text>
-                  <TextInput
-                    ref={cityInputRef}
-                    placeholder="City"
-                    placeholderTextColor="#A8A39B"
-                    value={city}
-                    onChangeText={setCity}
-                    className="mt-0.5 text-[15px] text-[#26242A]"
-                    style={{ outlineWidth: 0, padding: 0 }}
+                  <Controller
+                    control={control}
+                    name="city"
+                    render={({ field }) => (
+                      <TextInput
+                        ref={cityInputRef}
+                        placeholder="City"
+                        placeholderTextColor="#A8A39B"
+                        value={field.value ?? ''}
+                        onChangeText={field.onChange}
+                        onBlur={field.onBlur}
+                        className="mt-0.5 text-[15px] text-[#26242A]"
+                        style={{ outlineWidth: 0, padding: 0 }}
+                      />
+                    )}
                   />
                 </View>
                 <Pressable
@@ -258,9 +275,9 @@ export function CustomerAccountScreen() {
               </View>
             </View>
 
-            {(fieldError ?? serverError) ? (
+            {(formError ?? serverError) ? (
               <Text className="mt-3 text-[13px] text-[#E5484D]">
-                {fieldError ?? serverError}
+                {formError ?? serverError}
               </Text>
             ) : null}
 
@@ -269,7 +286,7 @@ export function CustomerAccountScreen() {
                 label={
                   updateProfileMutation.isPending ? 'Saving…' : 'Save changes'
                 }
-                onPress={handleSave}
+                onPress={handleSubmit(onValid)}
                 loading={updateProfileMutation.isPending}
                 disabled={!isDirty}
               />

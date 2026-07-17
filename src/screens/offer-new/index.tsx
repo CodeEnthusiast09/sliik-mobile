@@ -1,38 +1,32 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
-import { type ReactNode, useState } from 'react';
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { useEffect } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import type { z } from 'zod';
 
 import { Button } from '@/components/button';
-import { DateTimeField } from '@/components/date-time-field';
+import { ControlledDateTimeField } from '@/components/controlled-date-time-field';
+import { ControlledTextInput } from '@/components/controlled-text-input';
 import { ScreenHeader } from '@/components/screen-header';
 import { useHideTabBar } from '@/hooks/common/use-hide-tab-bar';
 import { useCustomerProfile } from '@/hooks/services/customer';
 import { useCreateOffer } from '@/hooks/services/offers';
 import { useUploadImage } from '@/hooks/services/uploads';
-import { getErrorMessage } from '@/lib/utils';
+import { firstFormError, getErrorMessage } from '@/lib/utils';
 import { showToast } from '@/store/toast';
-import { createOfferSchema } from '@/validations/offer';
+import {
+  createOfferFormSchema,
+  type CreateOfferFormInput,
+} from '@/validations/offer';
 
-const PREFERRED_WINDOW_MS = 60 * 60 * 1000;
+import { FieldCard } from './_components/field-card';
 
-function FieldCard({
-  label,
-  children,
-}: {
-  label: string;
-  children: ReactNode;
-}) {
-  return (
-    <View className="mt-3 gap-2 rounded-[16px] border border-[#ECE7E0] bg-white p-4">
-      <Text className="text-[13px] font-bold text-[#26242A]">{label}</Text>
-      {children}
-    </View>
-  );
-}
+type OfferPayload = z.output<typeof createOfferFormSchema>;
 
 export function OfferNewScreen() {
   const router = useRouter();
@@ -43,18 +37,32 @@ export function OfferNewScreen() {
   const createOfferMutation = useCreateOffer();
   const uploadImageMutation = useUploadImage();
 
-  const [serviceType, setServiceType] = useState('');
-  const [description, setDescription] = useState('');
-  const [budget, setBudget] = useState('');
-  const [preferredDateTime, setPreferredDateTime] = useState('');
-  const [city, setCity] = useState('');
-  const [referenceImageUrl, setReferenceImageUrl] = useState('');
-  const [syncedCustomerId, setSyncedCustomerId] = useState<string | null>(null);
+  const { control, handleSubmit, setValue } = useForm<
+    CreateOfferFormInput,
+    unknown,
+    OfferPayload
+  >({
+    resolver: zodResolver(createOfferFormSchema),
+    defaultValues: {
+      serviceType: '',
+      description: '',
+      budget: '',
+      preferredDateTime: '',
+      city: '',
+      referenceImageUrl: '',
+    },
+  });
 
-  if (customer && customer.id !== syncedCustomerId) {
-    setSyncedCustomerId(customer.id);
-    setCity(customer.city ?? '');
-  }
+  const description = useWatch({ control, name: 'description' }) ?? '';
+  const referenceImageUrl = useWatch({ control, name: 'referenceImageUrl' });
+
+  // Prefill the city from the customer's profile once it loads. Keyed on the
+  // customer id so it doesn't clobber a city the user has since edited.
+  const customerId = customer?.id;
+  const customerCity = customer?.city ?? '';
+  useEffect(() => {
+    if (customerId) setValue('city', customerCity);
+  }, [customerId, customerCity, setValue]);
 
   async function handlePickPhoto() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -70,35 +78,12 @@ export function OfferNewScreen() {
       result.assets[0],
     );
     if (uploadResponse.data) {
-      setReferenceImageUrl(uploadResponse.data.url);
+      setValue('referenceImageUrl', uploadResponse.data.url);
     }
   }
 
-  function handleSubmit() {
-    let preferredFrom = '';
-    let preferredTo = '';
-    if (preferredDateTime) {
-      const from = new Date(`${preferredDateTime}:00`);
-      preferredFrom = from.toISOString();
-      preferredTo = new Date(from.getTime() + PREFERRED_WINDOW_MS).toISOString();
-    }
-
-    const result = createOfferSchema.safeParse({
-      serviceType,
-      description,
-      budget: budget ? Number(budget) : undefined,
-      preferredFrom,
-      preferredTo,
-      city,
-      referenceImageUrl: referenceImageUrl || undefined,
-    });
-
-    if (!result.success) {
-      showToast(result.error.issues[0]?.message ?? 'Invalid input', 'error');
-      return;
-    }
-
-    createOfferMutation.mutate(result.data, {
+  function onValid(data: OfferPayload) {
+    createOfferMutation.mutate(data, {
       onSuccess: () => router.back(),
       onError: (err) => showToast(getErrorMessage(err), 'error'),
     });
@@ -124,22 +109,22 @@ export function OfferNewScreen() {
             </Text>
 
             <FieldCard label="Service type">
-              <TextInput
+              <ControlledTextInput
+                control={control}
+                name="serviceType"
                 placeholder="E.g. Soft glam, sleek ponytail"
                 placeholderTextColor="#A8A39B"
-                value={serviceType}
-                onChangeText={setServiceType}
                 className="text-[15px] text-[#26242A]"
                 style={{ outlineWidth: 0 }}
               />
             </FieldCard>
 
             <FieldCard label="Describe what you need">
-              <TextInput
+              <ControlledTextInput
+                control={control}
+                name="description"
                 placeholder="E.g. Soft glam for wedding guest"
                 placeholderTextColor="#A8A39B"
-                value={description}
-                onChangeText={setDescription}
                 multiline
                 maxLength={300}
                 className="min-h-[60px] text-[15px] text-[#26242A]"
@@ -193,11 +178,11 @@ export function OfferNewScreen() {
                   ₦
                 </Text>
                 <View className="h-4 w-px bg-[#ECE7E0]" />
-                <TextInput
+                <ControlledTextInput
+                  control={control}
+                  name="budget"
                   placeholder="E.g. 20,000"
                   placeholderTextColor="#A8A39B"
-                  value={budget}
-                  onChangeText={setBudget}
                   keyboardType="decimal-pad"
                   className="flex-1 text-[15px] text-[#26242A]"
                   style={{ outlineWidth: 0 }}
@@ -209,12 +194,12 @@ export function OfferNewScreen() {
               <View className="flex-row items-center gap-2">
                 <Ionicons name="calendar-outline" size={16} color="#817F80" />
                 <View className="flex-1">
-                  <DateTimeField
+                  <ControlledDateTimeField
+                    control={control}
+                    name="preferredDateTime"
                     mode="datetime"
                     bare
                     placeholder="Select date & time"
-                    value={preferredDateTime}
-                    onChangeValue={setPreferredDateTime}
                   />
                 </View>
               </View>
@@ -223,11 +208,11 @@ export function OfferNewScreen() {
             <FieldCard label="City">
               <View className="flex-row items-center gap-2">
                 <Ionicons name="location-outline" size={16} color="#817F80" />
-                <TextInput
+                <ControlledTextInput
+                  control={control}
+                  name="city"
                   placeholder="Select your city"
                   placeholderTextColor="#A8A39B"
-                  value={city}
-                  onChangeText={setCity}
                   className="flex-1 text-[15px] text-[#26242A]"
                   style={{ outlineWidth: 0 }}
                 />
@@ -254,7 +239,9 @@ export function OfferNewScreen() {
                 label={
                   createOfferMutation.isPending ? 'Posting…' : 'Post offer'
                 }
-                onPress={handleSubmit}
+                onPress={handleSubmit(onValid, (errors) =>
+                  showToast(firstFormError(errors) ?? 'Invalid input', 'error'),
+                )}
                 loading={createOfferMutation.isPending}
               />
             </View>

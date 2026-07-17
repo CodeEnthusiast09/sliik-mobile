@@ -1,14 +1,23 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import { Pressable, Text, View } from 'react-native';
+import type { z } from 'zod';
 
 import { Button } from '@/components/button';
+import { ControlledTextField } from '@/components/controlled-text-field';
 import { SocialAuthButtons } from '@/components/social-auth-buttons';
 import { TextField } from '@/components/text-field';
 import { useLogin } from '@/hooks/services/auth/useLogin';
-import { getErrorMessage, isEmailNotVerifiedError } from '@/lib/utils';
+import {
+  firstFormError,
+  getErrorMessage,
+  isEmailNotVerifiedError,
+} from '@/lib/utils';
 import { showToast } from '@/store/toast';
 import { loginSchema } from '@/validations/auth';
+
+type LoginFormValues = z.infer<typeof loginSchema>;
 
 export type SignInFormProps = {
   email: string;
@@ -16,33 +25,16 @@ export type SignInFormProps = {
 };
 
 export function SignInForm({ email, onChangeEmail }: SignInFormProps) {
-  const [password, setPassword] = useState('');
-  const [emailError, setEmailError] = useState(false);
-  const [passwordError, setPasswordError] = useState(false);
-
   const router = useRouter();
   const loginMutation = useLogin();
 
-  function handleSubmit() {
-    const result = loginSchema.safeParse({ email, password });
+  const { control, handleSubmit } = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email, password: '' },
+  });
 
-    if (!result.success) {
-      const invalid = new Set(
-        result.error.issues.map((issue) => String(issue.path[0])),
-      );
-      setEmailError(invalid.has('email'));
-      setPasswordError(invalid.has('password'));
-      showToast(
-        result.error.issues[0]?.message ?? 'Please check your details',
-        'error',
-      );
-      return;
-    }
-
-    setEmailError(false);
-    setPasswordError(false);
-
-    loginMutation.mutate(result.data, {
+  function onValid(data: LoginFormValues) {
+    loginMutation.mutate(data, {
       onSuccess: () => router.replace('/'),
       onError: (error) => {
         // A 403 here means the account exists and the password is right, but
@@ -51,12 +43,10 @@ export function SignInForm({ email, onChangeEmail }: SignInFormProps) {
         if (isEmailNotVerifiedError(error)) {
           router.push({
             pathname: '/verify-email',
-            params: { email: result.data.email },
+            params: { email: data.email },
           });
           return;
         }
-        setEmailError(true);
-        setPasswordError(true);
         showToast(getErrorMessage(error), 'error');
       },
     });
@@ -64,29 +54,34 @@ export function SignInForm({ email, onChangeEmail }: SignInFormProps) {
 
   return (
     <View className="gap-4">
-      <TextField
-        leftIcon="mail-outline"
-        placeholder="Enter your email"
-        value={email}
-        error={emailError}
-        onChangeText={(text) => {
-          onChangeEmail(text);
-          if (emailError) setEmailError(false);
-        }}
-        autoCapitalize="none"
-        autoCorrect={false}
-        keyboardType="email-address"
+      <Controller
+        control={control}
+        name="email"
+        render={({ field, fieldState }) => (
+          <TextField
+            leftIcon="mail-outline"
+            placeholder="Enter your email"
+            value={field.value}
+            error={!!fieldState.error}
+            onChangeText={(text) => {
+              field.onChange(text);
+              // Keep the parent's copy in sync so the email survives an
+              // accidental signin <-> signup tab toggle.
+              onChangeEmail(text);
+            }}
+            onBlur={field.onBlur}
+            autoCapitalize="none"
+            autoCorrect={false}
+            keyboardType="email-address"
+          />
+        )}
       />
 
-      <TextField
+      <ControlledTextField
+        control={control}
+        name="password"
         leftIcon="lock-closed-outline"
         placeholder="Enter your password"
-        value={password}
-        error={passwordError}
-        onChangeText={(text) => {
-          setPassword(text);
-          if (passwordError) setPasswordError(false);
-        }}
         password
       />
 
@@ -102,7 +97,12 @@ export function SignInForm({ email, onChangeEmail }: SignInFormProps) {
       <View className="mt-1">
         <Button
           label={loginMutation.isPending ? 'Signing in…' : 'Sign In'}
-          onPress={handleSubmit}
+          onPress={handleSubmit(onValid, (errors) =>
+            showToast(
+              firstFormError(errors) ?? 'Please check your details',
+              'error',
+            ),
+          )}
           loading={loginMutation.isPending}
         />
       </View>

@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -10,64 +11,57 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import type { z } from 'zod';
 
 import { Button } from '@/components/button';
+import { ControlledTextField } from '@/components/controlled-text-field';
 import { TextField } from '@/components/text-field';
 import { useResetPassword } from '@/hooks/services/auth/useResetPassword';
-import { getErrorMessage } from '@/lib/utils';
+import { firstFormError, getErrorMessage } from '@/lib/utils';
 import { showToast } from '@/store/toast';
 import { resetPasswordFormSchema } from '@/validations/auth';
+
+type ResetPasswordFormValues = z.infer<typeof resetPasswordFormSchema>;
 
 export function ResetPasswordScreen() {
   const { email } = useLocalSearchParams<{ email: string }>();
 
-  const [code, setCode] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [codeError, setCodeError] = useState(false);
-  const [passwordError, setPasswordError] = useState(false);
-  const [confirmError, setConfirmError] = useState(false);
-
   const router = useRouter();
   const mutation = useResetPassword();
 
-  function handleSubmit() {
-    const result = resetPasswordFormSchema.safeParse({
+  const { control, handleSubmit, setError } = useForm<ResetPasswordFormValues>({
+    resolver: zodResolver(resetPasswordFormSchema),
+    // email is fixed for this screen (carried in from the forgot-password step),
+    // so it rides along in the values rather than being an editable field.
+    defaultValues: {
       email: email ?? '',
-      code,
-      newPassword,
-      confirmPassword,
-    });
+      code: '',
+      newPassword: '',
+      confirmPassword: '',
+    },
+  });
 
-    if (!result.success) {
-      const invalid = new Set(
-        result.error.issues.map((issue) => String(issue.path[0])),
-      );
-      setCodeError(invalid.has('code'));
-      setPasswordError(invalid.has('newPassword'));
-      setConfirmError(invalid.has('confirmPassword'));
-      showToast(
-        result.error.issues[0]?.message ?? 'Please check your details',
-        'error',
-      );
-      return;
-    }
-
-    setCodeError(false);
-    setPasswordError(false);
-    setConfirmError(false);
-
-    const { confirmPassword: _confirm, ...payload } = result.data;
-    mutation.mutate(payload, {
-      onSuccess: () => {
-        showToast('Password reset. Sign in with your new password.', 'success');
-        router.replace('/login');
+  function onValid(values: ResetPasswordFormValues) {
+    mutation.mutate(
+      {
+        email: values.email,
+        code: values.code,
+        newPassword: values.newPassword,
       },
-      onError: (error) => {
-        setCodeError(true);
-        showToast(getErrorMessage(error), 'error');
+      {
+        onSuccess: () => {
+          showToast(
+            'Password reset. Sign in with your new password.',
+            'success',
+          );
+          router.replace('/login');
+        },
+        onError: (error) => {
+          setError('code', { message: getErrorMessage(error) });
+          showToast(getErrorMessage(error), 'error');
+        },
       },
-    });
+    );
   }
 
   return (
@@ -99,48 +93,51 @@ export function ResetPasswordScreen() {
             </Text>
 
             <View className="mt-9 gap-4">
-              <TextField
-                leftIcon="keypad-outline"
-                placeholder="6-digit code"
-                value={code}
-                error={codeError}
-                onChangeText={(text) => {
-                  setCode(text.replace(/\D/g, ''));
-                  if (codeError) setCodeError(false);
-                }}
-                keyboardType="number-pad"
-                maxLength={6}
-                autoComplete="one-time-code"
+              <Controller
+                control={control}
+                name="code"
+                render={({ field, fieldState }) => (
+                  <TextField
+                    leftIcon="keypad-outline"
+                    placeholder="6-digit code"
+                    value={field.value}
+                    error={!!fieldState.error}
+                    onChangeText={(text) =>
+                      field.onChange(text.replace(/\D/g, ''))
+                    }
+                    onBlur={field.onBlur}
+                    keyboardType="number-pad"
+                    maxLength={6}
+                    autoComplete="one-time-code"
+                  />
+                )}
               />
 
-              <TextField
+              <ControlledTextField
+                control={control}
+                name="newPassword"
                 leftIcon="lock-closed-outline"
                 placeholder="New password"
-                value={newPassword}
-                error={passwordError}
-                onChangeText={(text) => {
-                  setNewPassword(text);
-                  if (passwordError) setPasswordError(false);
-                }}
                 password
               />
 
-              <TextField
+              <ControlledTextField
+                control={control}
+                name="confirmPassword"
                 leftIcon="lock-closed-outline"
                 placeholder="Confirm new password"
-                value={confirmPassword}
-                error={confirmError}
-                onChangeText={(text) => {
-                  setConfirmPassword(text);
-                  if (confirmError) setConfirmError(false);
-                }}
                 password
               />
 
               <View className="mt-1">
                 <Button
                   label={mutation.isPending ? 'Resetting…' : 'Reset Password'}
-                  onPress={handleSubmit}
+                  onPress={handleSubmit(onValid, (errors) =>
+                    showToast(
+                      firstFormError(errors) ?? 'Please check your details',
+                      'error',
+                    ),
+                  )}
                   loading={mutation.isPending}
                 />
               </View>

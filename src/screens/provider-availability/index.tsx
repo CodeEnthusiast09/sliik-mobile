@@ -1,9 +1,14 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native';
+import { useForm } from 'react-hook-form';
+import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import type { z } from 'zod';
 
 import { Button } from '@/components/button';
+import { ControlledDateTimeField } from '@/components/controlled-date-time-field';
+import { ControlledTextInput } from '@/components/controlled-text-input';
 import { DateTimeField } from '@/components/date-time-field';
 import { ErrorState } from '@/components/error-state';
 import { ScreenHeader } from '@/components/screen-header';
@@ -16,8 +21,10 @@ import {
   useSchedule,
   useSetSchedule,
 } from '@/hooks/services/availability';
-import { getErrorMessage } from '@/lib/utils';
+import { firstFormError, getErrorMessage } from '@/lib/utils';
 import { addDayOffSchema, setScheduleSchema } from '@/validations/availability';
+
+type DayOffFormValues = z.infer<typeof addDayOffSchema>;
 
 const DAY_LABELS = [
   'Sunday',
@@ -68,12 +75,21 @@ export function ProviderAvailabilityScreen() {
   const addDayOffMutation = useAddDayOff();
   const removeDayOffMutation = useRemoveDayOff();
 
+  // The weekly schedule is a fixed 7-row enable/time grid, not a field form -
+  // it stays in local state. Only the days-off sub-form uses react-hook-form.
   const [rows, setRows] = useState<DayRow[]>(buildDefaultRows());
   const [scheduleError, setScheduleError] = useState<string | null>(null);
-  const [dayOffDate, setDayOffDate] = useState('');
-  const [dayOffReason, setDayOffReason] = useState('');
-  const [dayOffError, setDayOffError] = useState<string | null>(null);
   const [hasSyncedSchedule, setHasSyncedSchedule] = useState(false);
+
+  const {
+    control: dayOffControl,
+    handleSubmit: handleDayOffSubmit,
+    reset: resetDayOffForm,
+    formState: { errors: dayOffErrors },
+  } = useForm<DayOffFormValues>({
+    resolver: zodResolver(addDayOffSchema),
+    defaultValues: { date: '', reason: '' },
+  });
 
   if (schedule && !hasSyncedSchedule) {
     setHasSyncedSchedule(true);
@@ -121,24 +137,13 @@ export function ProviderAvailabilityScreen() {
     setScheduleMutation.mutate(result.data);
   }
 
-  function handleAddDayOff() {
-    setDayOffError(null);
-
-    const result = addDayOffSchema.safeParse({
-      date: dayOffDate,
-      reason: dayOffReason || undefined,
-    });
-    if (!result.success) {
-      setDayOffError(result.error.issues[0]?.message ?? 'Invalid date');
-      return;
-    }
-
-    addDayOffMutation.mutate(result.data, {
-      onSuccess: () => {
-        setDayOffDate('');
-        setDayOffReason('');
+  function onAddDayOff(data: DayOffFormValues) {
+    addDayOffMutation.mutate(
+      { date: data.date, reason: data.reason || undefined },
+      {
+        onSuccess: () => resetDayOffForm({ date: '', reason: '' }),
       },
-    });
+    );
   }
 
   const scheduleServerError = setScheduleMutation.isError
@@ -294,32 +299,32 @@ export function ProviderAvailabilityScreen() {
             )}
 
             <View className="mt-3">
-              <DateTimeField
+              <ControlledDateTimeField
+                control={dayOffControl}
+                name="date"
                 mode="date"
                 placeholder="Date"
-                value={dayOffDate}
-                onChangeValue={setDayOffDate}
               />
             </View>
-            <TextInput
+            <ControlledTextInput
+              control={dayOffControl}
+              name="reason"
               placeholder="Reason (optional)"
               placeholderTextColor="#A8A39B"
-              value={dayOffReason}
-              onChangeText={setDayOffReason}
               className="mt-3 rounded-[16px] border border-[#ECE7E0] bg-white px-4 py-3.5 text-[15px] text-[#26242A]"
               style={{ outlineWidth: 0 }}
             />
 
-            {(dayOffError ?? dayOffServerError) ? (
+            {(firstFormError(dayOffErrors) ?? dayOffServerError) ? (
               <Text className="mt-3 text-[13px] text-[#E5484D]">
-                {dayOffError ?? dayOffServerError}
+                {firstFormError(dayOffErrors) ?? dayOffServerError}
               </Text>
             ) : null}
 
             <View className="mt-4">
               <Button
                 label={addDayOffMutation.isPending ? 'Adding…' : 'Add day off'}
-                onPress={handleAddDayOff}
+                onPress={handleDayOffSubmit(onAddDayOff)}
                 loading={addDayOffMutation.isPending}
               />
             </View>

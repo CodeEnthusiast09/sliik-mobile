@@ -1,13 +1,30 @@
 import { z } from 'zod';
 
-export const registerSchema = z
-  .object({
-    email: z.email('Enter a valid email address'),
-    password: z.string().min(8, 'Password must be at least 8 characters'),
-    role: z.enum(['customer', 'provider']),
-    fullName: z.string().min(1, 'Enter your full name'),
-    tradeType: z.string().min(1).optional(),
-  })
+const registerBaseSchema = z.object({
+  email: z.email('Enter a valid email address'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+  role: z.enum(['customer', 'provider']),
+  fullName: z.string().min(1, 'Enter your full name'),
+  tradeType: z.string().min(1).optional(),
+});
+
+// API payload for POST /auth/register.
+export const registerSchema = registerBaseSchema.superRefine((data, ctx) => {
+  if (data.role === 'provider' && !data.tradeType) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['tradeType'],
+      message: 'Trade type is required for providers',
+    });
+  }
+});
+
+export type RegisterInput = z.infer<typeof registerSchema>;
+
+// Form-only schema: adds the confirm field + match check alongside the same
+// provider trade-type rule. confirmPassword is stripped before the API call.
+export const registerFormSchema = registerBaseSchema
+  .extend({ confirmPassword: z.string() })
   .superRefine((data, ctx) => {
     if (data.role === 'provider' && !data.tradeType) {
       ctx.addIssue({
@@ -16,9 +33,16 @@ export const registerSchema = z
         message: 'Trade type is required for providers',
       });
     }
+    if (data.password !== data.confirmPassword) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['confirmPassword'],
+        message: 'Passwords do not match',
+      });
+    }
   });
 
-export type RegisterInput = z.infer<typeof registerSchema>;
+export type RegisterFormInput = z.infer<typeof registerFormSchema>;
 
 export const loginSchema = z.object({
   email: z.email('Enter a valid email address'),

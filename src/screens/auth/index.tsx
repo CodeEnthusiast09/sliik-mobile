@@ -10,8 +10,8 @@ import { SliikWordmark } from '@/components/sliik-wordmark';
 import type { AuthMode, UserRole } from '@/interfaces/auth';
 import { useSignupFlowStore } from '@/store/signup-flow';
 
-import { SignInForm } from './components/sign-in-form';
-import { SignUpForm } from './components/sign-up-form';
+import { SignInForm } from './_components/sign-in-form';
+import { SignUpForm } from './_components/sign-up-form';
 
 // Small nudge, not a carousel swipe - large enough to read as directional
 // motion, small enough that forms of very different heights (2 fields vs 5)

@@ -1,9 +1,12 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import type { z } from 'zod';
 
 import { Button } from '@/components/button';
 import { ErrorState } from '@/components/error-state';
@@ -17,7 +20,7 @@ import {
 } from '@/hooks/services/provider';
 import { useReviewsForUser } from '@/hooks/services/reviews';
 import { useUploadImage } from '@/hooks/services/uploads';
-import { getErrorMessage, maskAccountNumber } from '@/lib/utils';
+import { firstFormError, getErrorMessage, maskAccountNumber } from '@/lib/utils';
 import { unregisterPushToken } from '@/services/notifications';
 import { useAuthStore } from '@/store/auth';
 import { usePushTokenStore } from '@/store/push-token';
@@ -26,6 +29,9 @@ import { getGreeting } from './_lib/utils';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 const REVIEWS_PREVIEW_COUNT = 1;
+
+type ProfileFormInput = z.input<typeof updateProviderProfileSchema>;
+type ProfileFormOutput = z.output<typeof updateProviderProfileSchema>;
 
 export function ProviderProfileScreen() {
   const router = useRouter();
@@ -46,32 +52,42 @@ export function ProviderProfileScreen() {
   );
   const hasMoreReviews = (userReviews?.totalReviews ?? 0) > REVIEWS_PREVIEW_COUNT;
 
-  const [fullName, setFullName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [bio, setBio] = useState('');
-  const [tradeType, setTradeType] = useState('');
-  const [yearsExperience, setYearsExperience] = useState('');
-  const [city, setCity] = useState('');
-  const [fieldError, setFieldError] = useState<string | null>(null);
-  const [syncedProfileId, setSyncedProfileId] = useState<string | null>(null);
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isDirty },
+  } = useForm<ProfileFormInput, unknown, ProfileFormOutput>({
+    resolver: zodResolver(updateProviderProfileSchema),
+    defaultValues: {
+      fullName: '',
+      phone: '',
+      bio: '',
+      tradeType: '',
+      yearsExperience: '',
+      city: '',
+    },
+    // Prefill once the profile loads; RHF re-baselines isDirty against these.
+    values: profile
+      ? {
+          fullName: profile.fullName ?? '',
+          phone: profile.phone ?? '',
+          bio: profile.bio ?? '',
+          tradeType: profile.tradeType ?? '',
+          yearsExperience:
+            profile.yearsExperience != null
+              ? String(profile.yearsExperience)
+              : '',
+          city: profile.city ?? '',
+        }
+      : undefined,
+  });
+
   const fullNameInputRef = useRef<TextInput>(null);
   const phoneInputRef = useRef<TextInput>(null);
-  const bioInputRef = useRef<TextInput>(null)
-  const tradeTypeInputRef = useRef<TextInput>(null)
-  const yearsExperienceInputRef = useRef<TextInput>(null)
+  const bioInputRef = useRef<TextInput>(null);
+  const tradeTypeInputRef = useRef<TextInput>(null);
+  const yearsExperienceInputRef = useRef<TextInput>(null);
   const cityInputRef = useRef<TextInput>(null);
-
-  if (profile && profile.id !== syncedProfileId) {
-    setSyncedProfileId(profile.id);
-    setFullName(profile.fullName ?? '');
-    setPhone(profile.phone ?? '');
-    setBio(profile.bio ?? '');
-    setTradeType(profile.tradeType ?? '');
-    setYearsExperience(
-      profile.yearsExperience != null ? String(profile.yearsExperience) : '',
-    );
-    setCity(profile.city ?? '');
-  }
 
   async function handlePickAvatar() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -93,38 +109,21 @@ export function ProviderProfileScreen() {
     }
   }
 
-  const isDirty =
-    !!profile &&
-    (fullName !== (profile.fullName ?? '') ||
-      phone !== (profile.phone ?? '') ||
-      city !== (profile.city ?? '') ||
-      tradeType !== (profile?.tradeType ?? '')
-      || yearsExperience !== (profile?.yearsExperience != null ? String(profile.yearsExperience) : '') ||
-      bio !== (profile?.bio ?? ''));
-
-  function handleSave() {
-    setFieldError(null);
-
-    const result = updateProviderProfileSchema.safeParse({
-      fullName,
-      phone: phone || undefined,
-      bio: bio || undefined,
-      tradeType,
-      yearsExperience: yearsExperience ? Number(yearsExperience) : undefined,
-      city: city || undefined,
+  function onValid(data: ProfileFormOutput) {
+    updateProfileMutation.mutate({
+      fullName: data.fullName,
+      phone: data.phone || undefined,
+      bio: data.bio || undefined,
+      tradeType: data.tradeType,
+      yearsExperience: data.yearsExperience,
+      city: data.city || undefined,
     });
-
-    if (!result.success) {
-      setFieldError(result.error.issues[0]?.message ?? 'Invalid input');
-      return;
-    }
-
-    updateProfileMutation.mutate(result.data);
   }
 
   const serverError = updateProfileMutation.isError
     ? getErrorMessage(updateProfileMutation.error)
     : null;
+  const formError = firstFormError(errors);
 
   async function handleLogout() {
     const pushToken = usePushTokenStore.getState().token;
@@ -205,15 +204,22 @@ export function ProviderProfileScreen() {
               <View className="flex-row items-center gap-3 px-4 py-3.5">
                 <View className='flex-1'>
                   <Text className='text-xs text-[#948F86]'>Full name</Text>
-                  <TextInput
-                    ref={fullNameInputRef}
-                    placeholder="Full name"
-                    placeholderTextColor="#A8A39B"
-                    value={fullName}
-                    onChangeText={setFullName}
-                    autoCapitalize="words"
-                    className="mt-0.5 text-[15px] text-[#26242A]"
-                    style={{ outlineWidth: 0, padding: 0 }}
+                  <Controller
+                    control={control}
+                    name="fullName"
+                    render={({ field }) => (
+                      <TextInput
+                        ref={fullNameInputRef}
+                        placeholder="Full name"
+                        placeholderTextColor="#A8A39B"
+                        value={field.value == null ? '' : String(field.value)}
+                        onChangeText={field.onChange}
+                        onBlur={field.onBlur}
+                        autoCapitalize="words"
+                        className="mt-0.5 text-[15px] text-[#26242A]"
+                        style={{ outlineWidth: 0, padding: 0 }}
+                      />
+                    )}
                   />
                 </View>
 
@@ -230,15 +236,22 @@ export function ProviderProfileScreen() {
               <View className="flex-row items-center gap-3 px-4 py-3.5">
                 <View className='flex-1'>
                   <Text className='text-xs text-[#948F86]'>Phone number</Text>
-                  <TextInput
-                    ref={phoneInputRef}
-                    placeholder="Phone"
-                    placeholderTextColor="#A8A39B"
-                    value={phone}
-                    onChangeText={setPhone}
-                    keyboardType="phone-pad"
-                    className="mt-0.5 text-[15px] text-[#26242A]"
-                    style={{ outlineWidth: 0, padding: 0 }}
+                  <Controller
+                    control={control}
+                    name="phone"
+                    render={({ field }) => (
+                      <TextInput
+                        ref={phoneInputRef}
+                        placeholder="Phone"
+                        placeholderTextColor="#A8A39B"
+                        value={field.value == null ? '' : String(field.value)}
+                        onChangeText={field.onChange}
+                        onBlur={field.onBlur}
+                        keyboardType="phone-pad"
+                        className="mt-0.5 text-[15px] text-[#26242A]"
+                        style={{ outlineWidth: 0, padding: 0 }}
+                      />
+                    )}
                   />
                 </View>
 
@@ -255,14 +268,21 @@ export function ProviderProfileScreen() {
               <View className="flex-row items-center gap-3 px-4 py-3.5">
                 <View className='flex-1'>
                   <Text className='text-xs text-[#948F86]'>Trade</Text>
-                  <TextInput
-                    ref={tradeTypeInputRef}
-                    placeholder="Trade (e.g. hairdresser, barber)"
-                    placeholderTextColor="#A8A39B"
-                    value={tradeType}
-                    onChangeText={setTradeType}
-                    className="mt-0.5 text-[15px] text-[#26242A] capitalize"
-                    style={{ outlineWidth: 0, padding: 0 }}
+                  <Controller
+                    control={control}
+                    name="tradeType"
+                    render={({ field }) => (
+                      <TextInput
+                        ref={tradeTypeInputRef}
+                        placeholder="Trade (e.g. hairdresser, barber)"
+                        placeholderTextColor="#A8A39B"
+                        value={field.value == null ? '' : String(field.value)}
+                        onChangeText={field.onChange}
+                        onBlur={field.onBlur}
+                        className="mt-0.5 text-[15px] text-[#26242A] capitalize"
+                        style={{ outlineWidth: 0, padding: 0 }}
+                      />
+                    )}
                   />
                 </View>
 
@@ -279,15 +299,22 @@ export function ProviderProfileScreen() {
               <View className="flex-row items-center gap-3 px-4 py-3.5">
                 <View className='flex-1'>
                   <Text className='text-xs text-[#948F86]'>Years of experience</Text>
-                  <TextInput
-                    ref={yearsExperienceInputRef}
-                    placeholder="Years of experience"
-                    placeholderTextColor="#A8A39B"
-                    value={yearsExperience}
-                    onChangeText={setYearsExperience}
-                    keyboardType="number-pad"
-                    className="mt-0.5 text-[15px] text-[#26242A]"
-                    style={{ outlineWidth: 0, padding: 0 }}
+                  <Controller
+                    control={control}
+                    name="yearsExperience"
+                    render={({ field }) => (
+                      <TextInput
+                        ref={yearsExperienceInputRef}
+                        placeholder="Years of experience"
+                        placeholderTextColor="#A8A39B"
+                        value={field.value == null ? '' : String(field.value)}
+                        onChangeText={field.onChange}
+                        onBlur={field.onBlur}
+                        keyboardType="number-pad"
+                        className="mt-0.5 text-[15px] text-[#26242A]"
+                        style={{ outlineWidth: 0, padding: 0 }}
+                      />
+                    )}
                   />
                 </View>
 
@@ -304,14 +331,21 @@ export function ProviderProfileScreen() {
               <View className="flex-row items-center gap-3 px-4 py-3.5">
                 <View className='flex-1'>
                   <Text className='text-xs text-[#948F86]'>City</Text>
-                  <TextInput
-                    ref={cityInputRef}
-                    placeholder="City"
-                    placeholderTextColor="#A8A39B"
-                    value={city}
-                    onChangeText={setCity}
-                    className="mt-0.5 text-[15px] text-[#26242A]"
-                    style={{ outlineWidth: 0, padding: 0 }}
+                  <Controller
+                    control={control}
+                    name="city"
+                    render={({ field }) => (
+                      <TextInput
+                        ref={cityInputRef}
+                        placeholder="City"
+                        placeholderTextColor="#A8A39B"
+                        value={field.value == null ? '' : String(field.value)}
+                        onChangeText={field.onChange}
+                        onBlur={field.onBlur}
+                        className="mt-0.5 text-[15px] text-[#26242A]"
+                        style={{ outlineWidth: 0, padding: 0 }}
+                      />
+                    )}
                   />
                 </View>
 
@@ -328,15 +362,22 @@ export function ProviderProfileScreen() {
               <View className="flex-row items-start gap-3 px-4 py-3.5">
                 <View className='flex-1'>
                   <Text className='text-xs text-[#948F86]'>Bio</Text>
-                  <TextInput
-                    ref={bioInputRef}
-                    placeholder="Bio"
-                    placeholderTextColor="#A8A39B"
-                    value={bio}
-                    onChangeText={setBio}
-                    multiline
-                    className="mt-0.5 min-h-[60px] text-[15px] text-[#26242A]"
-                    style={{ outlineWidth: 0, textAlignVertical: "top" }}
+                  <Controller
+                    control={control}
+                    name="bio"
+                    render={({ field }) => (
+                      <TextInput
+                        ref={bioInputRef}
+                        placeholder="Bio"
+                        placeholderTextColor="#A8A39B"
+                        value={field.value == null ? '' : String(field.value)}
+                        onChangeText={field.onChange}
+                        onBlur={field.onBlur}
+                        multiline
+                        className="mt-0.5 min-h-[60px] text-[15px] text-[#26242A]"
+                        style={{ outlineWidth: 0, textAlignVertical: 'top' }}
+                      />
+                    )}
                   />
                 </View>
 
@@ -350,9 +391,9 @@ export function ProviderProfileScreen() {
               </View>
             </View>
 
-            {(fieldError ?? serverError) ? (
+            {(formError ?? serverError) ? (
               <Text className="mt-3 text-[13px] text-[#E5484D]">
-                {fieldError ?? serverError}
+                {formError ?? serverError}
               </Text>
             ) : null}
 
@@ -361,7 +402,7 @@ export function ProviderProfileScreen() {
                 label={
                   updateProfileMutation.isPending ? 'Saving…' : 'Save changes'
                 }
-                onPress={handleSave}
+                onPress={handleSubmit(onValid)}
                 loading={updateProfileMutation.isPending}
                 disabled={!isDirty}
               />

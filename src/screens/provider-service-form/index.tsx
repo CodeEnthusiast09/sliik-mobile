@@ -1,21 +1,23 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
 import {
   ActivityIndicator,
   Pressable,
   ScrollView,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import type { z } from 'zod';
 
 import { Button } from '@/components/button';
+import { ControlledSelectField } from '@/components/controlled-select-field';
+import { ControlledTextInput } from '@/components/controlled-text-input';
 import { ScreenHeader } from '@/components/screen-header';
-import { SelectField } from '@/components/select-field';
 import { useHideTabBar } from '@/hooks/common/use-hide-tab-bar';
 import {
   useCreateService,
@@ -25,8 +27,11 @@ import {
 } from '@/hooks/services/provider-services';
 import { useUploadImage } from '@/hooks/services/uploads';
 import { ADD_ONS, CATEGORIES, DURATION_OPTIONS } from '@/lib/constants';
-import { getErrorMessage } from '@/lib/utils';
+import { firstFormError, getErrorMessage } from '@/lib/utils';
 import { serviceSchema } from '@/validations/service';
+
+type ServiceFormInput = z.input<typeof serviceSchema>;
+type ServiceFormOutput = z.output<typeof serviceSchema>;
 
 export function ProviderServiceFormScreen() {
   const router = useRouter();
@@ -43,26 +48,38 @@ export function ProviderServiceFormScreen() {
   const deleteServiceMutation = useDeleteService();
   const uploadImageMutation = useUploadImage();
 
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [price, setPrice] = useState('');
-  const [durationMinutes, setDurationMinutes] = useState('');
-  const [category, setCategory] = useState('');
-  const [addOns, setAddOns] = useState<string[]>([]);
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [fieldError, setFieldError] = useState<string | null>(null);
-  const [syncedServiceId, setSyncedServiceId] = useState<string | null>(null);
+  const {
+    control,
+    handleSubmit,
+    setValue,
+    formState: { errors },
+  } = useForm<ServiceFormInput, unknown, ServiceFormOutput>({
+    resolver: zodResolver(serviceSchema),
+    defaultValues: {
+      name: '',
+      description: '',
+      price: '',
+      durationMinutes: '',
+      category: '',
+      imageUrl: '',
+      addOns: [],
+    },
+    // Prefill on edit. RHF re-syncs when `existingService` arrives from the
+    // query and leaves user edits untouched afterwards, so no manual sync guard.
+    values: existingService
+      ? {
+          name: existingService.name,
+          description: existingService.description ?? '',
+          price: existingService.price,
+          durationMinutes: String(existingService.durationMinutes),
+          category: existingService.category ?? '',
+          imageUrl: existingService.imageUrl ?? '',
+          addOns: existingService.addOns ?? [],
+        }
+      : undefined,
+  });
 
-  if (existingService && existingService.id !== syncedServiceId) {
-    setSyncedServiceId(existingService.id);
-    setName(existingService.name);
-    setDescription(existingService.description ?? '');
-    setPrice(existingService.price);
-    setDurationMinutes(String(existingService.durationMinutes));
-    setCategory(existingService.category ?? '');
-    setAddOns(existingService.addOns ?? []);
-    setImageUrl(existingService.imageUrl ?? null);
-  }
+  const imageUrl = useWatch({ control, name: 'imageUrl' });
 
   const activeMutation = isEditing
     ? updateServiceMutation
@@ -81,34 +98,27 @@ export function ProviderServiceFormScreen() {
     const uploadResponse = await uploadImageMutation.mutateAsync(
       result.assets[0],
     );
-    if (uploadResponse.data) setImageUrl(uploadResponse.data.url);
+    if (uploadResponse.data) setValue('imageUrl', uploadResponse.data.url);
   }
 
-  function handleSave() {
-    setFieldError(null);
-
-    const result = serviceSchema.safeParse({
-      name,
-      description: description || undefined,
-      price: Number(price),
-      durationMinutes: Number(durationMinutes),
-      category: category || undefined,
-      imageUrl: imageUrl || undefined,
-      addOns: addOns.length ? addOns : undefined,
-    });
-
-    if (!result.success) {
-      setFieldError(result.error.issues[0]?.message ?? 'Invalid input');
-      return;
-    }
+  function onValid(data: ServiceFormOutput) {
+    const payload = {
+      name: data.name,
+      description: data.description || undefined,
+      price: data.price,
+      durationMinutes: data.durationMinutes,
+      category: data.category || undefined,
+      imageUrl: data.imageUrl || undefined,
+      addOns: data.addOns?.length ? data.addOns : undefined,
+    };
 
     if (isEditing && id) {
       updateServiceMutation.mutate(
-        { id, payload: result.data },
+        { id, payload },
         { onSuccess: () => router.back() },
       );
     } else {
-      createServiceMutation.mutate(result.data, {
+      createServiceMutation.mutate(payload, {
         onSuccess: () => router.back(),
       });
     }
@@ -130,6 +140,7 @@ export function ProviderServiceFormScreen() {
   const serverError = activeMutation.isError
     ? getErrorMessage(activeMutation.error)
     : null;
+  const formError = firstFormError(errors);
 
   return (
     <View className="flex-1 bg-white">
@@ -172,74 +183,74 @@ export function ProviderServiceFormScreen() {
               )}
             </Pressable>
 
-            <TextInput
+            <ControlledTextInput
+              control={control}
+              name="name"
               placeholder="Service name"
               placeholderTextColor="#A8A39B"
-              value={name}
-              onChangeText={setName}
               className="mt-3 rounded-[16px] border border-[#ECE7E0] bg-white px-4 py-3.5 text-[15px] text-[#26242A]"
               style={{ outlineWidth: 0 }}
             />
-            <TextInput
+            <ControlledTextInput
+              control={control}
+              name="description"
               placeholder="Description (optional)"
               placeholderTextColor="#A8A39B"
-              value={description}
-              onChangeText={setDescription}
               multiline
               className="mt-3 min-h-[76px] rounded-[16px] border border-[#ECE7E0] bg-white px-5 py-4 text-[15px] text-[#26242A]"
               style={{ textAlignVertical: 'top', outlineWidth: 0 }}
             />
-            <TextInput
+            <ControlledTextInput
+              control={control}
+              name="price"
               placeholder="Price"
               placeholderTextColor="#A8A39B"
-              value={price}
-              onChangeText={setPrice}
               keyboardType="decimal-pad"
               className="mt-3 rounded-[16px] border border-[#ECE7E0] bg-white px-4 py-3.5 text-[15px] text-[#26242A]"
               style={{ outlineWidth: 0 }}
             />
 
             <View className="mt-3">
-              <SelectField
+              <ControlledSelectField
+                control={control}
+                name="durationMinutes"
                 label="Duration"
                 placeholder="Select duration"
                 options={DURATION_OPTIONS}
-                value={durationMinutes}
-                onChange={setDurationMinutes}
               />
             </View>
 
             <View className="mt-3">
-              <SelectField
+              <ControlledSelectField
+                control={control}
+                name="category"
                 label="Category"
                 placeholder="Select category"
                 options={CATEGORIES}
-                value={category}
-                onChange={setCategory}
               />
             </View>
 
             <View className="mt-3">
-              <SelectField
+              <ControlledSelectField
+                control={control}
+                name="addOns"
                 label="Add-ons (optional)"
                 placeholder="Select add-ons"
                 options={ADD_ONS}
-                value={addOns}
-                onChange={setAddOns}
                 multiple
               />
             </View>
 
-            {(fieldError ?? serverError) ? (
+            {(formError ?? serverError) ? (
               <Text className="mt-3 text-[13px] text-[#E5484D]">
-                {fieldError ?? serverError}
+                {formError ?? serverError}
               </Text>
             ) : null}
 
             <View className="mt-5">
               <Button
                 label={activeMutation.isPending ? 'Saving…' : 'Save service'}
-                onPress={handleSave}
+                onPress={handleSubmit(onValid)}
                 loading={activeMutation.isPending}
               />
             </View>

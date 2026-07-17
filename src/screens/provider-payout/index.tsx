@@ -1,9 +1,12 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
 import { ActivityIndicator, FlatList, Pressable, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import type { z } from 'zod';
 
 import { Button } from '@/components/button';
 import { EmptyState } from '@/components/empty-state';
@@ -17,9 +20,10 @@ import {
   usePayoutAccount,
   useResolveAccountName,
 } from '@/hooks/services/payouts';
-import type { Bank } from '@/interfaces/provider';
-import { getErrorMessage } from '@/lib/utils';
+import { firstFormError, getErrorMessage } from '@/lib/utils';
 import { createPayoutAccountSchema } from '@/validations/payout';
+
+type PayoutFormValues = z.infer<typeof createPayoutAccountSchema>;
 
 export function ProviderPayoutScreen() {
   const router = useRouter();
@@ -42,16 +46,27 @@ export function ProviderPayoutScreen() {
   } = useBanks();
   const createPayoutAccountMutation = useCreatePayoutAccount();
 
+  const {
+    control,
+    handleSubmit,
+    setValue,
+    formState: { errors },
+  } = useForm<PayoutFormValues>({
+    resolver: zodResolver(createPayoutAccountSchema),
+    defaultValues: { bankCode: '', bankName: '', accountNumber: '' },
+  });
+
   const [search, setSearch] = useState('');
-  const [selectedBank, setSelectedBank] = useState<Bank | null>(null);
-  const [accountNumber, setAccountNumber] = useState('');
-  const [fieldError, setFieldError] = useState<string | null>(null);
+
+  const bankCode = useWatch({ control, name: 'bankCode' });
+  const accountNumber = useWatch({ control, name: 'accountNumber' });
+  const selectedBank = banks?.find((bank) => bank.code === bankCode);
 
   const {
     data: resolvedAccount,
     isFetching: isResolvingAccount,
     isError: isResolveError,
-  } = useResolveAccountName(selectedBank?.code, accountNumber);
+  } = useResolveAccountName(bankCode || undefined, accountNumber);
 
   const filteredBanks = useMemo(() => {
     if (!banks) return [];
@@ -61,21 +76,8 @@ export function ProviderPayoutScreen() {
     );
   }, [banks, search]);
 
-  function handleSubmit() {
-    setFieldError(null);
-
-    const result = createPayoutAccountSchema.safeParse({
-      bankCode: selectedBank?.code ?? '',
-      bankName: selectedBank?.name ?? '',
-      accountNumber,
-    });
-
-    if (!result.success) {
-      setFieldError(result.error.issues[0]?.message ?? 'Invalid input');
-      return;
-    }
-
-    createPayoutAccountMutation.mutate(result.data, {
+  function onValid(data: PayoutFormValues) {
+    createPayoutAccountMutation.mutate(data, {
       onSuccess: () => router.back(),
     });
   }
@@ -83,6 +85,7 @@ export function ProviderPayoutScreen() {
   const serverError = createPayoutAccountMutation.isError
     ? getErrorMessage(createPayoutAccountMutation.error)
     : null;
+  const formError = firstFormError(errors);
 
   if (isAccountError) {
     return (
@@ -192,7 +195,10 @@ export function ProviderPayoutScreen() {
               <Text className="mt-4 text-xs text-[#948F86]">Select bank</Text>
               {selectedBank ? (
                 <Pressable
-                  onPress={() => setSelectedBank(null)}
+                  onPress={() => {
+                    setValue('bankCode', '');
+                    setValue('bankName', '');
+                  }}
                   className="mt-3 flex-row items-center justify-between rounded-[20px] border border-[#ECE7E0] bg-white p-4"
                 >
                   <Text className="text-[15px] text-[#26242A]">
@@ -229,7 +235,10 @@ export function ProviderPayoutScreen() {
                       }
                       renderItem={({ item }) => (
                         <Pressable
-                          onPress={() => setSelectedBank(item)}
+                          onPress={() => {
+                            setValue('bankCode', item.code);
+                            setValue('bankName', item.name);
+                          }}
                           className="border-b border-[#ECE7E0] py-3"
                         >
                           <Text className="text-[15px] text-[#26242A]">
@@ -251,7 +260,7 @@ export function ProviderPayoutScreen() {
                     placeholder="Account number"
                     placeholderTextColor="#A8A39B"
                     value={accountNumber}
-                    onChangeText={setAccountNumber}
+                    onChangeText={(text) => setValue('accountNumber', text)}
                     keyboardType="number-pad"
                     className="mt-1 rounded-[16px] border border-[#ECE7E0] bg-white px-4 py-3.5 text-[15px] text-[#26242A]"
                     style={{ outlineWidth: 0 }}
@@ -304,9 +313,9 @@ export function ProviderPayoutScreen() {
                 </Text>
               ) : null}
 
-              {(fieldError ?? serverError) ? (
+              {(formError ?? serverError) ? (
                 <Text className="mt-3 text-[13px] text-[#E5484D]">
-                  {fieldError ?? serverError}
+                  {formError ?? serverError}
                 </Text>
               ) : null}
 
@@ -318,7 +327,7 @@ export function ProviderPayoutScreen() {
                         ? 'Saving…'
                         : 'Save and continue'
                     }
-                    onPress={handleSubmit}
+                    onPress={handleSubmit(onValid)}
                     loading={createPayoutAccountMutation.isPending}
                     disabled={!resolvedAccount?.accountName}
                   />
