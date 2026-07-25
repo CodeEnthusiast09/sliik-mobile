@@ -1,56 +1,69 @@
-# Welcome to your Expo app 👋
+# Sliik Mobile
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Expo (Expo Router) client for **Sliik**, a beauty and grooming appointment booking marketplace. Customers discover, book, and pay local service providers; providers manage their services, availability, portfolio, and earnings.
 
-## Get started
+Talks to the [`sliik-backend`](../sliik-backend) NestJS API — no business logic lives in this repo.
 
-1. Install dependencies
+## Tech Stack
 
-   ```bash
-   npm install
-   ```
+- **Framework**: Expo SDK 57 + Expo Router (file-based routing, typed routes)
+- **Language**: TypeScript (strict), React 19 / React Native 0.86
+- **Data**: TanStack Query (server state) + Zustand (client state)
+- **Forms**: react-hook-form + zod
+- **Styling**: NativeWind (Tailwind)
+- **Realtime**: socket.io-client
+- **HTTP**: axios
 
-2. Start the app
+## Project Structure
 
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+src/
+├── app/                  # Expo Router routes only (thin, no UI logic)
+├── screens/              # real screen UI — routes render these
+├── components/           # globally reusable UI
+├── hooks/
+│   ├── common/           # cross-cutting hooks (use-chat-socket, use-notifications-socket, ...)
+│   └── services/         # TanStack Query hooks, grouped by domain
+├── services/             # raw axios calls per domain (no React)
+├── store/                # Zustand global non-server state
+├── interfaces/           # shared TS types
+├── lib/                  # third-party singletons (socket, query-client), constants, utils
+└── validations/          # Zod schemas per domain
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Path aliases: `@/*` → `./src/*`, `@/assets/*` → `./assets/*`.
 
-### Other setup steps
+## Getting Started
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+Prerequisites: Node.js, npm, Expo Go (or a dev build), and the `sliik-backend` API running/reachable.
 
-## Learn more
+```bash
+npm install
+cp .env.example .env    # fill in the values described below
+npm run start            # start the Expo dev server
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+Then run `npm run ios`, `npm run android`, or `npm run web` for a specific target.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Environment Variables
 
-## Join the community
+Only `EXPO_PUBLIC_*` variables reach the client bundle — never put real secrets in `.env`.
 
-Join our community of developers creating universal apps.
+| Variable | Purpose |
+|---|---|
+| `EXPO_PUBLIC_API_URL` | Base URL of the `sliik-backend` API |
+| `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` | Google web client ID for Google Sign-In |
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Scripts
+
+| Script | Description |
+|---|---|
+| `npm run start` | Start the Expo dev server |
+| `npm run android` | Start with Android target |
+| `npm run ios` | Start with iOS target (macOS only) |
+| `npm run web` | Start with web target |
+| `npm run lint` | Lint (`expo lint`) |
+
+## License
+
+Private, unlicensed portfolio project.
