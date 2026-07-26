@@ -1,8 +1,22 @@
 import { Message } from "@/interfaces/chat";
 import { formatTime12hLabel } from "@/lib/utils";
 import { Image } from "expo-image";
-import { Pressable, Text } from "react-native";
+import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { PendingVoiceMessage, VoiceMessagePlayer } from "./voice-message-player";
+
+// Shown in place of the real image while it's still uploading (no mediaUrl
+// yet) - same footprint as the real image so the bubble doesn't jump in size
+// once the upload finishes.
+function PendingImageMessage() {
+  return (
+    <View
+      style={{ width: 200, height: 200, borderRadius: 12 }}
+      className="items-center justify-center bg-[#0000000D]"
+    >
+      <ActivityIndicator size="small" color="#4B2E46" />
+    </View>
+  );
+}
 
 // Nothing to show for a message the server hasn't confirmed yet - once it
 // has, "Sent" holds until the other party actually opens the thread.
@@ -48,18 +62,29 @@ export const MessageBubble = ({
         </Text>
       ) : (
         <>
-          {message.type === 'image' && message.mediaUrl ? (
-            <Pressable onPress={() => onPressImage?.(message.mediaUrl!)}>
-              <Image
-                source={{ uri: message.mediaUrl }}
-                style={{ width: 200, height: 200, borderRadius: 12 }}
-                contentFit="cover"
-              />
-            </Pressable>
+          {message.type === 'image' ? (
+            message.mediaUrl ? (
+              <Pressable
+                onPress={() => onPressImage?.(message.mediaUrl!)}
+                onLongPress={handleLongPress}
+              >
+                <Image
+                  source={{ uri: message.mediaUrl }}
+                  style={{ width: 200, height: 200, borderRadius: 12 }}
+                  contentFit="cover"
+                />
+              </Pressable>
+            ) : (
+              <PendingImageMessage />
+            )
           ) : null}
           {message.type === 'audio' ? (
             message.mediaUrl ? (
-              <VoiceMessagePlayer uri={message.mediaUrl} isMine={isMine} />
+              <VoiceMessagePlayer
+                uri={message.mediaUrl}
+                isMine={isMine}
+                onLongPress={handleLongPress}
+              />
             ) : (
               <PendingVoiceMessage isMine={isMine} />
             )

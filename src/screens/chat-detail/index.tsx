@@ -7,6 +7,7 @@ import {
 } from 'expo-audio';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
+import type { ImagePickerAsset } from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -48,13 +49,19 @@ import {
 import { useAuthStore } from '@/store/auth';
 import { showToast } from '@/store/toast';
 import { DayDivider } from './_components/day-divider';
+import { ImagePreviewModal } from './_components/image-preview-modal';
 import { MessageBubble } from './_components/message-bubble';
+import { RecordButton } from './_components/record-button';
 import { RecordingVisualizer } from './_components/recording-visualizer';
 
 /** One line of input text at lineHeight 24. */
 const INPUT_LINE_HEIGHT = 24;
 /** Max input content height before internal scrolling (~4 lines). */
 const INPUT_MAX_HEIGHT = 96;
+/** Below this, a release is treated as an accidental tap and discarded
+ * instead of sent - otherwise a quick tap on the mic produces a real,
+ * near-silent voice message with a "0:00" duration. */
+const MIN_RECORDING_DURATION_MS = 500;
 
 function clampInputHeight(height: number): number {
   return Math.min(Math.max(height, INPUT_LINE_HEIGHT), INPUT_MAX_HEIGHT);
@@ -124,14 +131,29 @@ export function ChatDetailScreen() {
   const [text, setText] = useState('');
   const [contentHeight, setContentHeight] = useState(INPUT_LINE_HEIGHT);
   const [viewerImageUrl, setViewerImageUrl] = useState<string | null>(null);
+  const [pendingImageAsset, setPendingImageAsset] = useState<ImagePickerAsset | null>(
+    null,
+  );
   const [menuVisible, setMenuVisible] = useState(false);
   const [reportModalVisible, setReportModalVisible] = useState(false);
   const [bookingCardDismissed, setBookingCardDismissed] = useState(false);
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(
     null,
   );
+  // True once a held recording has been dragged past the lock threshold -
+  // it then keeps recording hands-free and switches to the expanded row
+  // (visualizer/timer/send). RecordButton itself must stay mounted for the
+  // full press-and-hold gesture, so this (not recorderState.isRecording)
+  // is what the row layout below switches on.
+  const [isLocked, setIsLocked] = useState(false);
   const listRef = useRef<FlatList<Message>>(null);
   const previousMessageCountRef = useRef(0);
+  const recordingStartedAtRef = useRef<number | null>(null);
+  // handleStartRecording is fire-and-forget from the gesture (onBegin
+  // doesn't await it), so a release quick enough can otherwise call
+  // recorder.stop() before prepareToRecordAsync()/record() have even
+  // resolved. Stop/cancel await this first so they never race the start.
+  const recordingStartPromiseRef = useRef<Promise<void>>(Promise.resolve());
 
   // A single delayed scrollToEnd still lands short on web: markRead fires
   // right after every new message and invalidates the messages query,
@@ -200,35 +222,67 @@ export function ChatDetailScreen() {
     });
     if (result.canceled) return;
 
+    // Hands off to the preview modal instead of uploading immediately - the
+    // user can rotate/crop before anything is sent.
+    setPendingImageAsset(result.assets[0]);
+  }
+
+  async function handleSendImage(finalAsset: ImagePickerAsset) {
+    setPendingImageAsset(null);
+
+    // Bubble appears right away, same pattern as handleStopAndSendRecording -
+    // the real message replaces it once the upload + socket round trip finish.
+    const clientId = beginPendingMessage('image');
+
     try {
-      const uploadResponse = await uploadImageMutation.mutateAsync(
-        result.assets[0],
-      );
+      const uploadResponse = await uploadImageMutation.mutateAsync(finalAsset);
       if (uploadResponse.data) {
-        sendMessage('', { type: 'image', mediaUrl: uploadResponse.data.url });
+        sendMessage('', {
+          type: 'image',
+          mediaUrl: uploadResponse.data.url,
+          clientId,
+        });
+      } else {
+        removePendingMessage(clientId);
       }
     } catch (err) {
+      removePendingMessage(clientId);
       showToast(getErrorMessage(err), 'error');
     }
   }
 
-  async function handleStartRecording() {
-    const { granted } = await requestRecordingPermissionsAsync();
-    if (!granted) {
-      showToast(
-        'Microphone permission is required to record a voice message',
-        'error',
-      );
-      return;
-    }
-    await recorder.prepareToRecordAsync();
-    recorder.record();
+  function handleStartRecording() {
+    recordingStartPromiseRef.current = (async () => {
+      const { granted } = await requestRecordingPermissionsAsync();
+      if (!granted) {
+        showToast(
+          'Microphone permission is required to record a voice message',
+          'error',
+        );
+        return;
+      }
+      await recorder.prepareToRecordAsync();
+      recorder.record();
+      recordingStartedAtRef.current = Date.now();
+    })();
   }
 
   async function handleStopAndSendRecording() {
+    setIsLocked(false);
+    await recordingStartPromiseRef.current;
     await recorder.stop();
     const uri = recorder.uri;
+    const startedAt = recordingStartedAtRef.current;
+    recordingStartedAtRef.current = null;
     if (!uri) return;
+
+    // A tap that never really held down still starts/stops a recording -
+    // without this it sends a real, near-silent message with a "0:00"
+    // duration instead of being treated as an accidental tap.
+    if (startedAt && Date.now() - startedAt < MIN_RECORDING_DURATION_MS) {
+      showToast('Recording too short', 'warning');
+      return;
+    }
 
     // Bubble appears right away (with a spinner, no playable audio yet)
     // instead of only after the Cloudinary upload + socket round trip
@@ -253,6 +307,9 @@ export function ChatDetailScreen() {
   }
 
   async function handleCancelRecording() {
+    setIsLocked(false);
+    await recordingStartPromiseRef.current;
+    recordingStartedAtRef.current = null;
     await recorder.stop();
   }
 
@@ -510,7 +567,7 @@ export function ChatDetailScreen() {
               />
             )}
 
-            {recorderState.isRecording ? (
+            {isLocked ? (
               <View className="flex-row items-center gap-2 py-3">
                 <Pressable
                   onPress={handleCancelRecording}
@@ -533,22 +590,17 @@ export function ChatDetailScreen() {
                   hitSlop={4}
                   className="h-12 w-12 items-center justify-center rounded-full bg-[#4B2E46]"
                 >
-                  <Ionicons name="checkmark" size={22} color="#F7EFE4" />
+                  <Ionicons name="send" size={20} color="#F7EFE4" />
                 </Pressable>
               </View>
             ) : (
               <View className="flex-row items-end gap-2 py-3">
                 <Pressable
                   onPress={handleAttachPhoto}
-                  disabled={uploadImageMutation.isPending}
                   hitSlop={4}
                   className="h-12 w-12 items-center justify-center rounded-full border border-[#ECE7E0] bg-white"
                 >
-                  {uploadImageMutation.isPending ? (
-                    <ActivityIndicator size="small" color="#4B2E46" />
-                  ) : (
-                    <Ionicons name="add" size={22} color="#4B2E46" />
-                  )}
+                  <Ionicons name="add" size={22} color="#4B2E46" />
                 </Pressable>
 
                 <View className="flex-1 flex-row items-end rounded-[24px] border border-[#ECE7E0] bg-white py-[11px] pl-5 pr-3">
@@ -570,28 +622,35 @@ export function ChatDetailScreen() {
                       overflow: 'hidden',
                     }}
                   />
-                  <Pressable
-                    onPress={text.trim() ? handleSend : handleStartRecording}
-                    disabled={uploadAudioMutation.isPending}
-                    hitSlop={8}
-                    className="h-6 w-6 items-center justify-center"
-                  >
-                    {uploadAudioMutation.isPending ? (
-                      <ActivityIndicator size="small" color="#4B2E46" />
-                    ) : (
-                      <Ionicons
-                        name={text.trim() ? 'send' : 'mic-outline'}
-                        size={20}
-                        color="#4B2E46"
-                      />
-                    )}
-                  </Pressable>
+                  {text.trim() ? (
+                    <Pressable
+                      onPress={handleSend}
+                      hitSlop={8}
+                      className="h-6 w-6 items-center justify-center"
+                    >
+                      <Ionicons name="send" size={20} color="#4B2E46" />
+                    </Pressable>
+                  ) : (
+                    <RecordButton
+                      onStart={handleStartRecording}
+                      onCancel={handleCancelRecording}
+                      onLock={() => setIsLocked(true)}
+                      onSend={handleStopAndSendRecording}
+                    />
+                  )}
                 </View>
               </View>
             )}
           </KeyboardAvoidingView>
         </View>
       </SafeAreaView>
+
+      <ImagePreviewModal
+        key={pendingImageAsset?.uri ?? 'none'}
+        asset={pendingImageAsset}
+        onCancel={() => setPendingImageAsset(null)}
+        onSend={handleSendImage}
+      />
 
       <Modal
         visible={viewerImageUrl !== null}

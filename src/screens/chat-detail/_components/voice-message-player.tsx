@@ -1,17 +1,11 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import {
-  requestRecordingPermissionsAsync,
-  useAudioPlayer,
-  useAudioPlayerStatus,
-  useAudioSampleListener,
-  type AudioPlayer,
-  type AudioSample,
-} from 'expo-audio';
+import { useAudioPlayer, useAudioPlayerStatus, type AudioPlayer } from 'expo-audio';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Text, View, type LayoutChangeEvent } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { runOnJS } from 'react-native-reanimated';
 
 const BAR_COUNT = 20;
-const RESTING_LEVEL = 0.12;
 
 // Only one voice message should play at a time across the whole thread.
 // Tracked as a plain module variable rather than React/Zustand state -
@@ -27,42 +21,37 @@ function formatDuration(seconds: number): string {
   return `${mins}:${String(secs).padStart(2, '0')}`;
 }
 
-// Root-mean-square of the frame amplitudes (-1..1) as a single 0..1 level
-// for this sample tick - a standard, cheap loudness estimate.
-function amplitudeOf(sample: AudioSample): number {
-  const frames = sample.channels[0]?.frames ?? [];
-  if (frames.length === 0) return 0;
-  const sumSquares = frames.reduce((sum, frame) => sum + frame * frame, 0);
-  return Math.sqrt(sumSquares / frames.length);
+function clamp01(value: number): number {
+  return Math.min(Math.max(value, 0), 1);
 }
+
+// Fixed, decorative bar heights (0..1) - purely visual now that bars track
+// playback position instead of live volume, so they never need to change.
+const BAR_HEIGHTS = Array.from({ length: BAR_COUNT }, (_, i) => {
+  const wave = Math.sin(i * 1.7) * 0.5 + 0.5;
+  return 0.35 + wave * 0.65;
+});
 
 export function VoiceMessagePlayer({
   uri,
   isMine,
+  onLongPress,
 }: {
   uri: string;
   isMine: boolean;
+  onLongPress?: () => void;
 }) {
   const player = useAudioPlayer(uri);
   const status = useAudioPlayerStatus(player);
-  const [levels, setLevels] = useState<number[]>(() =>
-    Array(BAR_COUNT).fill(RESTING_LEVEL),
-  );
-  // Audio sampling needs RECORD_AUDIO permission on Android even though
-  // this is playback, not recording - request it best-effort. Playback
-  // itself still works without it, the bars just stay at rest.
-  const [samplingAllowed, setSamplingAllowed] = useState(false);
+  const [rowWidth, setRowWidth] = useState(0);
+  // Non-null while the user is actively dragging - overrides the
+  // playback-derived fraction so the bars respond instantly instead of
+  // waiting on the next player status tick.
+  const [dragFraction, setDragFraction] = useState<number | null>(null);
 
-  useEffect(() => {
-    requestRecordingPermissionsAsync()
-      .then(({ granted }) => setSamplingAllowed(granted))
-      .catch(() => setSamplingAllowed(false));
-  }, []);
-
-  useAudioSampleListener(player, (sample) => {
-    if (!samplingAllowed) return;
-    setLevels((previous) => [...previous.slice(1), amplitudeOf(sample)]);
-  });
+  function handleLayout(event: LayoutChangeEvent) {
+    setRowWidth(event.nativeEvent.layout.width);
+  }
 
   // Release this bubble's claim on "the" active player when it unmounts,
   // so a stale reference can't get paused if another bubble reuses the slot.
@@ -73,17 +62,6 @@ export function VoiceMessagePlayer({
       }
     };
   }, [player]);
-
-  // Adjusting state during render (React's documented pattern for reacting
-  // to a prop/status change) rather than in an effect - resets the bars to
-  // rest the moment playback stops instead of one render later.
-  const [prevPlaying, setPrevPlaying] = useState(status.playing);
-  if (status.playing !== prevPlaying) {
-    setPrevPlaying(status.playing);
-    if (!status.playing) {
-      setLevels(Array(BAR_COUNT).fill(RESTING_LEVEL));
-    }
-  }
 
   function handleToggle() {
     if (status.playing) {
@@ -101,8 +79,44 @@ export function VoiceMessagePlayer({
     player.play();
   }
 
+  function handleSeek(fraction: number) {
+    if (status.duration > 0) {
+      player.seekTo(fraction * status.duration);
+    }
+    setDragFraction(null);
+  }
+
+  const playedFraction =
+    dragFraction ??
+    (status.duration > 0 ? status.currentTime / status.duration : 0);
+
+  // A real drag moves past this before ~500ms of holding still would elapse,
+  // handing the gesture to Pan; a still hold instead resolves to LongPress -
+  // same distinction WhatsApp itself makes between scrubbing and selecting.
+  const barLongPress = Gesture.LongPress().onStart(() => {
+    if (onLongPress) runOnJS(onLongPress)();
+  });
+  const barPan = Gesture.Pan()
+    .minDistance(0)
+    .onUpdate((event) => {
+      if (rowWidth <= 0) return;
+      runOnJS(setDragFraction)(clamp01(event.x / rowWidth));
+    })
+    .onEnd((event) => {
+      if (rowWidth <= 0) return;
+      runOnJS(handleSeek)(clamp01(event.x / rowWidth));
+    });
+  const barGesture = Gesture.Race(barLongPress, barPan);
+
+  const iconTap = Gesture.Tap().onEnd((_event, success) => {
+    if (success) runOnJS(handleToggle)();
+  });
+  const iconLongPress = Gesture.LongPress().onStart(() => {
+    if (onLongPress) runOnJS(onLongPress)();
+  });
+  const iconGesture = Gesture.Race(iconLongPress, iconTap);
+
   const iconColor = isMine ? '#F7EFE4' : '#4B2E46';
-  const barColor = isMine ? '#F7EFE4' : '#4B2E46';
   // Counts down remaining time once playback has started, otherwise shows
   // the total length - same convention as WhatsApp/iMessage voice notes.
   const displaySeconds =
@@ -111,37 +125,43 @@ export function VoiceMessagePlayer({
       : status.duration;
 
   return (
-    <Pressable
-      onPress={handleToggle}
-      className="flex-row items-center gap-2 py-1"
-      style={{ minWidth: 190 }}
-    >
-      <View
-        className={`h-9 w-9 items-center justify-center rounded-full ${isMine ? 'bg-white/15' : 'bg-[#4B2E4614]'}`}
-      >
-        <Ionicons
-          name={status.playing ? 'pause' : 'play'}
-          size={16}
-          color={iconColor}
-        />
-      </View>
-      <View className="h-6 flex-1 flex-row items-center gap-[2px]">
-        {levels.map((level, index) => (
-          <View
-            key={index}
-            className="flex-1 rounded-full"
-            style={{
-              height: Math.max(3, level * 24),
-              backgroundColor: barColor,
-              opacity: isMine ? 0.85 : 0.7,
-            }}
+    <View className="flex-row items-center gap-2 py-1" style={{ minWidth: 190 }}>
+      <GestureDetector gesture={iconGesture}>
+        <View
+          className={`h-9 w-9 items-center justify-center rounded-full ${isMine ? 'bg-white/15' : 'bg-[#4B2E4614]'}`}
+        >
+          <Ionicons
+            name={status.playing ? 'pause' : 'play'}
+            size={16}
+            color={iconColor}
           />
-        ))}
-      </View>
+        </View>
+      </GestureDetector>
+      <GestureDetector gesture={barGesture}>
+        <View
+          onLayout={handleLayout}
+          className="h-6 flex-1 flex-row items-center gap-[2px]"
+        >
+          {BAR_HEIGHTS.map((barHeight, index) => {
+            const isPlayed = index / BAR_COUNT < playedFraction;
+            return (
+              <View
+                key={index}
+                className="flex-1 rounded-full"
+                style={{
+                  height: Math.max(3, barHeight * 24),
+                  backgroundColor: isMine ? '#F7EFE4' : '#4B2E46',
+                  opacity: isPlayed ? (isMine ? 0.85 : 0.7) : (isMine ? 0.35 : 0.3),
+                }}
+              />
+            );
+          })}
+        </View>
+      </GestureDetector>
       <Text className={`text-[13px] ${isMine ? 'text-[#F7EFE4]' : 'text-[#26242A]'}`}>
         {formatDuration(displaySeconds)}
       </Text>
-    </Pressable>
+    </View>
   );
 }
 
@@ -159,14 +179,14 @@ export function PendingVoiceMessage({ isMine }: { isMine: boolean }) {
         <ActivityIndicator size="small" color={isMine ? '#F7EFE4' : '#4B2E46'} />
       </View>
       <View className="h-6 flex-1 flex-row items-center gap-[2px]">
-        {Array.from({ length: BAR_COUNT }).map((_, index) => (
+        {BAR_HEIGHTS.map((barHeight, index) => (
           <View
             key={index}
             className="flex-1 rounded-full"
             style={{
-              height: RESTING_LEVEL * 24,
+              height: Math.max(3, barHeight * 24),
               backgroundColor: barColor,
-              opacity: isMine ? 0.5 : 0.4,
+              opacity: isMine ? 0.35 : 0.3,
             }}
           />
         ))}
