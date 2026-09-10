@@ -1,11 +1,13 @@
+// /home/oblee/Desktop/projects/sliik-mobile/src/hooks/common/use-notification-deeplink.ts
+
 import { router } from 'expo-router';
-import * as Notifications from 'expo-notifications';
 import { useEffect } from 'react';
 import { Platform } from 'react-native';
 
 import type { NotificationData } from '@/interfaces/notification';
+import { isExpoGo, loadNotifications } from '@/lib/notifications-module';
 
-function redirect(data: NotificationData | undefined) {
+function redirect(data: NotificationData | undefined): void {
   if (!data) return;
   if (data.bookingId) {
     router.push({ pathname: '/bookings/[id]', params: { id: data.bookingId } });
@@ -18,12 +20,14 @@ function redirect(data: NotificationData | undefined) {
 
 // Handles both a tap that relaunches the app from a killed state
 // (getLastNotificationResponse) and one received while already running.
-export function useNotificationDeeplink() {
+// No-ops on web and in Expo Go - see `@/lib/notifications-module` for why
+// we never statically import `expo-notifications`.
+export function useNotificationDeeplink(): void {
   useEffect(() => {
-    // getLastNotificationResponse/addNotificationResponseReceivedListener
-    // are native-only - the former throws outright on web rather than
-    // no-op'ing, so this whole hook is skipped there.
     if (Platform.OS === 'web') return;
+    if (isExpoGo) return;
+
+    const Notifications = loadNotifications();
 
     const lastResponse = Notifications.getLastNotificationResponse();
     if (lastResponse) {

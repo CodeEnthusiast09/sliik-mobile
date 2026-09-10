@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-import { registerForPushNotificationsAsync } from '@/lib/push-notifications';
+import { initializeNotificationHandler, registerForPushNotificationsAsync } from '@/lib/push-notifications';
 import { registerPushToken } from '@/services/notifications';
 import { usePushTokenStore } from '@/store/push-token';
 import { useAuthStore } from '@/store/auth';
@@ -8,6 +8,13 @@ import { useAuthStore } from '@/store/auth';
 export function usePushTokenRegistration() {
   const accessToken = useAuthStore((state) => state.accessToken);
   const setToken = usePushTokenStore((state) => state.setToken);
+
+  useEffect(() => {
+    initializeNotificationHandler().catch(() => {
+      // Non-critical - foreground notification presentation just won't be
+      // configured; the app continues to function normally otherwise.
+    });
+  }, []);
 
   useEffect(() => {
     if (!accessToken) return;
