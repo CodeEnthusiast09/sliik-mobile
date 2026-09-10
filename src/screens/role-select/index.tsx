@@ -45,11 +45,10 @@ function RoleCard({
     <Pressable
       onPress={onPress}
       style={CARD_SHADOW}
-      className={`relative rounded-[20px] ${
-        selected
-          ? 'border-2 border-[#4B2E46] bg-[#F6EEF3]'
-          : 'border border-[#ECE7E0] bg-white'
-      }`}
+      className={`relative rounded-[20px] ${selected
+        ? 'border-2 border-[#4B2E46] bg-[#F6EEF3]'
+        : 'border border-[#ECE7E0] bg-white'
+        }`}
     >
       <View
         className="justify-center gap-2 py-5 pl-5"
@@ -120,7 +119,7 @@ export function RoleSelectScreen() {
             most.
           </Text>
 
-          <View className="mt-6 gap-4">
+          <View className="mt-12 gap-20">
             <RoleCard
               title="Customer"
               tag="Book services"
