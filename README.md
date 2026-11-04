@@ -6,8 +6,8 @@ Talks to the [`sliik-backend`](../sliik-backend) NestJS API — no business logi
 
 ## Tech Stack
 
-- **Framework**: Expo SDK 57 + Expo Router (file-based routing, typed routes)
-- **Language**: TypeScript (strict), React 19 / React Native 0.86
+- **Framework**: Expo SDK 58 + Expo Router (file-based routing, typed routes)
+- **Language**: TypeScript (strict), React 19.3 / React Native 0.88
 - **Data**: TanStack Query (server state) + Zustand (client state)
 - **Forms**: react-hook-form + zod
 - **Styling**: NativeWind (Tailwind)
