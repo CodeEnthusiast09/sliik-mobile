@@ -14,9 +14,9 @@ export function NotificationBell({ onPress }: NotificationBellProps) {
     <Pressable
       onPress={onPress}
       hitSlop={10}
-      className="h-9 w-9 items-center justify-center"
+      className="h-7 w-7 items-center justify-center"
     >
-      <Ionicons name="notifications-outline" size={28} color="#4B2E46" />
+      <Ionicons name="notifications-outline" size={24} color="#4B2E46" />
       {!!unreadCount && (
         <View className="absolute right-[-2px] top-[-2px] h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#E5484D] px-1">
           <Text className="text-[11px] font-bold text-white">

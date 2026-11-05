@@ -102,55 +102,57 @@ export function AuthScreen() {
   return (
     <View className="flex-1 bg-white">
       <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
-        <Pressable
-          onPress={() => router.back()}
-          hitSlop={8}
-          className="absolute left-4 top-2 z-10 h-10 w-10 items-center justify-center"
-        >
-          <Ionicons name="arrow-back" size={26} color="#4B2E46" />
-        </Pressable>
-
-        <KeyboardAvoidingView
-          className="flex-1"
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        >
-          <ScrollView
-            contentContainerClassName="grow justify-center px-6 py-6"
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
+        <View className="flex-1">
+          <Pressable
+            onPress={() => router.back()}
+            hitSlop={8}
+            className="absolute left-4 top-2 z-10 h-10 w-10 items-center justify-center"
           >
-            <Animated.View layout={CHROME_TRANSITION}>
-              <SliikWordmark height={38} />
-            </Animated.View>
+            <Ionicons name="arrow-back" size={26} color="#4B2E46" />
+          </Pressable>
 
-            <Animated.View style={{ marginTop: 48 }} layout={CHROME_TRANSITION}>
-              <AuthTabs active={mode} onChange={handleModeChange} />
-            </Animated.View>
-
-            <Animated.View
-              style={{ marginTop: 24 }}
-              layout={CHROME_TRANSITION}
+          <KeyboardAvoidingView
+            className="flex-1"
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          >
+            <ScrollView
+              contentContainerClassName="grow justify-center px-6 py-6"
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
             >
-              {mode === 'signin' ? (
-                <Animated.View
-                  key="signin"
-                  entering={hasToggledOnce ? slideInFrom(SLIDE_OFFSET) : undefined}
-                  exiting={slideOutTo(SLIDE_OFFSET)}
-                >
-                  <SignInForm email={email} onChangeEmail={setEmail} />
-                </Animated.View>
-              ) : (
-                <Animated.View
-                  key="signup"
-                  entering={hasToggledOnce ? slideInFrom(-SLIDE_OFFSET) : undefined}
-                  exiting={slideOutTo(-SLIDE_OFFSET)}
-                >
-                  <SignUpForm role={role} email={email} onChangeEmail={setEmail} />
-                </Animated.View>
-              )}
-            </Animated.View>
-          </ScrollView>
-        </KeyboardAvoidingView>
+              <Animated.View layout={CHROME_TRANSITION}>
+                <SliikWordmark height={38} />
+              </Animated.View>
+
+              <Animated.View style={{ marginTop: 48 }} layout={CHROME_TRANSITION}>
+                <AuthTabs active={mode} onChange={handleModeChange} />
+              </Animated.View>
+
+              <Animated.View
+                style={{ marginTop: 24 }}
+                layout={CHROME_TRANSITION}
+              >
+                {mode === 'signin' ? (
+                  <Animated.View
+                    key="signin"
+                    entering={hasToggledOnce ? slideInFrom(SLIDE_OFFSET) : undefined}
+                    exiting={slideOutTo(SLIDE_OFFSET)}
+                  >
+                    <SignInForm email={email} onChangeEmail={setEmail} />
+                  </Animated.View>
+                ) : (
+                  <Animated.View
+                    key="signup"
+                    entering={hasToggledOnce ? slideInFrom(-SLIDE_OFFSET) : undefined}
+                    exiting={slideOutTo(-SLIDE_OFFSET)}
+                  >
+                    <SignUpForm role={role} email={email} onChangeEmail={setEmail} />
+                  </Animated.View>
+                )}
+              </Animated.View>
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </View>
       </SafeAreaView>
     </View>
   );

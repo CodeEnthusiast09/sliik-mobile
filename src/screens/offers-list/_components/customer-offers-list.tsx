@@ -90,7 +90,7 @@ export function CustomerOffersList({
                   <Pressable
                     onPress={() =>
                       router.push({
-                        pathname: '/offers/[id]',
+                        pathname: '/deals/offers/[id]',
                         params: { id: item.id },
                       })
                     }
@@ -168,7 +168,7 @@ export function CustomerOffersList({
           <View className="mb-24 mt-3">
             <Button
               label="Post offer"
-              onPress={() => router.push('/offers/new')}
+              onPress={() => router.push('/deals/offers/new')}
               leftIcon={
                 <View className="h-6 w-6 items-center justify-center rounded-full bg-[#F7EFE4]">
                   <Ionicons name="add" size={16} color="#4B2E46" />

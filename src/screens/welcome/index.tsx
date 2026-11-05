@@ -1,4 +1,5 @@
 import { Image } from 'expo-image';
+import { NavigationBar } from 'expo-navigation-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -13,6 +14,7 @@ export function WelcomeScreen() {
   return (
     <View className="flex-1 bg-black">
       <StatusBar style="light" />
+      <NavigationBar style="dark" />
 
       <Image
         source={require('../../../assets/images/onboarding-hero.webp')}

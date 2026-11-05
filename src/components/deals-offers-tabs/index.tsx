@@ -67,7 +67,9 @@ export function DealsOffersTabs({
       (finished) => {
         if (!finished) return;
         runOnJS(setPendingTarget)(null);
-        runOnJS(router.replace)(target === 'deals' ? '/deals' : '/offers');
+        runOnJS(router.replace)(
+          target === 'deals' ? '/deals' : '/deals/offers',
+        );
       },
     );
   }, [localActive, pendingTarget, thumbWidth, translateX, router]);
@@ -84,7 +86,7 @@ export function DealsOffersTabs({
     if (target === localActive) return;
 
     if (thumbWidth === 0) {
-      router.replace(target === 'deals' ? '/deals' : '/offers');
+      router.replace(target === 'deals' ? '/deals' : '/deals/offers');
       return;
     }
 

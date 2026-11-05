@@ -111,7 +111,7 @@ export function AnimatedSplashScreen({
           <Animated.Text
             style={[
               {
-                fontFamily: 'Fraunces_700Bold',
+                fontFamily: 'PlusJakartaSans_700Bold',
                 color: '#FFFFFF',
                 fontSize: markHeight * (28 / 30),
                 marginLeft: markHeight * (-3 / 30),
@@ -125,7 +125,7 @@ export function AnimatedSplashScreen({
         <Animated.Text
           style={[
             {
-              fontFamily: 'Fraunces_400Regular',
+                fontFamily: 'PlusJakartaSans_400Regular',
               color: '#FFFFFF',
               fontSize: markHeight * 0.15,
               marginTop: markHeight * 0.12,

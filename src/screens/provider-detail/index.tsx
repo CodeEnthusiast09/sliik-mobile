@@ -106,7 +106,7 @@ export function ProviderDetailScreen() {
   const hasMoreReviews = (userReviews?.totalReviews ?? 0) > REVIEWS_PREVIEW_COUNT;
 
   function handleShare() {
-    const link = Linking.createURL(`/home/${provider!.id}`);
+    const link = Linking.createURL(`/provider/${provider!.id}`);
     Share.share({
       message: `Check out ${provider!.fullName} (${formatTradeTypeLabel(provider!.tradeType)}) on Sliik! ${link}`,
     });

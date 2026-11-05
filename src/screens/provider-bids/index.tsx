@@ -250,7 +250,7 @@ export function ProviderBidsScreen() {
                     response={item}
                     onPress={() =>
                       router.push({
-                        pathname: '/offers/[id]',
+                        pathname: '/deals/offers/[id]',
                         params: { id: item.offerId },
                       })
                     }

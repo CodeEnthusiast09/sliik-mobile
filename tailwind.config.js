@@ -5,9 +5,9 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        serif: ['Fraunces_600SemiBold'],
-        'serif-bold': ['Fraunces_700Bold'],
-        'serif-regular': ['Fraunces_400Regular'],
+        serif: ['PlusJakartaSans_600SemiBold'],
+        'serif-bold': ['PlusJakartaSans_700Bold'],
+        'serif-regular': ['PlusJakartaSans_400Regular'],
       },
     },
   },

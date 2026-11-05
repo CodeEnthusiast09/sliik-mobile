@@ -49,11 +49,11 @@ export const Brand = {
   charcoal: '#202124',
 } as const;
 
-/** Fraunces display serif weights (loaded via @expo-google-fonts/fraunces). */
+/** Plus Jakarta Sans weights (loaded via @expo-google-fonts/plus-jakarta-sans). */
 export const DisplayFont = {
-  regular: 'Fraunces_400Regular',
-  semibold: 'Fraunces_600SemiBold',
-  bold: 'Fraunces_700Bold',
+  regular: 'PlusJakartaSans_400Regular',
+  semibold: 'PlusJakartaSans_600SemiBold',
+  bold: 'PlusJakartaSans_700Bold',
 } as const;
 
 export const Fonts = Platform.select({
@@ -99,15 +99,14 @@ export const MaxContentWidth = 800;
 // with `undefined` would fall back to React Navigation's plain default bar instead.
 export const TAB_BAR_STYLE = {
   position: 'absolute' as const,
-  left: 12,
-  right: 12,
-  bottom: Platform.select({ ios: 28, default: 16 }),
-  height: 64,
-  borderRadius: 32,
+  marginHorizontal: 24,
+  bottom: 36,
+  height: 60,
+  borderRadius: 28,
   backgroundColor: '#FFFFFF',
   borderTopWidth: 0,
-  paddingTop: 4,
-  paddingBottom: 4,
+  paddingTop: 2,
+  paddingBottom: 2,
   shadowColor: '#000',
   shadowOpacity: 0.1,
   shadowRadius: 16,

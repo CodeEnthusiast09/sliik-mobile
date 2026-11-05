@@ -1,4 +1,4 @@
-import { create } from 'axios';
+import { create, isAxiosError } from 'axios';
 
 import { useAuthStore } from '@/store/auth';
 
@@ -17,3 +17,14 @@ apiClient.interceptors.request.use((config) => {
   }
   return config;
 });
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error: unknown) => {
+    if (isAxiosError(error) && error.response?.status === 401) {
+      useAuthStore.getState().clearAuth();
+    }
+
+    return Promise.reject(error);
+  },
+);

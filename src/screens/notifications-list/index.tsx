@@ -26,7 +26,10 @@ function targetRoute(notification: AppNotification) {
     };
   }
   if (data?.offerId) {
-    return { pathname: '/offers/[id]' as const, params: { id: data.offerId } };
+    return {
+      pathname: '/deals/offers/[id]' as const,
+      params: { id: data.offerId },
+    };
   }
   if (data?.dealId) {
     return { pathname: '/deals/[id]' as const, params: { id: data.dealId } };
@@ -69,14 +72,12 @@ export function NotificationsListScreen() {
             title="Notifications"
             notificationsHref={notificationsHref}
             onBack={() => router.back()}
+            rightAction
           />
 
-          <View className="mt-4 flex-row items-center justify-between">
-            <Text className="font-serif-bold text-[28px] leading-[32px] text-[#26242A]">
-              Notifications
-            </Text>
+          <View className="mt-4">
             <Pressable onPress={() => markAllAsReadMutation.mutate()}>
-              <Text className="text-[14px] font-bold text-[#4B2E46]">
+              <Text className="text-[14px] text-right font-bold text-[#4B2E46]">
                 Mark all read
               </Text>
             </Pressable>
@@ -107,9 +108,8 @@ export function NotificationsListScreen() {
                       style={
                         item.readAt ? undefined : { backgroundColor: '#4B2E461F' }
                       }
-                      className={`relative flex-row items-start gap-3 rounded-[20px] p-4 ${
-                        item.readAt ? 'border border-[#ECE7E0] bg-white' : ''
-                      }`}
+                      className={`relative flex-row items-start gap-3 rounded-[20px] p-4 ${item.readAt ? 'border border-[#ECE7E0] bg-white' : ''
+                        }`}
                     >
                       {item.readAt ? null : (
                         <View

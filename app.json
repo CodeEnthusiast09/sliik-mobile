@@ -7,6 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "sliik",
     "userInterfaceStyle": "automatic",
+    "backgroundColor": "#FFFFFF",
     "ios": {
       "bundleIdentifier": "com.sliik.app"
     },
@@ -27,6 +28,13 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-navigation-bar",
+        {
+          "enforceContrast": false
+        }
+      ],
+      "expo-system-ui",
       [
         "expo-splash-screen",
         {
@@ -60,7 +68,8 @@
       "expo-audio",
       "expo-secure-store",
       "expo-status-bar",
-      "expo-asset"
+      "expo-asset",
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true,

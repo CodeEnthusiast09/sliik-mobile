@@ -13,11 +13,13 @@ type TabIconProps = { focused: boolean; color: ColorValue; size: number };
 
 function tabIcon(outline: IoniconName, filled: IoniconName) {
   function TabIcon({ focused, color, size }: TabIconProps) {
+    const iconSize = Math.min(size, 20);
+
     return (
       <Ionicons
         name={focused ? filled : outline}
         color={color as string}
-        size={size}
+        size={iconSize}
       />
     );
   }
@@ -25,24 +27,27 @@ function tabIcon(outline: IoniconName, filled: IoniconName) {
 }
 
 function HomeTabIcon({ focused, color, size }: TabIconProps) {
+  const iconSize = Math.min(size, 20);
+
   return (
     <Ionicons
       name={focused ? 'home' : 'home-outline'}
       color={color as string}
-      size={size}
+      size={iconSize}
     />
   );
 }
 
 function ChatsTabIcon({ focused, color, size }: TabIconProps) {
   const { data: unreadCount } = useChatUnreadCount();
+  const iconSize = Math.min(size, 20);
 
   return (
-    <View style={{ width: size, height: size }}>
+    <View style={{ width: iconSize, height: iconSize }}>
       <Ionicons
         name={focused ? 'chatbubble' : 'chatbubble-outline'}
         color={color as string}
-        size={size}
+        size={iconSize}
       />
       {unreadCount ? (
         <View
@@ -62,11 +67,12 @@ export default function TabsLayout() {
 
   return (
     <Tabs
+      backBehavior="firstRoute"
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: '#4B2E46',
         tabBarInactiveTintColor: '#948F86',
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '700' },
+        tabBarLabelStyle: { fontSize: 10, fontWeight: '400' },
         tabBarStyle: TAB_BAR_STYLE,
       }}
     >
@@ -102,9 +108,6 @@ export default function TabsLayout() {
             tabBarIcon: tabIcon('pricetag-outline', 'pricetag'),
           }}
         />
-        {/* Merged into the Deals tab (segmented toggle) - kept as a real, navigable
-         * route so links to it still work, just not its own tab button. */}
-        <Tabs.Screen name="offers" options={{ href: null }} />
         <Tabs.Screen
           name="chats"
           options={{
@@ -124,12 +127,6 @@ export default function TabsLayout() {
         />
       </Tabs.Protected>
 
-      {/* Reachable from Profile as linked sub-pages, not their own tab buttons. */}
-      <Tabs.Protected guard={role === 'provider'}>
-        <Tabs.Screen name="services" options={{ href: null }} />
-        <Tabs.Screen name="availability" options={{ href: null }} />
-        <Tabs.Screen name="portfolio" options={{ href: null }} />
-      </Tabs.Protected>
     </Tabs>
   );
 }

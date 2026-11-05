@@ -1,11 +1,12 @@
 import '@/global.css';
 
-import { Fraunces_400Regular } from '@expo-google-fonts/fraunces/400Regular';
-import { Fraunces_600SemiBold } from '@expo-google-fonts/fraunces/600SemiBold';
-import { Fraunces_700Bold } from '@expo-google-fonts/fraunces/700Bold';
+import { PlusJakartaSans_400Regular } from '@expo-google-fonts/plus-jakarta-sans/400Regular';
+import { PlusJakartaSans_600SemiBold } from '@expo-google-fonts/plus-jakarta-sans/600SemiBold';
+import { PlusJakartaSans_700Bold } from '@expo-google-fonts/plus-jakarta-sans/700Bold';
 import { useFonts } from 'expo-font';
+import * as SystemUI from 'expo-system-ui';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider, usePathname } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
 import { useColorScheme } from 'react-native';
@@ -21,18 +22,33 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  const pathname = usePathname();
   const isHydrated = useAuthStore((state) => state.isHydrated);
-  const isLoggedIn = useAuthStore((state) => !!state.accessToken);
-  const [fontsLoaded] = useFonts({
-    Fraunces_400Regular,
-    Fraunces_600SemiBold,
-    Fraunces_700Bold,
+  const accessToken = useAuthStore((state) => state.accessToken);
+  const role = useAuthStore((state) => state.role);
+  const clearAuth = useAuthStore((state) => state.clearAuth);
+  const isLoggedIn = Boolean(accessToken && role);
+  const [fontsLoaded, fontError] = useFonts({
+    PlusJakartaSans_400Regular,
+    PlusJakartaSans_600SemiBold,
+    PlusJakartaSans_700Bold,
   });
   const [splashAnimationDone, setSplashAnimationDone] = useState(false);
 
   useNotificationDeeplink();
 
-  const isReady = isHydrated && fontsLoaded;
+  useEffect(() => {
+    const backgroundColor = pathname === '/' ? '#000000' : '#FFFFFF';
+    SystemUI.setBackgroundColorAsync(backgroundColor).catch(() => {});
+  }, [pathname]);
+
+  useEffect(() => {
+    if (isHydrated && accessToken && !role) {
+      clearAuth();
+    }
+  }, [accessToken, clearAuth, isHydrated, role]);
+
+  const isReady = isHydrated && (fontsLoaded || fontError !== null);
 
   useEffect(() => {
     if (isReady) {
@@ -60,6 +76,11 @@ export default function RootLayout() {
               <Stack.Screen name="(tabs)" />
               <Stack.Screen name="provider" />
               <Stack.Screen name="delete-account" />
+              <Stack.Protected guard={role === 'provider'}>
+                <Stack.Screen name="services" />
+                <Stack.Screen name="availability" />
+                <Stack.Screen name="portfolio" />
+              </Stack.Protected>
             </Stack.Protected>
           </Stack>
           <ToastHost />

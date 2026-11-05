@@ -12,7 +12,10 @@ function redirect(data: NotificationData | undefined): void {
   if (data.bookingId) {
     router.push({ pathname: '/bookings/[id]', params: { id: data.bookingId } });
   } else if (data.offerId) {
-    router.push({ pathname: '/offers/[id]', params: { id: data.offerId } });
+    router.push({
+      pathname: '/deals/offers/[id]',
+      params: { id: data.offerId },
+    });
   } else if (data.dealId) {
     router.push({ pathname: '/deals/[id]', params: { id: data.dealId } });
   }

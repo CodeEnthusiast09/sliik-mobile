@@ -28,6 +28,8 @@ export function usePushTokenRegistration() {
         // Non-critical - the app works fine without push, just no remote
         // delivery until the next successful registration attempt.
       });
+    }).catch(() => {
+      // Non-critical - push registration is unavailable in this runtime.
     });
 
     return () => {

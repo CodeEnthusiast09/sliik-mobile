@@ -122,7 +122,7 @@ export function ProviderOffersFeed({
 
           <View className="mt-4 flex-row items-center justify-end">
             <Pressable
-              onPress={() => router.push('/offers/my-bids')}
+              onPress={() => router.push('/deals/offers/my-bids')}
               className="flex-row items-center gap-1.5 rounded-full border bg-[#4B2E46] px-4 py-2.5"
             >
               <Ionicons name="receipt-outline" size={15} color="white" />
@@ -185,7 +185,7 @@ export function ProviderOffersFeed({
                   <Pressable
                     onPress={() =>
                       router.push({
-                        pathname: '/offers/[id]',
+                        pathname: '/deals/offers/[id]',
                         params: { id: item.id },
                       })
                     }

@@ -32,6 +32,7 @@ import { useLocationStore } from '@/store/location';
 
 import { HomeListHeader } from './_components/home-list-header';
 import { LocationHeader } from './_components/location-header';
+import { StatusBar } from 'expo-status-bar';
 
 const RATING_OPTIONS: { label: string; value: number | undefined }[] = [
   { label: 'All', value: undefined },
@@ -191,6 +192,7 @@ export function CustomerHomeScreen() {
 
   return (
     <View className="flex-1 bg-white">
+      <StatusBar style="dark" />
       <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
         <View className="flex-1 px-6">
           <ScreenHeader
@@ -198,9 +200,9 @@ export function CustomerHomeScreen() {
             leadingContent={<LocationHeader />}
           />
 
-          <View className="mt-1 flex-row items-center gap-2">
+          <View className="mt-4 flex-row items-center gap-2">
             <View
-              className={`flex-1 flex-row items-center gap-3 rounded-2xl border bg-white px-2.5 py-4 ${isSearchFocused ? 'border-[#4B2E46]' : 'border-[#ECE7E0]'}`}
+              className={`flex-1 flex-row items-center gap-3 rounded-2xl border bg-white px-2 py-1 ${isSearchFocused ? 'border-[#4B2E46]' : 'border-[#ECE7E0]'}`}
             >
               <Ionicons
                 name="search-outline"
@@ -228,7 +230,7 @@ export function CustomerHomeScreen() {
 
             <Pressable
               onPress={() => setRatingModalVisible(true)}
-              className="h-[52px] w-[52px] items-center justify-center rounded-2xl border border-[#ECE7E0] bg-white"
+              className="h-[48px] w-[48px] items-center justify-center rounded-2xl border border-[#ECE7E0] bg-white"
             >
               <Ionicons
                 name="funnel-outline"

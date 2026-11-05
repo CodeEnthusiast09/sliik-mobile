@@ -44,7 +44,7 @@ function RoleCard({
   return (
     <Pressable
       onPress={onPress}
-      style={CARD_SHADOW}
+      style={[CARD_SHADOW, { minHeight: CUTOUT_WIDTH / aspectRatio }]}
       className={`relative rounded-[20px] ${selected
         ? 'border-2 border-[#4B2E46] bg-[#F6EEF3]'
         : 'border border-[#ECE7E0] bg-white'
@@ -97,68 +97,70 @@ export function RoleSelectScreen() {
       <StatusBar style="dark" />
 
       <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
-        <Pressable
-          onPress={() => router.back()}
-          hitSlop={8}
-          className="absolute left-4 top-2 z-10 h-10 w-10 items-center justify-center"
-        >
-          <Ionicons name="arrow-back" size={26} color="#4B2E46" />
-        </Pressable>
+        <View className="flex-1">
+          <Pressable
+            onPress={() => router.back()}
+            hitSlop={8}
+            className="absolute left-4 top-2 z-10 h-10 w-10 items-center justify-center"
+          >
+            <Ionicons name="arrow-back" size={26} color="#4B2E46" />
+          </Pressable>
 
-        <ScrollView
-          contentContainerClassName="grow justify-center px-6 py-6"
-          showsVerticalScrollIndicator={false}
-        >
-          <SliikWordmark height={30} />
+          <ScrollView
+            contentContainerClassName="grow justify-center px-6 py-6"
+            showsVerticalScrollIndicator={false}
+          >
+            <SliikWordmark height={30} />
 
-          <Text className="mt-6 font-serif-bold text-[26px] leading-[32px] text-[#26242A]">
-            Who are you?
-          </Text>
-          <Text className="mt-2 text-[14px] leading-[20px] text-[#817F80]">
-            This helps us personalize your experience and show you what matters
-            most.
-          </Text>
+            <Text className="mt-6 font-serif-bold text-[26px] leading-[32px] text-[#26242A]">
+              Who are you?
+            </Text>
+            <Text className="mt-2 text-[14px] leading-[20px] text-[#817F80]">
+              This helps us personalize your experience and show you what matters
+              most.
+            </Text>
 
-          <View className="mt-12 gap-20">
-            <RoleCard
-              title="Customer"
-              tag="Book services"
-              description="Book services, discover professionals or post an offer for providers to bid on."
-              image={require('../../../assets/images/role-select-customer.webp')}
-              aspectRatio={360 / 567}
-              selected={role === 'customer'}
-              onPress={() => setRole('customer')}
-            />
-            <RoleCard
-              title="Provider"
-              tag="Earn on Sliik"
-              description="Offer your services, manage bookings and grow your business."
-              image={require('../../../assets/images/role-select-provider.webp')}
-              aspectRatio={360 / 527}
-              selected={role === 'provider'}
-              onPress={() => setRole('provider')}
-            />
-          </View>
-
-          <View className="mt-10">
-            <Button
-              label="Continue"
-              onPress={handleContinue}
-              disabled={!role}
-            />
-
-            <View className="mt-3 flex-row justify-center">
-              <Text className="text-[14px] text-[#817F80]">
-                Already have an account?{' '}
-              </Text>
-              <Pressable onPress={() => router.push('/login')}>
-                <Text className="text-[14px] font-bold text-[#4B2E46]">
-                  Sign in
-                </Text>
-              </Pressable>
+            <View className="mt-6 gap-4">
+              <RoleCard
+                title="Customer"
+                tag="Book services"
+                description="Book services, discover professionals or post an offer for providers to bid on."
+                image={require('../../../assets/images/role-select-customer.webp')}
+                aspectRatio={360 / 567}
+                selected={role === 'customer'}
+                onPress={() => setRole('customer')}
+              />
+              <RoleCard
+                title="Provider"
+                tag="Earn on Sliik"
+                description="Offer your services, manage bookings and grow your business."
+                image={require('../../../assets/images/role-select-provider.webp')}
+                aspectRatio={360 / 527}
+                selected={role === 'provider'}
+                onPress={() => setRole('provider')}
+              />
             </View>
-          </View>
-        </ScrollView>
+
+            <View className="mt-10">
+              <Button
+                label="Continue"
+                onPress={handleContinue}
+                disabled={!role}
+              />
+
+              <View className="mt-3 flex-row justify-center">
+                <Text className="text-[14px] text-[#817F80]">
+                  Already have an account?{' '}
+                </Text>
+                <Pressable onPress={() => router.push('/login')}>
+                  <Text className="text-[14px] font-bold text-[#4B2E46]">
+                    Sign in
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+          </ScrollView>
+        </View>
       </SafeAreaView>
     </View>
   );
