@@ -1,14 +1,24 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
+import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useState } from 'react';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { Easing, LinearTransition, withTiming } from 'react-native-reanimated';
+import Animated, {
+  Easing,
+  LinearTransition,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { AuthTabs } from '@/components/auth-tabs';
 import { SliikWordmark } from '@/components/sliik-wordmark';
 import type { AuthMode, UserRole } from '@/interfaces/auth';
-import { useSignupFlowStore } from '@/store/signup-flow';
 
 import { SignInForm } from './_components/sign-in-form';
 import { SignUpForm } from './_components/sign-up-form';
@@ -58,11 +68,9 @@ export function AuthScreen() {
     mode?: string;
     role?: string;
   }>();
+  const hasValidRole = roleParam === 'customer' || roleParam === 'provider';
   const mode: AuthMode = modeParam === 'signup' ? 'signup' : 'signin';
   const role: UserRole = roleParam === 'provider' ? 'provider' : 'customer';
-
-  const rememberedRole = useSignupFlowStore((state) => state.role);
-  const rememberRole = useSignupFlowStore((state) => state.setRole);
 
   // Email is the one field worth carrying across an accidental signup <->
   // signin toggle (it's the most commonly re-typed field); password isn't
@@ -77,17 +85,12 @@ export function AuthScreen() {
   // this project's React Compiler lint rules.
   const [hasToggledOnce, setHasToggledOnce] = useState(false);
 
-  // Mirrors the old register screen's behavior: remember whichever role the
-  // signup form was last shown with, so bouncing signup -> signin -> signup
-  // via the tabs doesn't force role-select again.
-  useEffect(() => {
-    if (roleParam) rememberRole(role);
-  }, [roleParam, role, rememberRole]);
+  if (mode === 'signup' && !hasValidRole && !hasToggledOnce) {
+    return <Redirect href="/role-select" />;
+  }
 
   function handleModeChange(target: AuthMode) {
-    if (target === 'signup' && !rememberedRole && !roleParam) {
-      // We don't know provider vs customer yet and won't guess - this is a
-      // real navigation away from the toggle, not an in-place param change.
+    if (target === 'signup' && !hasValidRole) {
       router.push('/role-select');
       return;
     }
@@ -95,8 +98,21 @@ export function AuthScreen() {
     setHasToggledOnce(true);
     router.setParams({
       mode: target,
-      role: target === 'signup' ? (roleParam ?? rememberedRole ?? undefined) : undefined,
+      role: hasValidRole ? roleParam : undefined,
     });
+  }
+
+  function handleBack() {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+
+    router.replace('/');
+  }
+
+  function handleChangeRole() {
+    router.replace({ pathname: '/role-select', params: { from: 'auth' } });
   }
 
   return (
@@ -104,7 +120,7 @@ export function AuthScreen() {
       <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
         <View className="flex-1">
           <Pressable
-            onPress={() => router.back()}
+            onPress={handleBack}
             hitSlop={8}
             className="absolute left-4 top-2 z-10 h-10 w-10 items-center justify-center"
           >
@@ -124,7 +140,10 @@ export function AuthScreen() {
                 <SliikWordmark height={38} />
               </Animated.View>
 
-              <Animated.View style={{ marginTop: 48 }} layout={CHROME_TRANSITION}>
+              <Animated.View
+                style={{ marginTop: 48 }}
+                layout={CHROME_TRANSITION}
+              >
                 <AuthTabs active={mode} onChange={handleModeChange} />
               </Animated.View>
 
@@ -132,21 +151,57 @@ export function AuthScreen() {
                 style={{ marginTop: 24 }}
                 layout={CHROME_TRANSITION}
               >
+                <Text className="text-center font-serif-bold text-[24px] leading-[30px] text-[#26242A]">
+                  {mode === 'signup' ? 'Create your account' : 'Welcome back'}
+                </Text>
+                {mode === 'signup' ? (
+                  <Pressable
+                    onPress={handleChangeRole}
+                    accessibilityRole="button"
+                    className="mt-2 self-center"
+                  >
+                    <Text className="text-[14px] text-[#817F80]">
+                      Creating a {role === 'provider' ? 'Provider' : 'Customer'}{' '}
+                      account ·{' '}
+                      <Text className="font-bold text-[#4B2E46]">
+                        Change role
+                      </Text>
+                    </Text>
+                  </Pressable>
+                ) : null}
+              </Animated.View>
+
+              <Animated.View
+                style={{ marginTop: mode === 'signup' ? 20 : 24 }}
+                layout={CHROME_TRANSITION}
+              >
                 {mode === 'signin' ? (
                   <Animated.View
                     key="signin"
-                    entering={hasToggledOnce ? slideInFrom(SLIDE_OFFSET) : undefined}
+                    entering={
+                      hasToggledOnce ? slideInFrom(SLIDE_OFFSET) : undefined
+                    }
                     exiting={slideOutTo(SLIDE_OFFSET)}
                   >
-                    <SignInForm email={email} onChangeEmail={setEmail} />
+                    <SignInForm
+                      role={role}
+                      email={email}
+                      onChangeEmail={setEmail}
+                    />
                   </Animated.View>
                 ) : (
                   <Animated.View
                     key="signup"
-                    entering={hasToggledOnce ? slideInFrom(-SLIDE_OFFSET) : undefined}
+                    entering={
+                      hasToggledOnce ? slideInFrom(-SLIDE_OFFSET) : undefined
+                    }
                     exiting={slideOutTo(-SLIDE_OFFSET)}
                   >
-                    <SignUpForm role={role} email={email} onChangeEmail={setEmail} />
+                    <SignUpForm
+                      role={role}
+                      email={email}
+                      onChangeEmail={setEmail}
+                    />
                   </Animated.View>
                 )}
               </Animated.View>

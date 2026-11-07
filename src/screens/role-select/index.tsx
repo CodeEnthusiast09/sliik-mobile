@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
@@ -44,11 +44,15 @@ function RoleCard({
   return (
     <Pressable
       onPress={onPress}
+      accessibilityRole="radio"
+      accessibilityLabel={`${title} role`}
+      accessibilityState={{ selected }}
       style={[CARD_SHADOW, { minHeight: CUTOUT_WIDTH / aspectRatio }]}
-      className={`relative rounded-[20px] ${selected
-        ? 'border-2 border-[#4B2E46] bg-[#F6EEF3]'
-        : 'border border-[#ECE7E0] bg-white'
-        }`}
+      className={`relative rounded-[20px] ${
+        selected
+          ? 'border-2 border-[#4B2E46] bg-[#F6EEF3]'
+          : 'border border-[#ECE7E0] bg-white'
+      }`}
     >
       <View
         className="justify-center gap-2 py-5 pl-5"
@@ -77,6 +81,12 @@ function RoleCard({
           height: CUTOUT_WIDTH / aspectRatio,
         }}
       />
+
+      {selected ? (
+        <View className="absolute right-4 top-4 z-10 h-7 w-7 items-center justify-center rounded-full bg-[#4B2E46]">
+          <Ionicons name="checkmark" size={18} color="#FFFFFF" />
+        </View>
+      ) : null}
     </Pressable>
   );
 }
@@ -84,12 +94,32 @@ function RoleCard({
 export function RoleSelectScreen() {
   const [role, setRole] = useState<UserRole | null>(null);
   const router = useRouter();
+  const { from } = useLocalSearchParams<{ from?: string }>();
   const rememberRole = useSignupFlowStore((state) => state.setRole);
+
+  function handleBack() {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+
+    router.replace('/');
+  }
 
   function handleContinue() {
     if (!role) return;
     rememberRole(role);
-    router.push({ pathname: '/register', params: { role } });
+    const href = {
+      pathname: '/auth',
+      params: { mode: 'signup', role },
+    } as const;
+
+    if (from === 'auth') {
+      router.replace(href);
+      return;
+    }
+
+    router.push(href);
   }
 
   return (
@@ -99,7 +129,7 @@ export function RoleSelectScreen() {
       <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
         <View className="flex-1">
           <Pressable
-            onPress={() => router.back()}
+            onPress={handleBack}
             hitSlop={8}
             className="absolute left-4 top-2 z-10 h-10 w-10 items-center justify-center"
           >
@@ -116,8 +146,8 @@ export function RoleSelectScreen() {
               Who are you?
             </Text>
             <Text className="mt-2 text-[14px] leading-[20px] text-[#817F80]">
-              This helps us personalize your experience and show you what matters
-              most.
+              This helps us personalize your experience and show you what
+              matters most.
             </Text>
 
             <View className="mt-6 gap-4">
@@ -143,7 +173,11 @@ export function RoleSelectScreen() {
 
             <View className="mt-10">
               <Button
-                label="Continue"
+                label={
+                  role
+                    ? `Continue as ${role === 'customer' ? 'Customer' : 'Provider'}`
+                    : 'Continue'
+                }
                 onPress={handleContinue}
                 disabled={!role}
               />

@@ -9,6 +9,7 @@ import { ControlledTextField } from '@/components/controlled-text-field';
 import { SocialAuthButtons } from '@/components/social-auth-buttons';
 import { TextField } from '@/components/text-field';
 import { useLogin } from '@/hooks/services/auth/useLogin';
+import type { UserRole } from '@/interfaces/auth';
 import {
   firstFormError,
   getErrorMessage,
@@ -20,11 +21,12 @@ import { loginSchema } from '@/validations/auth';
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export type SignInFormProps = {
+  role: UserRole;
   email: string;
   onChangeEmail: (email: string) => void;
 };
 
-export function SignInForm({ email, onChangeEmail }: SignInFormProps) {
+export function SignInForm({ role, email, onChangeEmail }: SignInFormProps) {
   const router = useRouter();
   const loginMutation = useLogin();
 
@@ -107,13 +109,17 @@ export function SignInForm({ email, onChangeEmail }: SignInFormProps) {
         />
       </View>
 
-      <View className="my-2 flex-row items-center gap-3">
-        <View className="h-px flex-1 bg-[#E7E1D9]" />
-        <Text className="text-[13px] text-[#8B877F]">or continue with</Text>
-        <View className="h-px flex-1 bg-[#E7E1D9]" />
-      </View>
+      {role === 'customer' ? (
+        <>
+          <View className="my-2 flex-row items-center gap-3">
+            <View className="h-px flex-1 bg-[#E7E1D9]" />
+            <Text className="text-[13px] text-[#8B877F]">or continue with</Text>
+            <View className="h-px flex-1 bg-[#E7E1D9]" />
+          </View>
 
-      <SocialAuthButtons role="customer" />
+          <SocialAuthButtons />
+        </>
+      ) : null}
     </View>
   );
 }

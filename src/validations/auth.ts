@@ -5,34 +5,18 @@ const registerBaseSchema = z.object({
   password: z.string().min(8, 'Password must be at least 8 characters'),
   role: z.enum(['customer', 'provider']),
   fullName: z.string().min(1, 'Enter your full name'),
-  tradeType: z.string().min(1).optional(),
+  tradeType: z.string().trim().max(100).optional(),
 });
 
 // API payload for POST /auth/register.
-export const registerSchema = registerBaseSchema.superRefine((data, ctx) => {
-  if (data.role === 'provider' && !data.tradeType) {
-    ctx.addIssue({
-      code: 'custom',
-      path: ['tradeType'],
-      message: 'Trade type is required for providers',
-    });
-  }
-});
+export const registerSchema = registerBaseSchema;
 
 export type RegisterInput = z.infer<typeof registerSchema>;
 
-// Form-only schema: adds the confirm field + match check alongside the same
-// provider trade-type rule. confirmPassword is stripped before the API call.
+// Form-only schema: adds the confirm field and password match check.
 export const registerFormSchema = registerBaseSchema
   .extend({ confirmPassword: z.string() })
   .superRefine((data, ctx) => {
-    if (data.role === 'provider' && !data.tradeType) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['tradeType'],
-        message: 'Trade type is required for providers',
-      });
-    }
     if (data.password !== data.confirmPassword) {
       ctx.addIssue({
         code: 'custom',
@@ -92,7 +76,7 @@ export type ResendVerificationInput = z.infer<typeof resendVerificationSchema>;
 // API payload for POST /auth/google. idToken comes from the Google OAuth flow.
 export const googleAuthSchema = z.object({
   idToken: z.string().min(1),
-  role: z.enum(['customer', 'provider']),
+  role: z.literal('customer'),
 });
 
 export type GoogleAuthInput = z.infer<typeof googleAuthSchema>;

@@ -46,11 +46,15 @@ export function Button({
     <Pressable
       onPress={onPress}
       disabled={isDisabled}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: isDisabled, busy: loading }}
       style={variant === 'ghost' ? undefined : SHADOW}
       className={`flex-row items-center justify-center gap-2 rounded-[28px] px-6 ${CONTAINER[variant]} ${isDisabled ? 'opacity-50' : ''}`}
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'primary' ? '#F7EFE4' : '#4B2E46'} />
+        <ActivityIndicator
+          color={variant === 'primary' ? '#F7EFE4' : '#4B2E46'}
+        />
       ) : (
         <>
           {leftIcon}

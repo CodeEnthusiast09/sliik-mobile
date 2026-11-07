@@ -36,20 +36,17 @@ export function SignUpForm({ role, email, onChangeEmail }: SignUpFormProps) {
       password: '',
       confirmPassword: '',
       role,
-      tradeType: undefined,
     },
   });
 
   function onValid(values: RegisterFormValues) {
-    // Build the API payload explicitly - drops the form-only confirmPassword
-    // and sends tradeType only for providers.
+    // Build the API payload explicitly and drop the form-only confirmPassword.
     registerMutation.mutate(
       {
         fullName: values.fullName,
         email: values.email,
         password: values.password,
         role,
-        tradeType: role === 'provider' ? values.tradeType : undefined,
       },
       {
         onSuccess: () => {
@@ -117,16 +114,6 @@ export function SignUpForm({ role, email, onChangeEmail }: SignUpFormProps) {
         password
       />
 
-      {role === 'provider' ? (
-        <ControlledTextField
-          control={control}
-          name="tradeType"
-          leftIcon="briefcase-outline"
-          placeholder="e.g. hairdresser, barber"
-          autoCapitalize="words"
-        />
-      ) : null}
-
       <View className="mt-1">
         <Button
           label={
@@ -146,13 +133,11 @@ export function SignUpForm({ role, email, onChangeEmail }: SignUpFormProps) {
         <>
           <View className="my-2 flex-row items-center gap-3">
             <View className="h-px flex-1 bg-[#E7E1D9]" />
-            <Text className="text-[13px] text-[#8B877F]">
-              or continue with
-            </Text>
+            <Text className="text-[13px] text-[#8B877F]">or continue with</Text>
             <View className="h-px flex-1 bg-[#E7E1D9]" />
           </View>
 
-          <SocialAuthButtons role={role} />
+          <SocialAuthButtons />
         </>
       )}
     </View>

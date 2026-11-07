@@ -84,6 +84,9 @@ export function AuthTabs({ active, onChange }: AuthTabsProps) {
 
       <Pressable
         onPress={() => handlePress('signup')}
+        accessibilityRole="tab"
+        accessibilityState={{ selected: active === 'signup' }}
+        accessibilityLabel="Sign up"
         className="flex-1 items-center rounded-full py-2.5"
       >
         <Text
@@ -95,6 +98,9 @@ export function AuthTabs({ active, onChange }: AuthTabsProps) {
 
       <Pressable
         onPress={() => handlePress('signin')}
+        accessibilityRole="tab"
+        accessibilityState={{ selected: active === 'signin' }}
+        accessibilityLabel="Sign in"
         className="flex-1 items-center rounded-full py-2.5"
       >
         <Text
