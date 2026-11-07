@@ -9,10 +9,10 @@ import { SliikWordmark } from '@/components/sliik-wordmark';
 export type ScreenHeaderProps = {
   notificationsHref: Href;
   /**
-   * If provided, shows a back button in the leading slot with `title` next to
-   * it (drill-down screens). Without `onBack`, `title` takes over the leading
-   * slot itself in place of the wordmark (tab-root screens); with neither, the
-   * brand wordmark is shown (Home only).
+   * If provided, shows a back button in the leading slot with a centered
+   * `title` (drill-down screens). Without `onBack`, `title` takes over the
+   * leading slot itself in place of the wordmark (tab-root screens); with
+   * neither, the brand wordmark is shown (Home only).
    */
   onBack?: () => void;
   title?: string;
@@ -37,7 +37,7 @@ export function ScreenHeader({
   const router = useRouter();
 
   return (
-    <View className="flex-row items-center justify-between py-2">
+    <View className="relative flex-row items-center justify-between py-2">
       {leadingContent ? (
         leadingContent
       ) : onBack ? (
@@ -61,7 +61,7 @@ export function ScreenHeader({
 
       {onBack && title ? (
         <Text
-          className={`font-serif-bold text-[17px] text-[#26242A] ${className ?? ''
+          className={`absolute left-12 right-12 text-center font-serif-bold text-[17px] text-[#26242A] ${className ?? ''
             }`}
         >
           {title}

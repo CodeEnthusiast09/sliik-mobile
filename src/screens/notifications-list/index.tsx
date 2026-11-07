@@ -138,7 +138,7 @@ export function NotificationsListScreen() {
             title="Notifications"
             notificationsHref={notificationsHref}
             onBack={() => router.back()}
-            rightAction
+            showNotifications={false}
           />
 
           <View className="mt-4">
@@ -188,16 +188,9 @@ export function NotificationsListScreen() {
                       style={
                         item.readAt ? undefined : { backgroundColor: '#4B2E461F' }
                       }
-                      className={`relative flex-row items-start gap-3 rounded-[20px] p-4 ${item.readAt ? 'border border-[#ECE7E0] bg-white' : ''
+                      className={`flex-row items-start gap-3 rounded-[20px] p-4 ${item.readAt ? 'border border-[#ECE7E0] bg-white' : ''
                         }`}
                     >
-                      {item.readAt ? null : (
-                        <View
-                          style={{ top: '50%', marginTop: -4 }}
-                          className="absolute right-4 h-2 w-2 rounded-full bg-[#4B2E46]"
-                        />
-                      )}
-
                       <View
                         style={{ backgroundColor: `${color}1F` }}
                         className="h-10 w-10 items-center justify-center rounded-full"
@@ -206,17 +199,23 @@ export function NotificationsListScreen() {
                       </View>
 
                       <View className="flex-1 gap-1">
-                        <View className="flex-row items-start justify-between gap-2">
-                          <Text className="flex-1 font-serif-bold text-[15px] text-[#26242A]">
-                            {item.title}
-                          </Text>
-                          <Text className="text-[12px] text-[#817F80]">
-                            {formatDateTimeLabel(item.createdAt)}
-                          </Text>
-                        </View>
+                        <Text className="font-serif-bold text-[15px] text-[#26242A]">
+                          {item.title}
+                        </Text>
                         <Text className="text-[14px] text-[#26242A]">
                           {item.body}
                         </Text>
+                      </View>
+
+                      <View className="relative w-[88px] self-stretch items-end">
+                        <Text className="text-right text-[12px] text-[#817F80]">
+                          {formatDateTimeLabel(item.createdAt)}
+                        </Text>
+                        <View className="absolute bottom-0 left-0 right-0 top-0 items-end justify-center">
+                          {item.readAt ? null : (
+                            <View className="h-2 w-2 rounded-full bg-[#4B2E46]" />
+                          )}
+                        </View>
                       </View>
                     </View>
                   </Pressable>
