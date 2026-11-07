@@ -1,6 +1,13 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
-import { FlatList, Pressable, Text, View } from 'react-native';
+import { useMemo } from 'react';
+import {
+  ActivityIndicator,
+  Pressable,
+  SectionList,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmptyState } from '@/components/empty-state';
@@ -14,11 +21,43 @@ import {
   useNotifications,
 } from '@/hooks/services/notifications';
 import type { AppNotification } from '@/interfaces/notification';
-import { formatDateTimeLabel, getErrorMessage, getNotificationIcon } from '@/lib/utils';
+import {
+  formatDateTimeLabel,
+  getErrorMessage,
+  getNotificationIcon,
+} from '@/lib/utils';
 import { useAuthStore } from '@/store/auth';
+
+type NotificationSection = {
+  title: string;
+  data: AppNotification[];
+};
+
+function getUtcDateKey(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+function getNotificationGroup(createdAt: string): string {
+  const now = new Date();
+  const dateKey = createdAt.slice(0, 10);
+  const todayKey = getUtcDateKey(now);
+  const yesterdayKey = getUtcDateKey(
+    new Date(now.getTime() - 24 * 60 * 60 * 1000),
+  );
+
+  if (dateKey === todayKey) return 'Today';
+  if (dateKey === yesterdayKey) return 'Yesterday';
+  return 'Earlier';
+}
 
 function targetRoute(notification: AppNotification) {
   const data = notification.data;
+  if (notification.type === 'message_received' && data?.bookingId) {
+    return {
+      pathname: '/chats/[id]' as const,
+      params: { id: data.bookingId },
+    };
+  }
   if (data?.bookingId) {
     return {
       pathname: '/bookings/[id]' as const,
@@ -44,15 +83,42 @@ export function NotificationsListScreen() {
   useHideTabBar();
 
   const {
-    data: notifications,
+    data,
     isLoading,
     isError,
     error,
     refetch,
     isRefetching,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
   } = useNotifications();
   const markAsReadMutation = useMarkAsRead();
   const markAllAsReadMutation = useMarkAllAsRead();
+
+  const notifications = useMemo(
+    () => data?.pages.flatMap((page) => page.data ?? []) ?? [],
+    [data],
+  );
+
+  const sections = useMemo<NotificationSection[]>(() => {
+    const grouped = new Map<string, AppNotification[]>();
+
+    for (const notification of notifications) {
+      const group = getNotificationGroup(notification.createdAt);
+      const existing = grouped.get(group);
+      if (existing) {
+        existing.push(notification);
+      } else {
+        grouped.set(group, [notification]);
+      }
+    }
+
+    return ['Today', 'Yesterday', 'Earlier'].flatMap((title) => {
+      const group = grouped.get(title);
+      return group ? [{ title, data: group }] : [];
+    });
+  }, [notifications]);
 
   const notificationsHref =
     role === 'provider' ? '/profile/notifications' : '/home/notifications';
@@ -90,20 +156,34 @@ export function NotificationsListScreen() {
           ) : isError ? (
             <ErrorState message={getErrorMessage(error)} onRetry={refetch} />
           ) : (
-            <FlatList
+            <SectionList
               showsVerticalScrollIndicator={false}
-              data={notifications}
+              sections={sections}
               keyExtractor={(item) => item.id}
-              contentContainerClassName="grow gap-3 pt-4 pb-32"
-              refreshing={isRefetching}
+              contentContainerClassName="grow pt-4 pb-32"
+              refreshing={isRefetching && !isFetchingNextPage}
               onRefresh={refetch}
+              onEndReached={() => {
+                if (hasNextPage && !isFetchingNextPage) fetchNextPage();
+              }}
+              onEndReachedThreshold={0.5}
               ListEmptyComponent={
                 <EmptyState message="No notifications yet." />
               }
+              ListFooterComponent={
+                isFetchingNextPage ? (
+                  <ActivityIndicator className="py-4" color="#4B2E46" />
+                ) : undefined
+              }
+              renderSectionHeader={({ section }) => (
+                <Text className="mb-3 mt-1 font-serif-bold text-[17px] text-[#26242A]">
+                  {section.title}
+                </Text>
+              )}
               renderItem={({ item }) => {
                 const { icon, color } = getNotificationIcon(item.type);
                 return (
-                  <Pressable onPress={() => handlePress(item)}>
+                  <Pressable className="mb-3" onPress={() => handlePress(item)}>
                     <View
                       style={
                         item.readAt ? undefined : { backgroundColor: '#4B2E461F' }

@@ -97,6 +97,8 @@ export function getNotificationIcon(type: NotificationType): {
       return { icon: 'wallet-outline', color: SUCCESS };
     case 'payment_sent':
       return { icon: 'wallet-outline', color: PLUM };
+    case 'payment_refunded':
+      return { icon: 'wallet-outline', color: DANGER };
     case 'review_received':
       return { icon: 'star', color: WARNING };
     case 'message_received':

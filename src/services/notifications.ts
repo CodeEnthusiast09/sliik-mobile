@@ -3,8 +3,11 @@ import type { AppNotification } from '@/interfaces/notification';
 
 import { apiClient } from './api-client';
 
-export async function getMyNotifications() {
-  const { data } = await apiClient.get<PaginatedResponse<AppNotification>>('/notifications');
+export async function getMyNotifications(page = 1) {
+  const { data } = await apiClient.get<PaginatedResponse<AppNotification>>(
+    '/notifications',
+    { params: { page, limit: 20 } },
+  );
   return data;
 }
 
