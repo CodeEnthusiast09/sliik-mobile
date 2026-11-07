@@ -2,7 +2,6 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import * as Linking from 'expo-linking';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect } from 'react';
 import { Pressable, ScrollView, Share, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -13,7 +12,10 @@ import { ReviewsList } from '@/components/reviews-list';
 import { DetailSkeleton } from '@/components/skeleton';
 import { useHideTabBar } from '@/hooks/common/use-hide-tab-bar';
 import { usePublicProviderProfile } from '@/hooks/services/discovery';
-import { useFavoriteStatus, useToggleFavorite } from '@/hooks/services/favorites';
+import {
+  useFavoriteStatus,
+  useToggleFavorite,
+} from '@/hooks/services/favorites';
 import { useReviewsForUser } from '@/hooks/services/reviews';
 import {
   calculateDistanceKm,
@@ -35,12 +37,6 @@ export function ProviderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const userCoords = useLocationStore((state) => state.coords);
 
-  // Same defensive request as customer-home - an already-logged-in session
-  // never re-fires the login-time request, so ask again here too.
-  useEffect(() => {
-    useLocationStore.getState().requestLocation();
-  }, []);
-
   useHideTabBar();
 
   const {
@@ -58,9 +54,9 @@ export function ProviderDetailScreen() {
 
   const soonestDeal = provider?.deals?.length
     ? [...provider.deals].sort(
-      (a, b) =>
-        new Date(a.expiresAt).getTime() - new Date(b.expiresAt).getTime(),
-    )[0]
+        (a, b) =>
+          new Date(a.expiresAt).getTime() - new Date(b.expiresAt).getTime(),
+      )[0]
     : null;
 
   if (isError) {
@@ -97,13 +93,18 @@ export function ProviderDetailScreen() {
   const locationLabel =
     [cityLabel, distanceLabel].filter(Boolean).join(' · ') || null;
 
-  const servicesPreview = provider.services?.slice(0, SERVICES_PREVIEW_COUNT) ?? [];
-  const hasMoreServices = (provider.services?.length ?? 0) > SERVICES_PREVIEW_COUNT;
+  const servicesPreview =
+    provider.services?.slice(0, SERVICES_PREVIEW_COUNT) ?? [];
+  const hasMoreServices =
+    (provider.services?.length ?? 0) > SERVICES_PREVIEW_COUNT;
 
-  const portfolioPreview = provider.portfolio?.slice(0, PORTFOLIO_PREVIEW_COUNT) ?? [];
-  const portfolioOverflowCount = (provider.portfolio?.length ?? 0) - PORTFOLIO_PREVIEW_COUNT;
+  const portfolioPreview =
+    provider.portfolio?.slice(0, PORTFOLIO_PREVIEW_COUNT) ?? [];
+  const portfolioOverflowCount =
+    (provider.portfolio?.length ?? 0) - PORTFOLIO_PREVIEW_COUNT;
 
-  const hasMoreReviews = (userReviews?.totalReviews ?? 0) > REVIEWS_PREVIEW_COUNT;
+  const hasMoreReviews =
+    (userReviews?.totalReviews ?? 0) > REVIEWS_PREVIEW_COUNT;
 
   function handleShare() {
     const link = Linking.createURL(`/provider/${provider!.id}`);
@@ -171,7 +172,11 @@ export function ProviderDetailScreen() {
                 </Text>
                 {locationLabel ? (
                   <View className="flex-row items-center gap-1">
-                    <Ionicons name="location-outline" size={13} color="#817F80" />
+                    <Ionicons
+                      name="location-outline"
+                      size={13}
+                      color="#817F80"
+                    />
                     <Text className="text-[13px] text-[#817F80]">
                       {locationLabel}
                     </Text>
@@ -233,7 +238,11 @@ export function ProviderDetailScreen() {
                     <Text className="pr-2 text-[14px] font-bold text-[#26242A]">
                       ₦{formatCurrency(service.price)}
                     </Text>
-                    <Ionicons name="chevron-forward" size={16} color="#A8A39B" />
+                    <Ionicons
+                      name="chevron-forward"
+                      size={16}
+                      color="#A8A39B"
+                    />
                   </Pressable>
                 ))}
               </View>
@@ -298,7 +307,8 @@ export function ProviderDetailScreen() {
 
             <View className="mt-7 flex-row items-center justify-between">
               <Text className="font-serif-bold text-[18px] text-[#26242A]">
-                Reviews{provider.totalReviews > 0 ? ` (${provider.totalReviews})` : ''}
+                Reviews
+                {provider.totalReviews > 0 ? ` (${provider.totalReviews})` : ''}
               </Text>
               {hasMoreReviews ? (
                 <Pressable
@@ -319,7 +329,9 @@ export function ProviderDetailScreen() {
               <ReviewsList
                 averageRating={userReviews?.averageRating ?? null}
                 totalReviews={userReviews?.totalReviews ?? 0}
-                reviews={userReviews?.reviews.slice(0, REVIEWS_PREVIEW_COUNT) ?? []}
+                reviews={
+                  userReviews?.reviews.slice(0, REVIEWS_PREVIEW_COUNT) ?? []
+                }
                 isLoading={isLoadingReviews}
               />
             </View>

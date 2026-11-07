@@ -8,7 +8,7 @@ import { showToast } from '@/store/toast';
 interface LocationState {
   coords: { lat: number; lng: number } | null;
   requested: boolean;
-  requestLocation: () => Promise<void>;
+  requestLocation: (force?: boolean) => Promise<boolean>;
 }
 
 /** Requested once right after a customer logs in or registers (also
@@ -23,20 +23,35 @@ export const useLocationStore = create<LocationState>()(
     (set, get) => ({
       coords: null,
       requested: false,
-      requestLocation: async () => {
-        if (get().requested) return;
+      requestLocation: async (force = false) => {
+        if (get().requested && !force) return Boolean(get().coords);
         set({ requested: true });
 
-        const permission = await Location.requestForegroundPermissionsAsync();
-        if (!permission.granted) {
-          showToast('Enable location to see providers near you', 'default');
-          return;
-        }
+        try {
+          const permission = await Location.requestForegroundPermissionsAsync();
+          if (!permission.granted) {
+            showToast(
+              'Enable location to browse providers near you',
+              'default',
+            );
+            return false;
+          }
 
-        const position = await Location.getCurrentPositionAsync({});
-        set({
-          coords: { lat: position.coords.latitude, lng: position.coords.longitude },
-        });
+          const position = await Location.getCurrentPositionAsync({});
+          set({
+            coords: {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+            },
+          });
+          return true;
+        } catch {
+          showToast(
+            'We could not get your location. Choose a city instead.',
+            'error',
+          );
+          return false;
+        }
       },
     }),
     {

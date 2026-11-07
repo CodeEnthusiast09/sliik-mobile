@@ -3,7 +3,7 @@ import { Image } from 'expo-image';
 import * as Linking from 'expo-linking';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -49,12 +49,6 @@ export function DealDetailScreen() {
   const notificationsHref =
     role === 'provider' ? '/profile/notifications' : '/home/notifications';
   const userCoords = useLocationStore((state) => state.coords);
-
-  // Same defensive request as customer-home/provider-detail - an
-  // already-logged-in session never re-fires the login-time request.
-  useEffect(() => {
-    useLocationStore.getState().requestLocation();
-  }, []);
 
   useHideTabBar();
 

@@ -134,7 +134,22 @@ export const CATEGORIES = [
   { value: 'nails', label: 'Nails' },
   { value: 'barbering', label: 'Barbering' },
   { value: 'mens_grooming', label: "Men's Grooming" },
-];
+] as const;
+
+export type ServiceCategory = (typeof CATEGORIES)[number]['value'];
+
+export const SUPPORTED_CITIES = [
+  'Lagos',
+  'Abuja',
+  'Port Harcourt',
+  'Ibadan',
+  'Benin City',
+  'Enugu',
+  'Kano',
+  'Kaduna',
+] as const;
+
+export type SupportedCity = (typeof SUPPORTED_CITIES)[number];
 
 // Mirrors the backend's ADD_ON_VALUES (create-service.dto.ts).
 export const ADD_ONS = [

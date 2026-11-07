@@ -1,4 +1,5 @@
 import type { Deal } from './deal';
+import type { ServiceCategory } from '@/lib/constants';
 
 export interface ProviderProfile {
   id: string;
@@ -68,6 +69,7 @@ export interface DayOff {
 export interface ProvidersQuery {
   city?: string;
   tradeType?: string;
+  category?: ServiceCategory;
   search?: string;
   minRating?: number;
   lat?: number;

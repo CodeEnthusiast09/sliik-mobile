@@ -2,7 +2,6 @@ import { useMutation } from '@tanstack/react-query';
 
 import { verifyEmail } from '@/services/auth';
 import { useAuthStore } from '@/store/auth';
-import { useLocationStore } from '@/store/location';
 import type { VerifyEmailInput } from '@/validations/auth';
 
 // Verifying the email is the point where a password signup actually becomes
@@ -15,9 +14,6 @@ export function useVerifyEmail() {
     onSuccess: (response) => {
       if (response.data) {
         setAuth(response.data.accessToken, response.data.role);
-        if (response.data.role === 'customer') {
-          useLocationStore.getState().requestLocation();
-        }
       }
     },
   });

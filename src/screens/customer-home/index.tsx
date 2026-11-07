@@ -1,18 +1,19 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
   Modal,
   Pressable,
+  ScrollView,
   Text,
   TextInput,
+  type TextInputInstance,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Avatar } from '@/components/avatar';
 import { Button } from '@/components/button';
 import { Chip } from '@/components/chip';
 import { EmptyState } from '@/components/empty-state';
@@ -24,14 +25,20 @@ import { useCustomerProfile } from '@/hooks/services/customer';
 import { useProviders } from '@/hooks/services/discovery';
 import type { ProviderProfile } from '@/interfaces/provider';
 import {
-  calculateDistanceKm,
-  formatTradeTypeLabel,
-  getErrorMessage,
-} from '@/lib/utils';
+  CATEGORIES,
+  SUPPORTED_CITIES,
+  type ServiceCategory,
+} from '@/lib/constants';
+import { calculateDistanceKm, getErrorMessage } from '@/lib/utils';
 import { useLocationStore } from '@/store/location';
 
 import { HomeListHeader } from './_components/home-list-header';
-import { LocationHeader } from './_components/location-header';
+import {
+  LocationHeader,
+  type LocationHeaderHandle,
+  type LocationMode,
+} from './_components/location-header';
+import { ProviderResultCard } from './_components/provider-result-card';
 import { StatusBar } from 'expo-status-bar';
 
 const RATING_OPTIONS: { label: string; value: number | undefined }[] = [
@@ -41,59 +48,64 @@ const RATING_OPTIONS: { label: string; value: number | undefined }[] = [
   { label: '★ 3.0 & up', value: 3 },
 ];
 
-// Curated top-line categories shown as their own chip - the mock's
-// Hair/Nails/Barbers/Makeup. Everything else, current or future, collapses
-// into "More" so the row never grows unbounded.
-const PINNED_TRADE_TYPES: { value: string; label: string }[] = [
-  { value: 'hairdresser', label: 'Hair' },
-  { value: 'nail-tech', label: 'Nails' },
-  { value: 'barber', label: 'Barbers' },
-  { value: 'makeup-artist', label: 'Makeup' },
-];
-const PINNED_TRADE_TYPE_VALUES = new Set(
-  PINNED_TRADE_TYPES.map((option) => option.value),
-);
-
 export function CustomerHomeScreen() {
   const router = useRouter();
   const userCoords = useLocationStore((state) => state.coords);
-  const { data: customerProfile } = useCustomerProfile();
+  const { data: customerProfile, isLoading: isCustomerProfileLoading } =
+    useCustomerProfile();
 
-  // requestLocation() normally fires right after login/register, but an
-  // already-logged-in session (persisted token, no fresh auth event) would
-  // otherwise never trigger it - ask here too so distance still works.
-  // requestLocation() itself guards against asking more than once.
-  useEffect(() => {
-    useLocationStore.getState().requestLocation();
-  }, []);
-
-  const searchInputRef = useRef<TextInput>(null);
+  const locationHeaderRef = useRef<LocationHeaderHandle>(null);
+  const searchInputRef = useRef<TextInputInstance>(null);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [searchInput, setSearchInput] = useState('');
-  const debouncedSearch = useDebounce(searchInput.trim(), 350);
-  const [selectedTradeType, setSelectedTradeType] = useState<string | null>(
-    null,
-  );
+  const [selectedCategory, setSelectedCategory] =
+    useState<ServiceCategory | null>(null);
   const [minRating, setMinRating] = useState<number | undefined>(undefined);
-  const [moreModalVisible, setMoreModalVisible] = useState(false);
+  const [locationMode, setLocationMode] = useState<LocationMode>('city');
+  const [searchEverywhere, setSearchEverywhere] = useState(false);
   const [ratingModalVisible, setRatingModalVisible] = useState(false);
+  const debouncedSearch = useDebounce(searchInput.trim(), 350);
 
-  // A chosen city takes over as the sole location filter once set (matches
-  // how the rest of the app - deals, offers - already scopes by city) -
-  // sending both city and GPS coords together would AND them on the backend
-  // and could zero out results if your GPS fix doesn't happen to fall inside
-  // that city's radius. GPS stays the fallback until a city is ever set.
-  const hasCity = !!customerProfile?.city;
+  const hasCity = SUPPORTED_CITIES.includes(
+    customerProfile?.city as (typeof SUPPORTED_CITIES)[number],
+  );
+  const hasNearbyLocation = locationMode === 'nearby' && !!userCoords;
+  const canBrowse =
+    searchEverywhere ||
+    (locationMode === 'city' && hasCity) ||
+    (locationMode === 'nearby' && hasNearbyLocation);
+  const locationLabel =
+    locationMode === 'nearby'
+      ? 'near you'
+      : (customerProfile?.city ?? 'your area');
+
   const filters = useMemo(
     () => ({
       search: debouncedSearch || undefined,
-      tradeType: selectedTradeType ?? undefined,
+      category: selectedCategory ?? undefined,
       minRating,
-      city: customerProfile?.city ?? undefined,
-      lat: hasCity ? undefined : userCoords?.lat,
-      lng: hasCity ? undefined : userCoords?.lng,
+      city:
+        !searchEverywhere && locationMode === 'city'
+          ? (customerProfile?.city ?? undefined)
+          : undefined,
+      lat:
+        !searchEverywhere && locationMode === 'nearby'
+          ? userCoords?.lat
+          : undefined,
+      lng:
+        !searchEverywhere && locationMode === 'nearby'
+          ? userCoords?.lng
+          : undefined,
     }),
-    [debouncedSearch, selectedTradeType, minRating, customerProfile?.city, hasCity, userCoords],
+    [
+      debouncedSearch,
+      selectedCategory,
+      minRating,
+      customerProfile?.city,
+      locationMode,
+      searchEverywhere,
+      userCoords,
+    ],
   );
 
   const {
@@ -106,45 +118,18 @@ export function CustomerHomeScreen() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useProviders(filters);
-
-  // Unfiltered baseline query, used only to seed the category chip options -
-  // filtering the main list narrows `providers` itself, which would make
-  // already-selected categories disappear from the chip row.
-  const { data: categorySeed } = useProviders({});
+  } = useProviders(filters, canBrowse);
 
   const providers = useMemo(
     () => data?.pages.flatMap((page) => page.data ?? []) ?? [],
     [data],
   );
 
-  const tradeTypeOptions = useMemo(() => {
-    const rows = categorySeed?.pages.flatMap((page) => page.data ?? []) ?? [];
-    const options = new Set<string>();
-    for (const provider of rows) {
-      // 'pending' is a sentinel the backend sets for providers who haven't
-      // finished onboarding yet - they shouldn't be offered as a real category.
-      if (provider.tradeType && provider.tradeType !== 'pending') {
-        options.add(provider.tradeType);
-      }
-    }
-    return Array.from(options).sort();
-  }, [categorySeed]);
-
-  const overflowTradeTypes = useMemo(
-    () =>
-      tradeTypeOptions.filter(
-        (tradeType) => !PINNED_TRADE_TYPE_VALUES.has(tradeType),
-      ),
-    [tradeTypeOptions],
-  );
-
-  const isOverflowTradeTypeSelected =
-    selectedTradeType !== null &&
-    !PINNED_TRADE_TYPE_VALUES.has(selectedTradeType);
-
   const displayProviders = useMemo(() => {
-    if (!userCoords) return providers;
+    if (locationMode !== 'nearby' || !userCoords || searchEverywhere) {
+      return providers;
+    }
+
     return [...providers].sort((a, b) => distanceOf(a) - distanceOf(b));
 
     function distanceOf(provider: ProviderProfile) {
@@ -161,24 +146,10 @@ export function CustomerHomeScreen() {
         provider.longitude,
       );
     }
-  }, [providers, userCoords]);
-
-  // A real ranking, not just "whatever's first" - reviewed providers sorted
-  // by rating, falling back to the full set if nobody has reviews yet so the
-  // section doesn't just disappear on a sparse/new city.
-  const recommendedProviders = useMemo(() => {
-    const reviewed = providers.filter((provider) => provider.totalReviews > 0);
-    const source = reviewed.length > 0 ? reviewed : providers;
-    return [...source]
-      .sort((a, b) => Number(b.avgRating) - Number(a.avgRating))
-      .slice(0, 8);
-  }, [providers]);
+  }, [locationMode, providers, searchEverywhere, userCoords]);
 
   function getDistanceLabel(provider: ProviderProfile) {
-    // Browsing a chosen city rather than GPS radius - "X km from you" would
-    // measure distance from your physical location, which is irrelevant
-    // (and often confusingly large) once you've deliberately picked a city.
-    if (hasCity) return null;
+    if (locationMode !== 'nearby' || searchEverywhere) return null;
     if (!userCoords || provider.latitude == null || provider.longitude == null)
       return null;
     const distance = calculateDistanceKm(
@@ -190,6 +161,23 @@ export function CustomerHomeScreen() {
     return `${distance.toFixed(1)} km`;
   }
 
+  const hasActiveFilter =
+    !!debouncedSearch ||
+    selectedCategory !== null ||
+    minRating !== undefined ||
+    searchEverywhere;
+
+  function clearFilters() {
+    setSearchInput('');
+    setSelectedCategory(null);
+    setMinRating(undefined);
+    setSearchEverywhere(false);
+  }
+
+  function searchAcrossNigeria() {
+    setSearchEverywhere(true);
+  }
+
   return (
     <View className="flex-1 bg-white">
       <StatusBar style="dark" />
@@ -197,7 +185,13 @@ export function CustomerHomeScreen() {
         <View className="flex-1 px-6">
           <ScreenHeader
             notificationsHref="/home/notifications"
-            leadingContent={<LocationHeader />}
+            leadingContent={
+              <LocationHeader
+                ref={locationHeaderRef}
+                mode={locationMode}
+                onModeChange={setLocationMode}
+              />
+            }
           />
 
           <View className="mt-4 flex-row items-center gap-2">
@@ -230,6 +224,9 @@ export function CustomerHomeScreen() {
 
             <Pressable
               onPress={() => setRatingModalVisible(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Filter by rating"
+              accessibilityState={{ selected: minRating !== undefined }}
               className="h-[48px] w-[48px] items-center justify-center rounded-2xl border border-[#ECE7E0] bg-white"
             >
               <Ionicons
@@ -243,190 +240,108 @@ export function CustomerHomeScreen() {
             </Pressable>
           </View>
 
-          <Text className='mt-5 font-bold text-base'>I need</Text>
+          <Text className="mt-5 font-bold text-base">I need</Text>
 
-          <View className="mt-1 h-11 flex-none flex-row items-center justify-between">
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            className="mt-1 flex-none"
+            contentContainerClassName="gap-2 pr-6"
+          >
             <Chip
               compact
               label="All"
-              selected={selectedTradeType === null}
-              onPress={() => setSelectedTradeType(null)}
+              selected={selectedCategory === null}
+              onPress={() => setSelectedCategory(null)}
             />
 
-            {PINNED_TRADE_TYPES.map(({ value, label }) => (
+            {CATEGORIES.map(({ value, label }) => (
               <Chip
                 key={value}
                 compact
                 label={label}
-                selected={selectedTradeType === value}
-                onPress={() => setSelectedTradeType(value)}
+                selected={selectedCategory === value}
+                onPress={() => setSelectedCategory(value)}
               />
             ))}
-
-            {overflowTradeTypes.length > 0 ? (
-              <Chip
-                compact
-                label="More"
-                selected={isOverflowTradeTypeSelected}
-                onPress={() => setMoreModalVisible(true)}
-                icon={
-                  <Ionicons
-                    name="chevron-down"
-                    size={12}
-                    color={isOverflowTradeTypeSelected ? '#4B2E46' : '#26242A'}
-                  />
-                }
-              />
-            ) : null}
-          </View>
+          </ScrollView>
 
           <View className="mt-4 flex-1">
-            {isLoading ? (
+            {isCustomerProfileLoading ? (
+              <ListSkeleton />
+            ) : !canBrowse ? (
+              <EmptyState
+                message="Choose a city or use your current location to find providers."
+                actionLabel="Set your location"
+                onAction={() => locationHeaderRef.current?.open()}
+              />
+            ) : isLoading ? (
               <ListSkeleton />
             ) : isError ? (
               <ErrorState message={getErrorMessage(error)} onRetry={refetch} />
             ) : (
-              <FlatList
-                showsVerticalScrollIndicator={false}
-                data={displayProviders}
-                keyExtractor={(provider) => provider.id}
-                contentContainerClassName="grow gap-3 pb-32"
-                refreshing={isRefetching}
-                onRefresh={refetch}
-                onEndReached={() => {
-                  if (hasNextPage && !isFetchingNextPage) fetchNextPage();
-                }}
-                onEndReachedThreshold={0.5}
-                ListHeaderComponent={
-                  <HomeListHeader
-                    recommended={recommendedProviders}
-                    hasActiveFilter={
-                      !!debouncedSearch || !!selectedTradeType || minRating !== undefined
-                    }
-                    getDistanceLabel={getDistanceLabel}
-                    onPressProvider={(provider) =>
-                      router.push({
-                        pathname: '/provider/[id]',
-                        params: { id: provider.id },
-                      })
-                    }
-                    onPressBookNow={() => searchInputRef.current?.focus()}
-                  />
-                }
-                ListEmptyComponent={
-                  <EmptyState message="No providers found. Try a different filter." />
-                }
-                ListFooterComponent={
-                  isFetchingNextPage ? (
-                    <ActivityIndicator className="mt-4" />
-                  ) : null
-                }
-                renderItem={({ item }) => {
-                  const rating = Number(item.avgRating);
-                  const distanceLabel = getDistanceLabel(item);
-                  return (
-                    <Pressable
-                      onPress={() =>
-                        router.push({
-                          pathname: '/provider/[id]',
-                          params: { id: item.id },
-                        })
+              <View className="flex-1">
+                <HomeListHeader
+                  hasActiveFilter={hasActiveFilter}
+                  locationLabel={
+                    searchEverywhere ? 'all locations' : locationLabel
+                  }
+                />
+                <FlatList
+                  showsVerticalScrollIndicator={false}
+                  data={displayProviders}
+                  keyExtractor={(provider) => provider.id}
+                  contentContainerClassName="grow gap-3 pb-32"
+                  keyboardShouldPersistTaps="handled"
+                  refreshing={isRefetching}
+                  onRefresh={refetch}
+                  onEndReached={() => {
+                    if (hasNextPage && !isFetchingNextPage) fetchNextPage();
+                  }}
+                  onEndReachedThreshold={0.5}
+                  ListEmptyComponent={
+                    <EmptyState
+                      message={
+                        searchEverywhere
+                          ? 'No providers found. Try a different search or category.'
+                          : `No providers found in ${customerProfile?.city ?? 'this area'}.`
                       }
-                      className="flex-row items-center gap-3 rounded-[20px] border border-[#ECE7E0] bg-white p-3"
-                    >
-                      <Avatar
-                        uri={item.avatarUrl}
-                        name={item.fullName}
-                        size={68}
-                        shape="square"
+                      actionLabel={
+                        hasActiveFilter
+                          ? 'Clear filters'
+                          : 'Search across Nigeria'
+                      }
+                      onAction={
+                        hasActiveFilter ? clearFilters : searchAcrossNigeria
+                      }
+                    />
+                  }
+                  ListFooterComponent={
+                    isFetchingNextPage ? (
+                      <ActivityIndicator className="mt-4" />
+                    ) : undefined
+                  }
+                  renderItem={({ item }) => {
+                    const distanceLabel = getDistanceLabel(item);
+                    return (
+                      <ProviderResultCard
+                        provider={item}
+                        distanceLabel={distanceLabel}
+                        onPress={() =>
+                          router.push({
+                            pathname: '/provider/[id]',
+                            params: { id: item.id },
+                          })
+                        }
                       />
-
-                      <View className="flex-1 gap-1">
-                        <View className="flex-row items-center justify-between">
-                          <Text
-                            className="flex-1 font-serif-bold text-[16px] text-[#26242A]"
-                            numberOfLines={1}
-                          >
-                            {item.fullName}
-                          </Text>
-                          {item.totalReviews > 0 ? (
-                            <Text className="text-[13px] font-bold text-[#26242A]">
-                              ★ {rating.toFixed(1)}
-                            </Text>
-                          ) : null}
-                        </View>
-                        <Text className="text-[13px] text-[#817F80]">
-                          {formatTradeTypeLabel(item.tradeType)}
-                        </Text>
-                        <View className="flex-row items-center justify-between">
-                          <View className="flex-row items-center gap-1">
-                            <Ionicons
-                              name="location-outline"
-                              size={14}
-                              color="#948F86"
-                            />
-                            <Text className="text-[13px] text-[#817F80]">
-                              {item.city ?? 'Location not set'}
-                            </Text>
-                          </View>
-                          {distanceLabel ? (
-                            <Text className="text-[13px] text-[#817F80]">
-                              {distanceLabel}
-                            </Text>
-                          ) : null}
-                        </View>
-                      </View>
-                    </Pressable>
-                  );
-                }}
-              />
+                    );
+                  }}
+                />
+              </View>
             )}
           </View>
         </View>
       </SafeAreaView>
-
-      <Modal
-        visible={moreModalVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setMoreModalVisible(false)}
-      >
-        <Pressable
-          className="flex-1 justify-end bg-black/40"
-          onPress={() => setMoreModalVisible(false)}
-        >
-          <Pressable
-            className="rounded-t-3xl bg-white px-6 pb-10 pt-5"
-            onPress={(event) => event.stopPropagation()}
-          >
-            <Text className="mb-4 text-center text-base font-bold text-[#26242A]">
-              More categories
-            </Text>
-            {overflowTradeTypes.map((tradeType) => {
-              const active = selectedTradeType === tradeType;
-              return (
-                <Pressable
-                  key={tradeType}
-                  className={`flex-row items-center justify-between rounded-xl px-3 py-3 ${active ? 'bg-[#4B2E4620]' : ''}`}
-                  onPress={() => {
-                    setSelectedTradeType(tradeType);
-                    setMoreModalVisible(false);
-                  }}
-                >
-                  <Text
-                    className={`text-[15px] font-semibold ${active ? 'text-[#4B2E46]' : 'text-[#26242A]'}`}
-                  >
-                    {formatTradeTypeLabel(tradeType)}
-                  </Text>
-                  {active ? (
-                    <Ionicons name="checkmark" size={18} color="#4B2E46" />
-                  ) : null}
-                </Pressable>
-              );
-            })}
-          </Pressable>
-        </Pressable>
-      </Modal>
 
       <Modal
         visible={ratingModalVisible}
